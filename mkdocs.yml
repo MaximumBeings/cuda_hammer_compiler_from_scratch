@@ -93,6 +93,7 @@ nav:
       - "24. Caching and Reusing Autotuning Results": part5/24-caching-and-reusing-autotuning-results.md
   - "Part 6 -- Case Studies of Real Compilers":
       - "25. XLA: Fusion and Autotuning in a Real Production Compiler": part6/25-xla-fusion-and-autotuning-in-a-real-production-compiler.md
+      - "26. TVM's Real Modern Stack: Relax, TIR, and MetaSchedule": part6/26-tvms-real-modern-stack-relax-tir-and-metaschedule.md
 
 extra:
   social: []
