@@ -89,6 +89,7 @@ nav:
   - "Part 5 -- Autotuning":
       - "21. The Search Space: Tile Sizes, Loop Orders, and Unrolling": part5/21-the-search-space.md
       - "22. Cost Models vs. Measurement-Based Autotuning": part5/22-cost-models-vs-measurement.md
+      - "23. Building CUDA Hammer's Autotuner": part5/23-building-the-autotuner.md
 
 extra:
   social: []
