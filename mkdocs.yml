@@ -68,6 +68,7 @@ nav:
   - "Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch":
       - "4. Representing Tensors and Operations as a Graph": part1/04-representing-tensors-and-operations-as-a-graph.md
       - "5. Building the Graph: CUDA Hammer's Frontend": part1/05-building-the-graph-cuda-hammers-frontend.md
+      - "6. Graph Validation and Shape Inference": part1/06-graph-validation-and-shape-inference.md
 
 extra:
   social: []
