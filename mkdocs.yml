@@ -88,6 +88,7 @@ nav:
       - "20. A JIT Backend: Compiling and Loading Generated Code at Runtime": part4/20-jit-backend.md
   - "Part 5 -- Autotuning":
       - "21. The Search Space: Tile Sizes, Loop Orders, and Unrolling": part5/21-the-search-space.md
+      - "22. Cost Models vs. Measurement-Based Autotuning": part5/22-cost-models-vs-measurement.md
 
 extra:
   social: []
