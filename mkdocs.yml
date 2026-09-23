@@ -1,4 +1,4 @@
-site_name: CUDA Hammer - CUDA C++ Compiler From Scratch -- Under Development
+site_name: CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
 site_description: A Tensor Compiler in C++, From a Minimal IR to Fused, Autotuned Kernels
 site_author: Oluwaseyi Awoga
 copyright: Copyright &copy; 2026 Oluwaseyi Awoga
