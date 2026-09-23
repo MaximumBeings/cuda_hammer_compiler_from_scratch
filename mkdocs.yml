@@ -86,6 +86,8 @@ nav:
       - "18. Generating CUDA C++ From the Fused IR": part4/18-generating-cuda-cpp.md
       - "19. Generating Vectorized CPU Code": part4/19-generating-vectorized-cpu-code.md
       - "20. A JIT Backend: Compiling and Loading Generated Code at Runtime": part4/20-jit-backend.md
+  - "Part 5 -- Autotuning":
+      - "21. The Search Space: Tile Sizes, Loop Orders, and Unrolling": part5/21-the-search-space.md
 
 extra:
   social: []
