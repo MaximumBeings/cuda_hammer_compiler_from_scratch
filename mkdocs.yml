@@ -58,6 +58,8 @@ plugins:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - "Part 0 -- Why Compile Tensor Programs At All":
+      - "1. The Cost of Eager Execution": part0/01-the-cost-of-eager-execution.md
 
 extra:
   social: []
