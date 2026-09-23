@@ -69,6 +69,7 @@ nav:
       - "4. Representing Tensors and Operations as a Graph": part1/04-representing-tensors-and-operations-as-a-graph.md
       - "5. Building the Graph: CUDA Hammer's Frontend": part1/05-building-the-graph-cuda-hammers-frontend.md
       - "6. Graph Validation and Shape Inference": part1/06-graph-validation-and-shape-inference.md
+      - "7. Printing and Visualizing CUDA Hammer's IR": part1/07-printing-and-visualizing-cuda-hammers-ir.md
 
 extra:
   social: []
