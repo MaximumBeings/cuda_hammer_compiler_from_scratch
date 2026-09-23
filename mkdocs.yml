@@ -72,6 +72,7 @@ nav:
       - "7. Printing and Visualizing CUDA Hammer's IR": part1/07-printing-and-visualizing-cuda-hammers-ir.md
   - "Part 2 -- Basic Optimization Passes":
       - "8. The Pass Manager: Structuring Compiler Transformations": part2/08-the-pass-manager-structuring-compiler-transformations.md
+      - "9. Constant Folding and Dead Code Elimination": part2/09-constant-folding-and-dead-code-elimination.md
 
 extra:
   social: []
