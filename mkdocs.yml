@@ -60,6 +60,7 @@ nav:
   - Getting Started: getting-started.md
   - "Part 0 -- Why Compile Tensor Programs At All":
       - "1. The Cost of Eager Execution": part0/01-the-cost-of-eager-execution.md
+      - "2. What a Compiler Pipeline Looks Like": part0/02-what-a-compiler-pipeline-looks-like.md
 
 extra:
   social: []
