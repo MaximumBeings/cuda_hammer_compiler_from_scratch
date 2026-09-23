@@ -83,6 +83,7 @@ nav:
       - "16. Fusion Boundaries": part3/16-fusion-boundaries.md
   - "Part 4 -- Code Generation":
       - "17. Lowering CUDA Hammer's IR to Loops": part4/17-lowering-to-loops.md
+      - "18. Generating CUDA C++ From the Fused IR": part4/18-generating-cuda-cpp.md
 
 extra:
   social: []
