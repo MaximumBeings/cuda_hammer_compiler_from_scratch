@@ -85,6 +85,7 @@ nav:
       - "17. Lowering CUDA Hammer's IR to Loops": part4/17-lowering-to-loops.md
       - "18. Generating CUDA C++ From the Fused IR": part4/18-generating-cuda-cpp.md
       - "19. Generating Vectorized CPU Code": part4/19-generating-vectorized-cpu-code.md
+      - "20. A JIT Backend: Compiling and Loading Generated Code at Runtime": part4/20-jit-backend.md
 
 extra:
   social: []
