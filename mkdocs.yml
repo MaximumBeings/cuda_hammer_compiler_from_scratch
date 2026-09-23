@@ -96,6 +96,7 @@ nav:
       - "26. TVM's Real Modern Stack: Relax, TIR, and MetaSchedule": part6/26-tvms-real-modern-stack-relax-tir-and-metaschedule.md
       - "27. Triton's Block-Level Programming Model": part6/27-tritons-block-level-programming-model.md
       - "28. torch.compile and TorchInductor": part6/28-torch-compile-and-torchinductor.md
+      - "29. Flash Attention as a Cross-System Fusion Case Study": part6/29-flash-attention-as-a-cross-system-fusion-case-study.md
 
 extra:
   social: []
