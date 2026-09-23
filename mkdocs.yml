@@ -97,6 +97,7 @@ nav:
       - "27. Triton's Block-Level Programming Model": part6/27-tritons-block-level-programming-model.md
       - "28. torch.compile and TorchInductor": part6/28-torch-compile-and-torchinductor.md
       - "29. Flash Attention as a Cross-System Fusion Case Study": part6/29-flash-attention-as-a-cross-system-fusion-case-study.md
+      - "30. Quantization-Aware Codegen": part6/30-quantization-aware-codegen.md
 
 extra:
   social: []
