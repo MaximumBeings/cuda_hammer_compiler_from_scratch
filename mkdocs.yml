@@ -80,6 +80,7 @@ nav:
       - "13. Elementwise Fusion": part3/13-elementwise-fusion.md
       - "14. Reduction Fusion": part3/14-reduction-fusion.md
       - "15. Loop Fusion and Tiling": part3/15-loop-fusion-and-tiling.md
+      - "16. Fusion Boundaries": part3/16-fusion-boundaries.md
 
 extra:
   social: []
