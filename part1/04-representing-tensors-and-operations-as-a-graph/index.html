@@ -1,0 +1,1644 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Tensor Compiler in C++, From a Minimal IR to Fused, Autotuned Kernels">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part0/03-a-tour-of-real-ml-compilers-xla-tvm-and-triton/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>4. Representing Tensors and Operations as a Graph - CUDA Hammer -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#4-representing-tensors-and-operations-as-a-graph" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="CUDA Hammer -- Under Development" class="md-header__button md-logo" aria-label="CUDA Hammer -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CUDA Hammer -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              4. Representing Tensors and Operations as a Graph
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="CUDA Hammer -- Under Development" class="md-nav__button md-logo" aria-label="CUDA Hammer -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    CUDA Hammer -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/01-the-cost-of-eager-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. The Cost of Eager Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/02-what-a-compiler-pipeline-looks-like/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. What a Compiler Pipeline Looks Like
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/03-a-tour-of-real-ml-compilers-xla-tvm-and-triton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Representing Tensors and Operations as a Graph
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Representing Tensors and Operations as a Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#41-why-a-graph-not-a-tree-or-a-linear-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Why a Graph, Not a Tree or a Linear List
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1 Why a Graph, Not a Tree or a Linear List">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#42-nodes-and-values-the-building-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Nodes and Values: The Building Blocks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 Nodes and Values: The Building Blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#43-a-graph-must-be-acyclic-and-how-cuda-hammers-api-guarantees-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 A Graph Must Be Acyclic (And How CUDA Hammer's API Guarantees It)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3 A Graph Must Be Acyclic (And How CUDA Hammer&#39;s API Guarantees It)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Check Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-we-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where We Go Next
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked Solutions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#41-why-a-graph-not-a-tree-or-a-linear-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Why a Graph, Not a Tree or a Linear List
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.1 Why a Graph, Not a Tree or a Linear List">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#42-nodes-and-values-the-building-blocks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Nodes and Values: The Building Blocks
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.2 Nodes and Values: The Building Blocks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#43-a-graph-must-be-acyclic-and-how-cuda-hammers-api-guarantees-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 A Graph Must Be Acyclic (And How CUDA Hammer's API Guarantees It)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4.3 A Graph Must Be Acyclic (And How CUDA Hammer&#39;s API Guarantees It)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Check Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-we-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where We Go Next
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked Solutions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="4-representing-tensors-and-operations-as-a-graph">4. Representing Tensors and Operations as a Graph<a class="headerlink" href="#4-representing-tensors-and-operations-as-a-graph" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> why CUDA Hammer's own IR, starting in this chapter, is a graph rather than a tree or a straight-line list -- and the two real building blocks (<code>Node</code>, <code>Value</code>) every later chapter's passes, fusion, codegen, and autotuner all operate on. This is CUDA Hammer's own first real code: genuinely compiled, genuinely run C++, not a toy arithmetic language anymore.</p>
+<p><strong>What you need to know first:</strong> Chapter 2's vocabulary (IR, pass, codegen) and, specifically, that Chapter 2's own IR was always a tree (as an AST) or a straight-line list (as linear IR) -- this chapter explains exactly why a tensor computation cannot stay that way.</p>
+<hr />
+<p>Part 1 starts CUDA Hammer itself: no more parsing arithmetic expression text, no more single-letter variables. From here forward, every chapter builds on the same graph data structure this chapter designs, compiles, and tests.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2&#39;s LINEAR IR (every temp is consumed by AT MOST one later
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>instruction -- guaranteed by construction, since it came from walking
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>PARSED TEXT, where each subexpression appears exactly once):
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  t0 = a + b
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  t1 = t0 * c          -- t0 is used here, and only here, ever
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>CHAPTER 4&#39;s GRAPH (built through an API, not parsed from text -- the
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>exact same computed Value can be handed to more than one later call):
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  t1 = Add(a, b)
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  t2 = Mul(t1, a)       -- t1 used here...
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>  t3 = ReLU(t1)         -- ...AND here: the SAME t1, not a second copy,
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>                           not recomputed -- this is what makes it a
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                           graph instead of a tree or a straight line.
+</code></pre></div>
+<h2 id="41-why-a-graph-not-a-tree-or-a-linear-list">4.1 Why a Graph, Not a Tree or a Linear List<a class="headerlink" href="#41-why-a-graph-not-a-tree-or-a-linear-list" title="Permanent link">&para;</a></h2>
+<h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
+<p>Picture a well shared by two houses through a single pipe that splits at a T-joint: the water is drawn from the ground once, and both houses draw from that same supply. Now picture the alternative -- each house paying to dig its own separate well, doing the identical work of reaching the same water table twice, just so each house can have "its own" supply instead of sharing one. A tree is the second arrangement: nothing in a tree can be reached by two different paths, so if two different places in a computation both need the same result, a tree has no way to represent that except by computing it twice, in two separate, unconnected parts of the tree.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ONE well, shared by two houses (a graph):
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  well --&gt; pipe --&gt; [house A tap]
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>                 --&gt; [house B tap]
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  the water in the pipe is drawn once; both houses draw from the SAME
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  supply, never a second, separately-dug well.
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>TWO wells, one per house (what a TREE would require instead):
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  well A --&gt; pipe --&gt; [house A tap]
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  well B --&gt; pipe --&gt; [house B tap]
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  digging a second well is exactly what &quot;expanding to a tree&quot; costs --
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>  the identical water, produced twice, just to give each consumer its
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>  own private copy.
+</code></pre></div>
+<h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
+<p>Chapter 2's toy compiler was always a tree (as an AST) and then a straight-line list (as linear IR) for a real structural reason, not an arbitrary design choice: both were built by walking <em>parsed source text</em>, and a subexpression written once in source text produces exactly one AST node. Nothing in <code>lex()</code>/<code>Parser::parseExpr()</code>/<code>lower()</code> could ever make one computed result feed two different downstream operations, because there was never a way to write that sharing down in source text in the first place -- writing <code>a</code> twice in <code>a + a</code> just re-parses two separate <code>Variable</code> nodes that both happen to look the same name up in the same environment, not one shared computed value. A real tensor program does not have this restriction: a normalization's output routinely feeds both a residual-add and the next layer, and File 005 below builds exactly that shape by hand, directly through CUDA Hammer's own graph-construction API (<code>addInput</code>/<code>addBinary</code>/<code>addUnary</code>), never by parsing text.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 4: Representing Tensors and Operations as a Graph</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 005_graph_representation_and_sharing.cpp</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 4.1 -- why a tensor computation needs a graph, not a tree or a</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">// linear list -- and Section 4.2 -- Node and Value as the actual building</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1">// blocks CUDA Hammer&#39;s IR is made of, from here through the rest of the</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1">// book.</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">//</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1">// Chapter 2&#39;s toy compiler always produced a tree (as an AST) and then a</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1">// straight-line list (as linear IR), because both were built by walking</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1">// PARSED TEXT: a subexpression written once in source produces exactly</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1">// one AST node, so nothing in that pipeline could ever make one computed</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1">// result feed two different downstream operations without writing that</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1">// subexpression&#39;s text out twice (and recomputing it). A real tensor</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c1">// program does not have this restriction -- a value computed once is</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1">// routinely consumed by more than one later operation (a normalization&#39;s</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1">// output feeding both a residual-add and a following layer, for</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1">// instance) -- so CUDA Hammer&#39;s own IR needs a data structure that lets</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="c1">// one computed result be referenced by more than one consumer without</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1">// duplicating the operation that produced it. That data structure is a</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1">// graph: Value identifies a specific node&#39;s output, Node holds a list of</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="c1">// Values as its own inputs (edges pointing backward at its producers),</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1">// and Graph owns every Node.</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1">//</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="c1">// This file builds a small, genuinely shared DAG by hand (through</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="c1">// CUDA Hammer&#39;s own graph-construction API, not by parsing text) and</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="c1">// counts two real things: how many consumers each node&#39;s output</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1">// actually has, and how many nodes an equivalent TREE (no sharing --</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="c1">// every multi-consumer value inlined at every one of its use sites</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="c1">// instead) would need to represent the identical computation. That</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="c1">// second count is computed by a genuinely recursive, UNMEMOIZED</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="c1">// expansion -- which, not coincidentally, redoes the shared node&#39;s own</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="c1">// work once per consumer while computing it, the IR-size version of</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="c1">// exactly the &quot;eager execution recomputes what fusion would have</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="c1">// shared&quot; argument Chapter 1 already made about runtime memory traffic.</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="c1">//</span>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="c1">// Compile: g++ -std=c++17 -Wall -Wextra -O2 005_graph_representation_and_sharing.cpp -o 005_graph_representation_and_sharing</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="c1">// Run:     ./005_graph_representation_and_sharing</span>
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string&gt;</span>
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;memory&gt;</span>
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;map&gt;</span>
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdexcept&gt;</span>
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a>
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="c1">// ============================ Value and Node ============================</span>
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span class="c1">//</span>
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a><span class="c1">// A Value never points at a Node directly (no pointer, no reference) --</span>
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="c1">// it is just a small, cheap-to-copy pair of integers: which node</span>
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span class="c1">// produced it, and which of that node&#39;s outputs. Every op in this</span>
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a><span class="c1">// chapter has exactly one output, so outputIndex is always 0 here, but</span>
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a><span class="c1">// keeping it explicit now means a future op with two real outputs (for</span>
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a><span class="c1">// instance, a max-with-argmax op producing both a value and an index)</span>
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a><span class="c1">// needs no change to Value&#39;s own shape later, only a new node kind that</span>
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span class="c1">// happens to report more than one output.</span>
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span class="k">struct</span><span class="w"> </span><span class="nc">Value</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nodeId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">outputIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a><span class="p">};</span>
+<a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a>
+<a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">OpKind</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Const</span><span class="p">,</span><span class="w"> </span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">Mul</span><span class="p">,</span><span class="w"> </span><span class="n">ReLU</span><span class="w"> </span><span class="p">};</span>
+<a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a>
+<a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">opKindStr</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a><span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Input</span><span class="p">:</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Input&quot;</span><span class="p">;</span>
+<a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Const</span><span class="p">:</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Const&quot;</span><span class="p">;</span>
+<a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Add</span><span class="p">:</span><span class="w">   </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Add&quot;</span><span class="p">;</span>
+<a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Mul</span><span class="p">:</span><span class="w">   </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Mul&quot;</span><span class="p">;</span>
+<a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a><span class="w">        </span><span class="k">default</span><span class="o">:</span><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;ReLU&quot;</span><span class="p">;</span>
+<a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-71" name="__codelineno-2-71" href="#__codelineno-2-71"></a><span class="p">}</span>
+<a id="__codelineno-2-72" name="__codelineno-2-72" href="#__codelineno-2-72"></a>
+<a id="__codelineno-2-73" name="__codelineno-2-73" href="#__codelineno-2-73"></a><span class="k">struct</span><span class="w"> </span><span class="nc">Node</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-2-75" name="__codelineno-2-75" href="#__codelineno-2-75"></a><span class="w">    </span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">;</span>
+<a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">debugName</span><span class="p">;</span>
+<a id="__codelineno-2-77" name="__codelineno-2-77" href="#__codelineno-2-77"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputs</span><span class="p">;</span><span class="w">  </span><span class="c1">// edges INTO this node, i.e. this node&#39;s own producers</span>
+<a id="__codelineno-2-78" name="__codelineno-2-78" href="#__codelineno-2-78"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">constValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span><span class="w">    </span><span class="c1">// only meaningful when op == OpKind::Const</span>
+<a id="__codelineno-2-79" name="__codelineno-2-79" href="#__codelineno-2-79"></a><span class="p">};</span>
+<a id="__codelineno-2-80" name="__codelineno-2-80" href="#__codelineno-2-80"></a>
+<a id="__codelineno-2-81" name="__codelineno-2-81" href="#__codelineno-2-81"></a><span class="c1">// Graph owns every Node through a vector&lt;unique_ptr&lt;Node&gt;&gt; -- Node</span>
+<a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a><span class="c1">// objects are individually heap-allocated, so a Value&#39;s nodeId stays</span>
+<a id="__codelineno-2-83" name="__codelineno-2-83" href="#__codelineno-2-83"></a><span class="c1">// valid forever even if the owning vector itself reallocates (which is</span>
+<a id="__codelineno-2-84" name="__codelineno-2-84" href="#__codelineno-2-84"></a><span class="c1">// exactly why Value stores an id, resolved through Graph::node(), rather</span>
+<a id="__codelineno-2-85" name="__codelineno-2-85" href="#__codelineno-2-85"></a><span class="c1">// than a raw Node* that a vector reallocation could otherwise leave</span>
+<a id="__codelineno-2-86" name="__codelineno-2-86" href="#__codelineno-2-86"></a><span class="c1">// dangling if Node were stored by value instead of by unique_ptr).</span>
+<a id="__codelineno-2-87" name="__codelineno-2-87" href="#__codelineno-2-87"></a><span class="k">class</span><span class="w"> </span><span class="nc">Graph</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-88" name="__codelineno-2-88" href="#__codelineno-2-88"></a><span class="k">public</span><span class="o">:</span>
+<a id="__codelineno-2-89" name="__codelineno-2-89" href="#__codelineno-2-89"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addInput</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-90" name="__codelineno-2-90" href="#__codelineno-2-90"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-2-91" name="__codelineno-2-91" href="#__codelineno-2-91"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-92" name="__codelineno-2-92" href="#__codelineno-2-92"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addConst</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-93" name="__codelineno-2-93" href="#__codelineno-2-93"></a><span class="w">        </span><span class="n">Value</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Const</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-2-94" name="__codelineno-2-94" href="#__codelineno-2-94"></a><span class="w">        </span><span class="n">nodes_</span><span class="p">.</span><span class="n">back</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">constValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v</span><span class="p">;</span>
+<a id="__codelineno-2-95" name="__codelineno-2-95" href="#__codelineno-2-95"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+<a id="__codelineno-2-96" name="__codelineno-2-96" href="#__codelineno-2-96"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-97" name="__codelineno-2-97" href="#__codelineno-2-97"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addUnary</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">in</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-98" name="__codelineno-2-98" href="#__codelineno-2-98"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">in</span><span class="p">},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-2-99" name="__codelineno-2-99" href="#__codelineno-2-99"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-100" name="__codelineno-2-100" href="#__codelineno-2-100"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">rhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-101" name="__codelineno-2-101" href="#__codelineno-2-101"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="n">rhs</span><span class="p">},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-2-102" name="__codelineno-2-102" href="#__codelineno-2-102"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-103" name="__codelineno-2-103" href="#__codelineno-2-103"></a>
+<a id="__codelineno-2-104" name="__codelineno-2-104" href="#__codelineno-2-104"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">Node</span><span class="o">*</span><span class="w"> </span><span class="n">node</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">nodes_</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">id</span><span class="p">)).</span><span class="n">get</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-2-105" name="__codelineno-2-105" href="#__codelineno-2-105"></a><span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">nodes_</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-2-106" name="__codelineno-2-106" href="#__codelineno-2-106"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;&gt;&amp;</span><span class="w"> </span><span class="n">nodes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">nodes_</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-2-107" name="__codelineno-2-107" href="#__codelineno-2-107"></a>
+<a id="__codelineno-2-108" name="__codelineno-2-108" href="#__codelineno-2-108"></a><span class="w">    </span><span class="c1">// Genuinely counted: how many other nodes&#39; input lists reference</span>
+<a id="__codelineno-2-109" name="__codelineno-2-109" href="#__codelineno-2-109"></a><span class="w">    </span><span class="c1">// each node&#39;s single output, across the whole graph.</span>
+<a id="__codelineno-2-110" name="__codelineno-2-110" href="#__codelineno-2-110"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">consumerCounts</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-111" name="__codelineno-2-111" href="#__codelineno-2-111"></a><span class="w">        </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">counts</span><span class="p">;</span>
+<a id="__codelineno-2-112" name="__codelineno-2-112" href="#__codelineno-2-112"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">nodes_</span><span class="p">)</span><span class="w"> </span><span class="n">counts</span><span class="p">[</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-2-113" name="__codelineno-2-113" href="#__codelineno-2-113"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">nodes_</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-114" name="__codelineno-2-114" href="#__codelineno-2-114"></a><span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Value</span><span class="o">&amp;</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-115" name="__codelineno-2-115" href="#__codelineno-2-115"></a><span class="w">                </span><span class="n">counts</span><span class="p">[</span><span class="n">in</span><span class="p">.</span><span class="n">nodeId</span><span class="p">]</span><span class="o">++</span><span class="p">;</span>
+<a id="__codelineno-2-116" name="__codelineno-2-116" href="#__codelineno-2-116"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-2-117" name="__codelineno-2-117" href="#__codelineno-2-117"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-2-118" name="__codelineno-2-118" href="#__codelineno-2-118"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">counts</span><span class="p">;</span>
+<a id="__codelineno-2-119" name="__codelineno-2-119" href="#__codelineno-2-119"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-120" name="__codelineno-2-120" href="#__codelineno-2-120"></a>
+<a id="__codelineno-2-121" name="__codelineno-2-121" href="#__codelineno-2-121"></a><span class="k">private</span><span class="o">:</span>
+<a id="__codelineno-2-122" name="__codelineno-2-122" href="#__codelineno-2-122"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-123" name="__codelineno-2-123" href="#__codelineno-2-123"></a><span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-2-124" name="__codelineno-2-124" href="#__codelineno-2-124"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nextId_</span><span class="o">++</span><span class="p">;</span>
+<a id="__codelineno-2-125" name="__codelineno-2-125" href="#__codelineno-2-125"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">;</span>
+<a id="__codelineno-2-126" name="__codelineno-2-126" href="#__codelineno-2-126"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">name</span><span class="p">;</span>
+<a id="__codelineno-2-127" name="__codelineno-2-127" href="#__codelineno-2-127"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span>
+<a id="__codelineno-2-128" name="__codelineno-2-128" href="#__codelineno-2-128"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-2-129" name="__codelineno-2-129" href="#__codelineno-2-129"></a><span class="w">        </span><span class="n">nodes_</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+<a id="__codelineno-2-130" name="__codelineno-2-130" href="#__codelineno-2-130"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Value</span><span class="p">{</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-2-131" name="__codelineno-2-131" href="#__codelineno-2-131"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-132" name="__codelineno-2-132" href="#__codelineno-2-132"></a>
+<a id="__codelineno-2-133" name="__codelineno-2-133" href="#__codelineno-2-133"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">nodes_</span><span class="p">;</span>
+<a id="__codelineno-2-134" name="__codelineno-2-134" href="#__codelineno-2-134"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nextId_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-2-135" name="__codelineno-2-135" href="#__codelineno-2-135"></a><span class="p">};</span>
+<a id="__codelineno-2-136" name="__codelineno-2-136" href="#__codelineno-2-136"></a>
+<a id="__codelineno-2-137" name="__codelineno-2-137" href="#__codelineno-2-137"></a><span class="c1">// Recursively expands a value into the node count an equivalent TREE</span>
+<a id="__codelineno-2-138" name="__codelineno-2-138" href="#__codelineno-2-138"></a><span class="c1">// would need -- every multi-consumer node&#39;s own subtree gets counted</span>
+<a id="__codelineno-2-139" name="__codelineno-2-139" href="#__codelineno-2-139"></a><span class="c1">// again, once per visit, exactly mirroring what inlining it at every use</span>
+<a id="__codelineno-2-140" name="__codelineno-2-140" href="#__codelineno-2-140"></a><span class="c1">// site (instead of sharing it) would actually cost. Deliberately NOT</span>
+<a id="__codelineno-2-141" name="__codelineno-2-141" href="#__codelineno-2-141"></a><span class="c1">// memoized: a memoized version would just be re-deriving the graph&#39;s own</span>
+<a id="__codelineno-2-142" name="__codelineno-2-142" href="#__codelineno-2-142"></a><span class="c1">// sharing, defeating the point of counting what NOT sharing costs.</span>
+<a id="__codelineno-2-143" name="__codelineno-2-143" href="#__codelineno-2-143"></a><span class="k">static</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="nf">expandToTreeNodeCount</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Graph</span><span class="o">&amp;</span><span class="w"> </span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-144" name="__codelineno-2-144" href="#__codelineno-2-144"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">Node</span><span class="o">*</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">node</span><span class="p">(</span><span class="n">v</span><span class="p">.</span><span class="n">nodeId</span><span class="p">);</span>
+<a id="__codelineno-2-145" name="__codelineno-2-145" href="#__codelineno-2-145"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-2-146" name="__codelineno-2-146" href="#__codelineno-2-146"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Value</span><span class="o">&amp;</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-147" name="__codelineno-2-147" href="#__codelineno-2-147"></a><span class="w">        </span><span class="n">count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">expandToTreeNodeCount</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="p">);</span>
+<a id="__codelineno-2-148" name="__codelineno-2-148" href="#__codelineno-2-148"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-149" name="__codelineno-2-149" href="#__codelineno-2-149"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">count</span><span class="p">;</span>
+<a id="__codelineno-2-150" name="__codelineno-2-150" href="#__codelineno-2-150"></a><span class="p">}</span>
+<a id="__codelineno-2-151" name="__codelineno-2-151" href="#__codelineno-2-151"></a>
+<a id="__codelineno-2-152" name="__codelineno-2-152" href="#__codelineno-2-152"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">printGraph</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Graph</span><span class="o">&amp;</span><span class="w"> </span><span class="n">g</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-153" name="__codelineno-2-153" href="#__codelineno-2-153"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-154" name="__codelineno-2-154" href="#__codelineno-2-154"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  %%%d = %s(%s)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">opKindStr</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">op</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
+<a id="__codelineno-2-155" name="__codelineno-2-155" href="#__codelineno-2-155"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OpKind</span><span class="o">::</span><span class="n">Const</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-156" name="__codelineno-2-156" href="#__codelineno-2-156"></a><span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; [value=%.1f]&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">constValue</span><span class="p">);</span>
+<a id="__codelineno-2-157" name="__codelineno-2-157" href="#__codelineno-2-157"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-2-158" name="__codelineno-2-158" href="#__codelineno-2-158"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-159" name="__codelineno-2-159" href="#__codelineno-2-159"></a><span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; &lt;- &quot;</span><span class="p">);</span>
+<a id="__codelineno-2-160" name="__codelineno-2-160" href="#__codelineno-2-160"></a><span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-161" name="__codelineno-2-161" href="#__codelineno-2-161"></a><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;, &quot;</span><span class="p">);</span>
+<a id="__codelineno-2-162" name="__codelineno-2-162" href="#__codelineno-2-162"></a><span class="w">                </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%%%d&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">nodeId</span><span class="p">);</span>
+<a id="__codelineno-2-163" name="__codelineno-2-163" href="#__codelineno-2-163"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-2-164" name="__codelineno-2-164" href="#__codelineno-2-164"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-2-165" name="__codelineno-2-165" href="#__codelineno-2-165"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-166" name="__codelineno-2-166" href="#__codelineno-2-166"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-167" name="__codelineno-2-167" href="#__codelineno-2-167"></a><span class="p">}</span>
+<a id="__codelineno-2-168" name="__codelineno-2-168" href="#__codelineno-2-168"></a>
+<a id="__codelineno-2-169" name="__codelineno-2-169" href="#__codelineno-2-169"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-170" name="__codelineno-2-170" href="#__codelineno-2-170"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Section 4.1 / 4.2: a genuinely shared DAG, built through CUDA Hammer&#39;s own graph API ===</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-171" name="__codelineno-2-171" href="#__codelineno-2-171"></a>
+<a id="__codelineno-2-172" name="__codelineno-2-172" href="#__codelineno-2-172"></a><span class="w">    </span><span class="c1">// Builds the diamond below directly through addInput/addBinary/addUnary</span>
+<a id="__codelineno-2-173" name="__codelineno-2-173" href="#__codelineno-2-173"></a><span class="w">    </span><span class="c1">// -- never by parsing text, so this is real graph CONSTRUCTION, not</span>
+<a id="__codelineno-2-174" name="__codelineno-2-174" href="#__codelineno-2-174"></a><span class="w">    </span><span class="c1">// Chapter 2&#39;s kind of parsing-driven tree building:</span>
+<a id="__codelineno-2-175" name="__codelineno-2-175" href="#__codelineno-2-175"></a><span class="w">    </span><span class="c1">//</span>
+<a id="__codelineno-2-176" name="__codelineno-2-176" href="#__codelineno-2-176"></a><span class="w">    </span><span class="c1">//   a, b = Input, Input</span>
+<a id="__codelineno-2-177" name="__codelineno-2-177" href="#__codelineno-2-177"></a><span class="w">    </span><span class="c1">//   t1   = Add(a, b)</span>
+<a id="__codelineno-2-178" name="__codelineno-2-178" href="#__codelineno-2-178"></a><span class="w">    </span><span class="c1">//   t2   = Mul(t1, a)      &lt;- t1 used again here</span>
+<a id="__codelineno-2-179" name="__codelineno-2-179" href="#__codelineno-2-179"></a><span class="w">    </span><span class="c1">//   t3   = ReLU(t1)        &lt;- and again here: t1 has TWO consumers</span>
+<a id="__codelineno-2-180" name="__codelineno-2-180" href="#__codelineno-2-180"></a><span class="w">    </span><span class="c1">//   out  = Add(t2, t3)</span>
+<a id="__codelineno-2-181" name="__codelineno-2-181" href="#__codelineno-2-181"></a><span class="w">    </span><span class="n">Graph</span><span class="w"> </span><span class="n">g</span><span class="p">;</span>
+<a id="__codelineno-2-182" name="__codelineno-2-182" href="#__codelineno-2-182"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">a</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addInput</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-183" name="__codelineno-2-183" href="#__codelineno-2-183"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">b</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addInput</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-184" name="__codelineno-2-184" href="#__codelineno-2-184"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">t1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;t1&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-185" name="__codelineno-2-185" href="#__codelineno-2-185"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">t2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Mul</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;t2&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-186" name="__codelineno-2-186" href="#__codelineno-2-186"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">t3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addUnary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">ReLU</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;t3&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-187" name="__codelineno-2-187" href="#__codelineno-2-187"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">t2</span><span class="p">,</span><span class="w"> </span><span class="n">t3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;out&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-188" name="__codelineno-2-188" href="#__codelineno-2-188"></a>
+<a id="__codelineno-2-189" name="__codelineno-2-189" href="#__codelineno-2-189"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Graph (%zu nodes):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-2-190" name="__codelineno-2-190" href="#__codelineno-2-190"></a><span class="w">    </span><span class="n">printGraph</span><span class="p">(</span><span class="n">g</span><span class="p">);</span>
+<a id="__codelineno-2-191" name="__codelineno-2-191" href="#__codelineno-2-191"></a>
+<a id="__codelineno-2-192" name="__codelineno-2-192" href="#__codelineno-2-192"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Consumer counts (how many other nodes&#39; inputs reference each node&#39;s output):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-193" name="__codelineno-2-193" href="#__codelineno-2-193"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">counts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">consumerCounts</span><span class="p">();</span>
+<a id="__codelineno-2-194" name="__codelineno-2-194" href="#__codelineno-2-194"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">t1HasTwoConsumers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-2-195" name="__codelineno-2-195" href="#__codelineno-2-195"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-196" name="__codelineno-2-196" href="#__codelineno-2-196"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">counts</span><span class="p">[</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">];</span>
+<a id="__codelineno-2-197" name="__codelineno-2-197" href="#__codelineno-2-197"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  %%%d (%s %s): %d consumer%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">opKindStr</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">op</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span>
+<a id="__codelineno-2-198" name="__codelineno-2-198" href="#__codelineno-2-198"></a><span class="w">               </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="p">.</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;s&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-199" name="__codelineno-2-199" href="#__codelineno-2-199"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">t1</span><span class="p">.</span><span class="n">nodeId</span><span class="p">)</span><span class="w"> </span><span class="n">t1HasTwoConsumers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<a id="__codelineno-2-200" name="__codelineno-2-200" href="#__codelineno-2-200"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-201" name="__codelineno-2-201" href="#__codelineno-2-201"></a>
+<a id="__codelineno-2-202" name="__codelineno-2-202" href="#__codelineno-2-202"></a><span class="w">    </span><span class="c1">// Note that %0 (a) ALSO has 2 consumers -- and that alone would not</span>
+<a id="__codelineno-2-203" name="__codelineno-2-203" href="#__codelineno-2-203"></a><span class="w">    </span><span class="c1">// distinguish this from Chapter 2&#39;s tree, since a tree can &quot;reuse&quot; a</span>
+<a id="__codelineno-2-204" name="__codelineno-2-204" href="#__codelineno-2-204"></a><span class="w">    </span><span class="c1">// leaf value too (parsing &quot;a + a&quot; produces two separate Variable AST</span>
+<a id="__codelineno-2-205" name="__codelineno-2-205" href="#__codelineno-2-205"></a><span class="w">    </span><span class="c1">// nodes that both look `a` up, with no sharing required). What a tree</span>
+<a id="__codelineno-2-206" name="__codelineno-2-206" href="#__codelineno-2-206"></a><span class="w">    </span><span class="c1">// genuinely cannot do is share a COMPUTED, non-leaf result -- t1 is</span>
+<a id="__codelineno-2-207" name="__codelineno-2-207" href="#__codelineno-2-207"></a><span class="w">    </span><span class="c1">// an Add&#39;s own output, not a leaf, and its 2 consumers below (t2 and</span>
+<a id="__codelineno-2-208" name="__codelineno-2-208" href="#__codelineno-2-208"></a><span class="w">    </span><span class="c1">// t3) are exactly the case a tree would have to duplicate the entire</span>
+<a id="__codelineno-2-209" name="__codelineno-2-209" href="#__codelineno-2-209"></a><span class="w">    </span><span class="c1">// Add operation to represent.</span>
+<a id="__codelineno-2-210" name="__codelineno-2-210" href="#__codelineno-2-210"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">self-check: t1 (a computed, non-leaf node) has exactly 2 consumers (%s) -- sharing</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-211" name="__codelineno-2-211" href="#__codelineno-2-211"></a><span class="w">           </span><span class="n">t1HasTwoConsumers</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-212" name="__codelineno-2-212" href="#__codelineno-2-212"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;a COMPUTED result this way, without recomputing it, is what a tree cannot do.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-213" name="__codelineno-2-213" href="#__codelineno-2-213"></a>
+<a id="__codelineno-2-214" name="__codelineno-2-214" href="#__codelineno-2-214"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">treeNodeCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">expandToTreeNodeCount</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">out</span><span class="p">);</span>
+<a id="__codelineno-2-215" name="__codelineno-2-215" href="#__codelineno-2-215"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Real DAG node count:                    %zu</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-2-216" name="__codelineno-2-216" href="#__codelineno-2-216"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Equivalent unshared-tree node count:    %lld  (t1&#39;s own subtree -- {a, b, t1}, 3 nodes --</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-217" name="__codelineno-2-217" href="#__codelineno-2-217"></a><span class="w">           </span><span class="n">treeNodeCount</span><span class="p">);</span>
+<a id="__codelineno-2-218" name="__codelineno-2-218" href="#__codelineno-2-218"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;                                          gets counted twice: once while expanding t2,</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-219" name="__codelineno-2-219" href="#__codelineno-2-219"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;                                          once more while expanding t3)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-220" name="__codelineno-2-220" href="#__codelineno-2-220"></a>
+<a id="__codelineno-2-221" name="__codelineno-2-221" href="#__codelineno-2-221"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">treeIsLarger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treeNodeCount</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="o">&gt;</span><span class="p">(</span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-2-222" name="__codelineno-2-222" href="#__codelineno-2-222"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: the unshared-tree expansion is strictly larger than the real DAG (%s)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-223" name="__codelineno-2-223" href="#__codelineno-2-223"></a><span class="w">           </span><span class="n">treeIsLarger</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-224" name="__codelineno-2-224" href="#__codelineno-2-224"></a>
+<a id="__codelineno-2-225" name="__codelineno-2-225" href="#__codelineno-2-225"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">t1HasTwoConsumers</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">treeIsLarger</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-2-226" name="__codelineno-2-226" href="#__codelineno-2-226"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>Compile and run:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>005_graph_representation_and_sharing.cpp<span class="w"> </span>-o<span class="w"> </span>005_graph_representation_and_sharing
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./005_graph_representation_and_sharing
+</code></pre></div>
+<p><strong>Output:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 4.1 / 4.2: a genuinely shared DAG, built through CUDA Hammer&#39;s own graph API ===
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Graph (6 nodes):
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  %0 = Input(a)
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  %1 = Input(b)
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  %2 = Add(t1) &lt;- %0, %1
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>  %3 = Mul(t2) &lt;- %2, %0
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  %4 = ReLU(t3) &lt;- %2
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  %5 = Add(out) &lt;- %3, %4
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>Consumer counts (how many other nodes&#39; inputs reference each node&#39;s output):
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>  %0 (Input a): 2 consumers
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>  %1 (Input b): 1 consumer
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>  %2 (Add t1): 2 consumers
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>  %3 (Mul t2): 1 consumer
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>  %4 (ReLU t3): 1 consumer
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>  %5 (Add out): 0 consumers
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>self-check: t1 (a computed, non-leaf node) has exactly 2 consumers (confirmed) -- sharing
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>a COMPUTED result this way, without recomputing it, is what a tree cannot do.
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>Real DAG node count:                    6
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>Equivalent unshared-tree node count:    10  (t1&#39;s own subtree -- {a, b, t1}, 3 nodes --
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>                                          gets counted twice: once while expanding t2,
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>                                          once more while expanding t3)
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>self-check: the unshared-tree expansion is strictly larger than the real DAG (confirmed)
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">[COMMON TRAP] Assuming any reused leaf name proves a graph is needed</p>
+<p><code>%0</code> (<code>a</code>) above also has 2 consumers, but that alone does not prove a tree could not represent this computation -- a tree can "reuse" a leaf just fine, since parsing <code>a + a</code> already produces two separate <code>Variable</code> AST nodes that both independently look <code>a</code> up, with no sharing required at all. What a tree genuinely cannot do is share a <em>computed, non-leaf</em> result: <code>t1</code> is an <code>Add</code> node's own output, and its two consumers (<code>t2</code> and <code>t3</code>) are exactly the case that would force a tree to duplicate the entire <code>Add</code> operation -- not just a name lookup -- to represent the same computation. The defining test for "does this need a graph" is whether a <em>non-leaf</em> node has more than one consumer, not whether any name appears more than once.</p>
+</div>
+<h2 id="42-nodes-and-values-the-building-blocks">4.2 Nodes and Values: The Building Blocks<a class="headerlink" href="#42-nodes-and-values-the-building-blocks" title="Permanent link">&para;</a></h2>
+<h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
+<p>A library's own catalog does not hand a reader the book itself -- it hands them a call slip recording where the book lives: which shelf, which copy. Two different readers can hold identical call slips pointing at the exact same shelf entry, and neither one owns a private copy; neither slip can ever go stale from the book being moved, either, because the library's own shelving (not the slip) is what actually holds the book. CUDA Hammer's <code>Value</code> is that call slip, and <code>Graph</code> is the library's own shelves.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>A Value is a call slip, not the book itself:
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  Value { nodeId: 7, outputIndex: 0 }    -- &quot;shelf 7, copy 0&quot;
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>Two DIFFERENT consumers can hold IDENTICAL call slips pointing at the
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>SAME shelf entry -- neither one owns a private copy, and neither slip
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>can ever go stale, because a slip only ever records WHERE the real
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>Node lives (by id, resolved through Graph::node()), never a direct
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>grip on the Node object itself.
+</code></pre></div>
+<h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
+<p>File 005 above already contains this section's own code -- <code>Value{nodeId, outputIndex}</code>, <code>Node</code> (an op kind, a debug name, and a list of input <code>Value</code>s), and <code>Graph</code> (owning every <code>Node</code> through <code>vector&lt;unique_ptr&lt;Node&gt;&gt;</code>) are exactly the three types this section is about, just read now for their own design rather than for the sharing they enable. Two design choices are worth being explicit about. First, <code>outputIndex</code> is always <code>0</code> for every op this chapter defines, and yet it is still a real field on <code>Value</code> rather than being left out -- because a future op with genuinely more than one output (a max-with-argmax op producing both a value and an index, to name one CUDA Hammer will eventually need) needs no change to <code>Value</code>'s own shape when that day comes, only a new node kind that happens to report more than one output. Second, <code>Value</code> stores an integer <code>nodeId</code>, resolved through <code>Graph::node()</code>, rather than a raw <code>Node*</code> -- both would actually be safe here, since <code>Node</code> objects are individually heap-allocated through <code>unique_ptr</code> and so never move even if the owning <code>vector</code> itself reallocates, but an id is the choice CUDA Hammer keeps for the rest of the book: ids serialize trivially (Chapter 7's printer needs exactly this), and an id can be looked up and found <em>absent</em> cleanly, where a stale pointer cannot safely be checked for validity at all.</p>
+<div class="admonition warning">
+<p class="admonition-title">[COMMON TRAP] Treating outputIndex as dead weight because every op here only has one output</p>
+<p>It is tempting to simplify <code>Value</code> down to just <code>nodeId</code> once, since nothing in this chapter's four op kinds (<code>Input</code>, <code>Const</code>, <code>Add</code>, <code>Mul</code>, <code>ReLU</code>) ever produces more than one output. Doing that would work for this chapter and then force a breaking change to every single call site across the whole rest of the book the first time a real multi-output op shows up -- exactly the kind of "premature simplification" a real IR design avoids by keeping the field now, at zero real cost, while it is trivial to add.</p>
+</div>
+<h2 id="43-a-graph-must-be-acyclic-and-how-cuda-hammers-api-guarantees-it">4.3 A Graph Must Be Acyclic (And How CUDA Hammer's API Guarantees It)<a class="headerlink" href="#43-a-graph-must-be-acyclic-and-how-cuda-hammers-api-guarantees-it" title="Permanent link">&para;</a></h2>
+<h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
+<p>A course catalog's prerequisite chart is only usable if some valid enrollment order actually exists: Calculus 1 before Calculus 2, Calculus 2 before Linear Algebra, and so on. A broken catalog that required Course A as a prerequisite for Course B, and Course B as a prerequisite for Course A, would leave no student able to take either course first -- there is no valid starting point, because everything that could come first already requires something else to come first. A computation graph has exactly the same requirement: every node's inputs have to be genuinely computable before that node runs, which means the graph has to be acyclic, or there is no order in which CUDA Hammer could ever actually execute it.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>COURSE PREREQUISITES (a valid DAG -- a valid enrollment order always
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>exists, because nothing requires itself, directly or indirectly):
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  Calc 1 --&gt; Calc 2 --&gt; Linear Algebra
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>A BROKEN CATALOG (a cycle -- no student could ever start):
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  Course A --&gt; Course B --&gt; Course A
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>  A requires B, B requires A: there is no first course to take, which
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  is exactly what Kahn&#39;s algorithm below detects by getting stuck with
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>  nodes left over that never reach in-degree zero.
+</code></pre></div>
+<h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
+<p>CUDA Hammer's own <code>addInput</code>/<code>addConst</code>/<code>addUnary</code>/<code>addBinary</code> API can only ever take <code>Value</code>s that some <em>earlier</em> call already returned -- there is no way to reference a node that does not exist yet -- so a graph built only through that API can never contain a cycle, by construction, the same way Chapter 2's parser could never produce an AST node with itself as its own child. File 006 below proves the resulting acyclicity two ways. First, it runs a genuine topological sort (Kahn's algorithm: repeatedly remove a node with no unprocessed producers left, decrementing every consumer's own remaining-producer count) on File 005's own diamond graph, and cross-checks that order with a second, independently implemented method -- a positional check confirming every node really does appear after all of its own producers -- the same independent-cross-check discipline Chapter 2 used for its AST evaluator. Second, it reaches <em>past</em> the normal API -- directly mutating a <code>Node</code>'s own <code>inputs</code> vector after construction, something ordinary use of <code>Graph</code> never does -- to hand-build one small graph that genuinely contains a cycle, and confirms the same checker correctly reports it as invalid rather than silently producing a wrong order.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// Chapter 4: Representing Tensors and Operations as a Graph</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1">// 006_topological_order_and_cycle_detection.cpp</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1">//</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1">// Section 4.3 -- a graph must be acyclic, and how CUDA Hammer&#39;s own</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="c1">// construction API guarantees that by design.</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="c1">//</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="c1">// Reuses File 005&#39;s own Value/Node/Graph classes unchanged (a real</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="c1">// compiler&#39;s later stages never re-derive the earlier ones). The only</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1">// new code here is a genuine topological sort (Kahn&#39;s algorithm) and an</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="c1">// independent second check of its own output.</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="c1">//</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="c1">// CUDA Hammer&#39;s addInput/addConst/addUnary/addBinary API can only ever</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="c1">// take Values that some EARLIER call already returned -- there is no way</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="c1">// to reference a node that does not exist yet -- so a graph built</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="c1">// through that API can never contain a cycle. This file proves that</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="c1">// property two ways: first, by running Kahn&#39;s algorithm on a normally</span>
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="c1">// built graph and cross-checking its result with an independent,</span>
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="c1">// differently-implemented positional check; second, by deliberately</span>
+<a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="c1">// reaching PAST the normal API (directly mutating a Node&#39;s own inputs</span>
+<a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a><span class="c1">// vector, something ordinary use of Graph never does) to hand-construct</span>
+<a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a><span class="c1">// one small graph that DOES contain a cycle, and confirming the same</span>
+<a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a><span class="c1">// checker correctly reports it as invalid rather than silently</span>
+<a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a><span class="c1">// producing a wrong order.</span>
+<a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a><span class="c1">//</span>
+<a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a><span class="c1">// Compile: g++ -std=c++17 -Wall -Wextra -O2 006_topological_order_and_cycle_detection.cpp -o 006_topological_order_and_cycle_detection</span>
+<a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a><span class="c1">// Run:     ./006_topological_order_and_cycle_detection</span>
+<a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string&gt;</span>
+<a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;memory&gt;</span>
+<a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;map&gt;</span>
+<a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deque&gt;</span>
+<a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;algorithm&gt;</span>
+<a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>
+<a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a><span class="c1">// ==================== Value / Node / Graph (from File 005) ====================</span>
+<a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>
+<a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a><span class="k">struct</span><span class="w"> </span><span class="nc">Value</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nodeId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">outputIndex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a><span class="p">};</span>
+<a id="__codelineno-7-41" name="__codelineno-7-41" href="#__codelineno-7-41"></a>
+<a id="__codelineno-7-42" name="__codelineno-7-42" href="#__codelineno-7-42"></a><span class="k">enum</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">OpKind</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="n">Const</span><span class="p">,</span><span class="w"> </span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">Mul</span><span class="p">,</span><span class="w"> </span><span class="n">ReLU</span><span class="w"> </span><span class="p">};</span>
+<a id="__codelineno-7-43" name="__codelineno-7-43" href="#__codelineno-7-43"></a>
+<a id="__codelineno-7-44" name="__codelineno-7-44" href="#__codelineno-7-44"></a><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="nf">opKindStr</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-45" name="__codelineno-7-45" href="#__codelineno-7-45"></a><span class="w">    </span><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-46" name="__codelineno-7-46" href="#__codelineno-7-46"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Input</span><span class="p">:</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Input&quot;</span><span class="p">;</span>
+<a id="__codelineno-7-47" name="__codelineno-7-47" href="#__codelineno-7-47"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Const</span><span class="p">:</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Const&quot;</span><span class="p">;</span>
+<a id="__codelineno-7-48" name="__codelineno-7-48" href="#__codelineno-7-48"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Add</span><span class="p">:</span><span class="w">   </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Add&quot;</span><span class="p">;</span>
+<a id="__codelineno-7-49" name="__codelineno-7-49" href="#__codelineno-7-49"></a><span class="w">        </span><span class="k">case</span><span class="w"> </span><span class="no">OpKind</span><span class="o">::</span><span class="no">Mul</span><span class="p">:</span><span class="w">   </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;Mul&quot;</span><span class="p">;</span>
+<a id="__codelineno-7-50" name="__codelineno-7-50" href="#__codelineno-7-50"></a><span class="w">        </span><span class="k">default</span><span class="o">:</span><span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;ReLU&quot;</span><span class="p">;</span>
+<a id="__codelineno-7-51" name="__codelineno-7-51" href="#__codelineno-7-51"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-52" name="__codelineno-7-52" href="#__codelineno-7-52"></a><span class="p">}</span>
+<a id="__codelineno-7-53" name="__codelineno-7-53" href="#__codelineno-7-53"></a>
+<a id="__codelineno-7-54" name="__codelineno-7-54" href="#__codelineno-7-54"></a><span class="k">struct</span><span class="w"> </span><span class="nc">Node</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-55" name="__codelineno-7-55" href="#__codelineno-7-55"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-7-56" name="__codelineno-7-56" href="#__codelineno-7-56"></a><span class="w">    </span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">;</span>
+<a id="__codelineno-7-57" name="__codelineno-7-57" href="#__codelineno-7-57"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">debugName</span><span class="p">;</span>
+<a id="__codelineno-7-58" name="__codelineno-7-58" href="#__codelineno-7-58"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputs</span><span class="p">;</span>
+<a id="__codelineno-7-59" name="__codelineno-7-59" href="#__codelineno-7-59"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">constValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0f</span><span class="p">;</span>
+<a id="__codelineno-7-60" name="__codelineno-7-60" href="#__codelineno-7-60"></a><span class="p">};</span>
+<a id="__codelineno-7-61" name="__codelineno-7-61" href="#__codelineno-7-61"></a>
+<a id="__codelineno-7-62" name="__codelineno-7-62" href="#__codelineno-7-62"></a><span class="k">class</span><span class="w"> </span><span class="nc">Graph</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-63" name="__codelineno-7-63" href="#__codelineno-7-63"></a><span class="k">public</span><span class="o">:</span>
+<a id="__codelineno-7-64" name="__codelineno-7-64" href="#__codelineno-7-64"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addInput</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Input</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-7-65" name="__codelineno-7-65" href="#__codelineno-7-65"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addConst</span><span class="p">(</span><span class="kt">float</span><span class="w"> </span><span class="n">v</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-66" name="__codelineno-7-66" href="#__codelineno-7-66"></a><span class="w">        </span><span class="n">Value</span><span class="w"> </span><span class="n">out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Const</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-7-67" name="__codelineno-7-67" href="#__codelineno-7-67"></a><span class="w">        </span><span class="n">nodes_</span><span class="p">.</span><span class="n">back</span><span class="p">()</span><span class="o">-&gt;</span><span class="n">constValue</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">v</span><span class="p">;</span>
+<a id="__codelineno-7-68" name="__codelineno-7-68" href="#__codelineno-7-68"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+<a id="__codelineno-7-69" name="__codelineno-7-69" href="#__codelineno-7-69"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-70" name="__codelineno-7-70" href="#__codelineno-7-70"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addUnary</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">in</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">in</span><span class="p">},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-7-71" name="__codelineno-7-71" href="#__codelineno-7-71"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="n">Value</span><span class="w"> </span><span class="n">rhs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-72" name="__codelineno-7-72" href="#__codelineno-7-72"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="n">lhs</span><span class="p">,</span><span class="w"> </span><span class="n">rhs</span><span class="p">},</span><span class="w"> </span><span class="n">name</span><span class="p">);</span>
+<a id="__codelineno-7-73" name="__codelineno-7-73" href="#__codelineno-7-73"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-74" name="__codelineno-7-74" href="#__codelineno-7-74"></a>
+<a id="__codelineno-7-75" name="__codelineno-7-75" href="#__codelineno-7-75"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">Node</span><span class="o">*</span><span class="w"> </span><span class="n">node</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">nodes_</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">id</span><span class="p">)).</span><span class="n">get</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-7-76" name="__codelineno-7-76" href="#__codelineno-7-76"></a><span class="w">    </span><span class="n">Node</span><span class="o">*</span><span class="w"> </span><span class="n">mutableNode</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">nodes_</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">id</span><span class="p">)).</span><span class="n">get</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-7-77" name="__codelineno-7-77" href="#__codelineno-7-77"></a><span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">nodes_</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-7-78" name="__codelineno-7-78" href="#__codelineno-7-78"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;&gt;&amp;</span><span class="w"> </span><span class="n">nodes</span><span class="p">()</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">nodes_</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-7-79" name="__codelineno-7-79" href="#__codelineno-7-79"></a>
+<a id="__codelineno-7-80" name="__codelineno-7-80" href="#__codelineno-7-80"></a><span class="k">private</span><span class="o">:</span>
+<a id="__codelineno-7-81" name="__codelineno-7-81" href="#__codelineno-7-81"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">addNode</span><span class="p">(</span><span class="n">OpKind</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Value</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inputs</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-82" name="__codelineno-7-82" href="#__codelineno-7-82"></a><span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;</span><span class="p">();</span>
+<a id="__codelineno-7-83" name="__codelineno-7-83" href="#__codelineno-7-83"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nextId_</span><span class="o">++</span><span class="p">;</span>
+<a id="__codelineno-7-84" name="__codelineno-7-84" href="#__codelineno-7-84"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">op</span><span class="p">;</span>
+<a id="__codelineno-7-85" name="__codelineno-7-85" href="#__codelineno-7-85"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">name</span><span class="p">;</span>
+<a id="__codelineno-7-86" name="__codelineno-7-86" href="#__codelineno-7-86"></a><span class="w">        </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">inputs</span><span class="p">);</span>
+<a id="__codelineno-7-87" name="__codelineno-7-87" href="#__codelineno-7-87"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-7-88" name="__codelineno-7-88" href="#__codelineno-7-88"></a><span class="w">        </span><span class="n">nodes_</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">move</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+<a id="__codelineno-7-89" name="__codelineno-7-89" href="#__codelineno-7-89"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">Value</span><span class="p">{</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">};</span>
+<a id="__codelineno-7-90" name="__codelineno-7-90" href="#__codelineno-7-90"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-91" name="__codelineno-7-91" href="#__codelineno-7-91"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">nodes_</span><span class="p">;</span>
+<a id="__codelineno-7-92" name="__codelineno-7-92" href="#__codelineno-7-92"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">nextId_</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-7-93" name="__codelineno-7-93" href="#__codelineno-7-93"></a><span class="p">};</span>
+<a id="__codelineno-7-94" name="__codelineno-7-94" href="#__codelineno-7-94"></a>
+<a id="__codelineno-7-95" name="__codelineno-7-95" href="#__codelineno-7-95"></a><span class="c1">// ======================= Kahn&#39;s algorithm (new in this file) =======================</span>
+<a id="__codelineno-7-96" name="__codelineno-7-96" href="#__codelineno-7-96"></a><span class="c1">//</span>
+<a id="__codelineno-7-97" name="__codelineno-7-97" href="#__codelineno-7-97"></a><span class="c1">// Repeatedly removes a node with in-degree 0 (no unprocessed producers</span>
+<a id="__codelineno-7-98" name="__codelineno-7-98" href="#__codelineno-7-98"></a><span class="c1">// left), appending it to the order and decrementing the in-degree of</span>
+<a id="__codelineno-7-99" name="__codelineno-7-99" href="#__codelineno-7-99"></a><span class="c1">// every node that reads it. If every node gets removed this way, the</span>
+<a id="__codelineno-7-100" name="__codelineno-7-100" href="#__codelineno-7-100"></a><span class="c1">// graph is acyclic and `order` is a valid topological order. If nodes</span>
+<a id="__codelineno-7-101" name="__codelineno-7-101" href="#__codelineno-7-101"></a><span class="c1">// remain stuck with in-degree &gt; 0 once no more zero-in-degree nodes are</span>
+<a id="__codelineno-7-102" name="__codelineno-7-102" href="#__codelineno-7-102"></a><span class="c1">// left to remove, the graph contains a cycle -- ok is set to false.</span>
+<a id="__codelineno-7-103" name="__codelineno-7-103" href="#__codelineno-7-103"></a><span class="k">struct</span><span class="w"> </span><span class="nc">TopoResult</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-104" name="__codelineno-7-104" href="#__codelineno-7-104"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">order</span><span class="p">;</span>
+<a id="__codelineno-7-105" name="__codelineno-7-105" href="#__codelineno-7-105"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-7-106" name="__codelineno-7-106" href="#__codelineno-7-106"></a><span class="p">};</span>
+<a id="__codelineno-7-107" name="__codelineno-7-107" href="#__codelineno-7-107"></a>
+<a id="__codelineno-7-108" name="__codelineno-7-108" href="#__codelineno-7-108"></a><span class="k">static</span><span class="w"> </span><span class="n">TopoResult</span><span class="w"> </span><span class="nf">topologicalSort</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Graph</span><span class="o">&amp;</span><span class="w"> </span><span class="n">g</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-109" name="__codelineno-7-109" href="#__codelineno-7-109"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">inDegree</span><span class="p">;</span>
+<a id="__codelineno-7-110" name="__codelineno-7-110" href="#__codelineno-7-110"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="n">inDegree</span><span class="p">[</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-7-111" name="__codelineno-7-111" href="#__codelineno-7-111"></a>
+<a id="__codelineno-7-112" name="__codelineno-7-112" href="#__codelineno-7-112"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">deque</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ready</span><span class="p">;</span>
+<a id="__codelineno-7-113" name="__codelineno-7-113" href="#__codelineno-7-113"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-114" name="__codelineno-7-114" href="#__codelineno-7-114"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inDegree</span><span class="p">[</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="n">ready</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">);</span>
+<a id="__codelineno-7-115" name="__codelineno-7-115" href="#__codelineno-7-115"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-116" name="__codelineno-7-116" href="#__codelineno-7-116"></a>
+<a id="__codelineno-7-117" name="__codelineno-7-117" href="#__codelineno-7-117"></a><span class="w">    </span><span class="n">TopoResult</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<a id="__codelineno-7-118" name="__codelineno-7-118" href="#__codelineno-7-118"></a><span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">ready</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-119" name="__codelineno-7-119" href="#__codelineno-7-119"></a><span class="w">        </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ready</span><span class="p">.</span><span class="n">front</span><span class="p">();</span>
+<a id="__codelineno-7-120" name="__codelineno-7-120" href="#__codelineno-7-120"></a><span class="w">        </span><span class="n">ready</span><span class="p">.</span><span class="n">pop_front</span><span class="p">();</span>
+<a id="__codelineno-7-121" name="__codelineno-7-121" href="#__codelineno-7-121"></a><span class="w">        </span><span class="n">result</span><span class="p">.</span><span class="n">order</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<a id="__codelineno-7-122" name="__codelineno-7-122" href="#__codelineno-7-122"></a><span class="w">        </span><span class="c1">// Decrement the in-degree of every node that lists `id` as an input.</span>
+<a id="__codelineno-7-123" name="__codelineno-7-123" href="#__codelineno-7-123"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-124" name="__codelineno-7-124" href="#__codelineno-7-124"></a><span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Value</span><span class="o">&amp;</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-125" name="__codelineno-7-125" href="#__codelineno-7-125"></a><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">in</span><span class="p">.</span><span class="n">nodeId</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-126" name="__codelineno-7-126" href="#__codelineno-7-126"></a><span class="w">                    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">--</span><span class="n">inDegree</span><span class="p">[</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">]</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="n">ready</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">);</span>
+<a id="__codelineno-7-127" name="__codelineno-7-127" href="#__codelineno-7-127"></a><span class="w">                </span><span class="p">}</span>
+<a id="__codelineno-7-128" name="__codelineno-7-128" href="#__codelineno-7-128"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-7-129" name="__codelineno-7-129" href="#__codelineno-7-129"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-7-130" name="__codelineno-7-130" href="#__codelineno-7-130"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-131" name="__codelineno-7-131" href="#__codelineno-7-131"></a>
+<a id="__codelineno-7-132" name="__codelineno-7-132" href="#__codelineno-7-132"></a><span class="w">    </span><span class="n">result</span><span class="p">.</span><span class="n">ok</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">order</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-7-133" name="__codelineno-7-133" href="#__codelineno-7-133"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<a id="__codelineno-7-134" name="__codelineno-7-134" href="#__codelineno-7-134"></a><span class="p">}</span>
+<a id="__codelineno-7-135" name="__codelineno-7-135" href="#__codelineno-7-135"></a>
+<a id="__codelineno-7-136" name="__codelineno-7-136" href="#__codelineno-7-136"></a><span class="c1">// Independent cross-check: for a claimed order to be valid, every node</span>
+<a id="__codelineno-7-137" name="__codelineno-7-137" href="#__codelineno-7-137"></a><span class="c1">// must appear AFTER every one of its own inputs&#39; producer nodes. This is</span>
+<a id="__codelineno-7-138" name="__codelineno-7-138" href="#__codelineno-7-138"></a><span class="c1">// checked by position lookup, never by re-running Kahn&#39;s own in-degree</span>
+<a id="__codelineno-7-139" name="__codelineno-7-139" href="#__codelineno-7-139"></a><span class="c1">// bookkeeping -- a genuinely different method arriving at the same</span>
+<a id="__codelineno-7-140" name="__codelineno-7-140" href="#__codelineno-7-140"></a><span class="c1">// verdict, the same cross-check discipline Chapter 2 used (an</span>
+<a id="__codelineno-7-141" name="__codelineno-7-141" href="#__codelineno-7-141"></a><span class="c1">// independent AST evaluator, checked against the IR interpreter).</span>
+<a id="__codelineno-7-142" name="__codelineno-7-142" href="#__codelineno-7-142"></a><span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="nf">independentlyValidatesOrder</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Graph</span><span class="o">&amp;</span><span class="w"> </span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">order</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-143" name="__codelineno-7-143" href="#__codelineno-7-143"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">order</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-7-144" name="__codelineno-7-144" href="#__codelineno-7-144"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="kt">int</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="o">&gt;</span><span class="w"> </span><span class="n">position</span><span class="p">;</span>
+<a id="__codelineno-7-145" name="__codelineno-7-145" href="#__codelineno-7-145"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">order</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">position</span><span class="p">[</span><span class="n">order</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+<a id="__codelineno-7-146" name="__codelineno-7-146" href="#__codelineno-7-146"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-147" name="__codelineno-7-147" href="#__codelineno-7-147"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Value</span><span class="o">&amp;</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-148" name="__codelineno-7-148" href="#__codelineno-7-148"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">position</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">in</span><span class="p">.</span><span class="n">nodeId</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">position</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">))</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-7-149" name="__codelineno-7-149" href="#__codelineno-7-149"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-7-150" name="__codelineno-7-150" href="#__codelineno-7-150"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-151" name="__codelineno-7-151" href="#__codelineno-7-151"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-7-152" name="__codelineno-7-152" href="#__codelineno-7-152"></a><span class="p">}</span>
+<a id="__codelineno-7-153" name="__codelineno-7-153" href="#__codelineno-7-153"></a>
+<a id="__codelineno-7-154" name="__codelineno-7-154" href="#__codelineno-7-154"></a><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">printGraph</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">Graph</span><span class="o">&amp;</span><span class="w"> </span><span class="n">g</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-155" name="__codelineno-7-155" href="#__codelineno-7-155"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-156" name="__codelineno-7-156" href="#__codelineno-7-156"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;    %%%d = %s(%s)&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">opKindStr</span><span class="p">(</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">op</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
+<a id="__codelineno-7-157" name="__codelineno-7-157" href="#__codelineno-7-157"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">.</span><span class="n">empty</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-158" name="__codelineno-7-158" href="#__codelineno-7-158"></a><span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; &lt;- &quot;</span><span class="p">);</span>
+<a id="__codelineno-7-159" name="__codelineno-7-159" href="#__codelineno-7-159"></a><span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-160" name="__codelineno-7-160" href="#__codelineno-7-160"></a><span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;, &quot;</span><span class="p">);</span>
+<a id="__codelineno-7-161" name="__codelineno-7-161" href="#__codelineno-7-161"></a><span class="w">                </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%%%d&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">nodeId</span><span class="p">);</span>
+<a id="__codelineno-7-162" name="__codelineno-7-162" href="#__codelineno-7-162"></a><span class="w">            </span><span class="p">}</span>
+<a id="__codelineno-7-163" name="__codelineno-7-163" href="#__codelineno-7-163"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-7-164" name="__codelineno-7-164" href="#__codelineno-7-164"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-165" name="__codelineno-7-165" href="#__codelineno-7-165"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-7-166" name="__codelineno-7-166" href="#__codelineno-7-166"></a><span class="p">}</span>
+<a id="__codelineno-7-167" name="__codelineno-7-167" href="#__codelineno-7-167"></a>
+<a id="__codelineno-7-168" name="__codelineno-7-168" href="#__codelineno-7-168"></a><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-169" name="__codelineno-7-169" href="#__codelineno-7-169"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Section 4.3: topological order, and detecting a graph that has no valid one ===</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-170" name="__codelineno-7-170" href="#__codelineno-7-170"></a>
+<a id="__codelineno-7-171" name="__codelineno-7-171" href="#__codelineno-7-171"></a><span class="w">    </span><span class="c1">// --- Part A: the normal diamond DAG from File 005, built ONLY through</span>
+<a id="__codelineno-7-172" name="__codelineno-7-172" href="#__codelineno-7-172"></a><span class="w">    </span><span class="c1">// the graph API -- this can never contain a cycle by construction. ---</span>
+<a id="__codelineno-7-173" name="__codelineno-7-173" href="#__codelineno-7-173"></a><span class="w">    </span><span class="n">Graph</span><span class="w"> </span><span class="n">g</span><span class="p">;</span>
+<a id="__codelineno-7-174" name="__codelineno-7-174" href="#__codelineno-7-174"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">a</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addInput</span><span class="p">(</span><span class="s">&quot;a&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-175" name="__codelineno-7-175" href="#__codelineno-7-175"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">b</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addInput</span><span class="p">(</span><span class="s">&quot;b&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-176" name="__codelineno-7-176" href="#__codelineno-7-176"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">t1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;t1&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-177" name="__codelineno-7-177" href="#__codelineno-7-177"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">t2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Mul</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;t2&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-178" name="__codelineno-7-178" href="#__codelineno-7-178"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">t3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">addUnary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">ReLU</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;t3&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-179" name="__codelineno-7-179" href="#__codelineno-7-179"></a><span class="w">    </span><span class="n">g</span><span class="p">.</span><span class="n">addBinary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">Add</span><span class="p">,</span><span class="w"> </span><span class="n">t2</span><span class="p">,</span><span class="w"> </span><span class="n">t3</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;out&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-180" name="__codelineno-7-180" href="#__codelineno-7-180"></a>
+<a id="__codelineno-7-181" name="__codelineno-7-181" href="#__codelineno-7-181"></a><span class="w">    </span><span class="n">TopoResult</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">topologicalSort</span><span class="p">(</span><span class="n">g</span><span class="p">);</span>
+<a id="__codelineno-7-182" name="__codelineno-7-182" href="#__codelineno-7-182"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Part A -- valid DAG (%zu nodes, built only through the graph API):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-7-183" name="__codelineno-7-183" href="#__codelineno-7-183"></a><span class="w">    </span><span class="n">printGraph</span><span class="p">(</span><span class="n">g</span><span class="p">);</span>
+<a id="__codelineno-7-184" name="__codelineno-7-184" href="#__codelineno-7-184"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  Kahn&#39;s algorithm order: &quot;</span><span class="p">);</span>
+<a id="__codelineno-7-185" name="__codelineno-7-185" href="#__codelineno-7-185"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">order</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%%%d &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<a id="__codelineno-7-186" name="__codelineno-7-186" href="#__codelineno-7-186"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">  Kahn&#39;s algorithm reports valid: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">ok</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;no&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-187" name="__codelineno-7-187" href="#__codelineno-7-187"></a>
+<a id="__codelineno-7-188" name="__codelineno-7-188" href="#__codelineno-7-188"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">independentCheckA</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">independentlyValidatesOrder</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="n">order</span><span class="p">);</span>
+<a id="__codelineno-7-189" name="__codelineno-7-189" href="#__codelineno-7-189"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  independent positional cross-check agrees: %s</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-190" name="__codelineno-7-190" href="#__codelineno-7-190"></a><span class="w">           </span><span class="n">independentCheckA</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-191" name="__codelineno-7-191" href="#__codelineno-7-191"></a>
+<a id="__codelineno-7-192" name="__codelineno-7-192" href="#__codelineno-7-192"></a><span class="w">    </span><span class="c1">// --- Part B: a SECOND, tiny graph, deliberately broken by reaching</span>
+<a id="__codelineno-7-193" name="__codelineno-7-193" href="#__codelineno-7-193"></a><span class="w">    </span><span class="c1">// past the normal API to hand-construct a cycle. This is never</span>
+<a id="__codelineno-7-194" name="__codelineno-7-194" href="#__codelineno-7-194"></a><span class="w">    </span><span class="c1">// something ordinary use of Graph can produce -- addBinary/addUnary</span>
+<a id="__codelineno-7-195" name="__codelineno-7-195" href="#__codelineno-7-195"></a><span class="w">    </span><span class="c1">// only ever accept Values that an earlier call already returned, so</span>
+<a id="__codelineno-7-196" name="__codelineno-7-196" href="#__codelineno-7-196"></a><span class="w">    </span><span class="c1">// a fresh Node cannot reference a Node that does not exist yet. The</span>
+<a id="__codelineno-7-197" name="__codelineno-7-197" href="#__codelineno-7-197"></a><span class="w">    </span><span class="c1">// only way to build a cycle at all is to add the nodes first and then</span>
+<a id="__codelineno-7-198" name="__codelineno-7-198" href="#__codelineno-7-198"></a><span class="w">    </span><span class="c1">// go back and mutate an EARLIER node&#39;s own inputs afterward, which is</span>
+<a id="__codelineno-7-199" name="__codelineno-7-199" href="#__codelineno-7-199"></a><span class="w">    </span><span class="c1">// exactly what happens below, purely to test that the checker itself</span>
+<a id="__codelineno-7-200" name="__codelineno-7-200" href="#__codelineno-7-200"></a><span class="w">    </span><span class="c1">// correctly rejects it. ---</span>
+<a id="__codelineno-7-201" name="__codelineno-7-201" href="#__codelineno-7-201"></a><span class="w">    </span><span class="n">Graph</span><span class="w"> </span><span class="n">broken</span><span class="p">;</span>
+<a id="__codelineno-7-202" name="__codelineno-7-202" href="#__codelineno-7-202"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">broken</span><span class="p">.</span><span class="n">addInput</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">);</span><span class="w">             </span><span class="c1">// node 0, no inputs yet</span>
+<a id="__codelineno-7-203" name="__codelineno-7-203" href="#__codelineno-7-203"></a><span class="w">    </span><span class="n">Value</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">broken</span><span class="p">.</span><span class="n">addUnary</span><span class="p">(</span><span class="n">OpKind</span><span class="o">::</span><span class="n">ReLU</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;y&quot;</span><span class="p">);</span><span class="w"> </span><span class="c1">// node 1, input: node 0</span>
+<a id="__codelineno-7-204" name="__codelineno-7-204" href="#__codelineno-7-204"></a><span class="w">    </span><span class="c1">// Reach past the API: force node 0 (&quot;x&quot;) to also depend on node 1</span>
+<a id="__codelineno-7-205" name="__codelineno-7-205" href="#__codelineno-7-205"></a><span class="w">    </span><span class="c1">// (&quot;y&quot;) after the fact -- x -&gt; y -&gt; x, a genuine cycle no normal</span>
+<a id="__codelineno-7-206" name="__codelineno-7-206" href="#__codelineno-7-206"></a><span class="w">    </span><span class="c1">// sequence of addInput/addUnary/addBinary calls could ever create.</span>
+<a id="__codelineno-7-207" name="__codelineno-7-207" href="#__codelineno-7-207"></a><span class="w">    </span><span class="n">broken</span><span class="p">.</span><span class="n">mutableNode</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">nodeId</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">inputs</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">y</span><span class="p">);</span>
+<a id="__codelineno-7-208" name="__codelineno-7-208" href="#__codelineno-7-208"></a>
+<a id="__codelineno-7-209" name="__codelineno-7-209" href="#__codelineno-7-209"></a><span class="w">    </span><span class="n">TopoResult</span><span class="w"> </span><span class="n">brokenResult</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">topologicalSort</span><span class="p">(</span><span class="n">broken</span><span class="p">);</span>
+<a id="__codelineno-7-210" name="__codelineno-7-210" href="#__codelineno-7-210"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Part B -- deliberately hand-broken graph (2 nodes, x -&gt; y -&gt; x cycle</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-211" name="__codelineno-7-211" href="#__codelineno-7-211"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;           forced by mutating node 0&#39;s inputs directly, bypassing the graph API):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-212" name="__codelineno-7-212" href="#__codelineno-7-212"></a><span class="w">    </span><span class="n">printGraph</span><span class="p">(</span><span class="n">broken</span><span class="p">);</span>
+<a id="__codelineno-7-213" name="__codelineno-7-213" href="#__codelineno-7-213"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  Kahn&#39;s algorithm processed %zu of %zu nodes before getting stuck</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-214" name="__codelineno-7-214" href="#__codelineno-7-214"></a><span class="w">           </span><span class="n">brokenResult</span><span class="p">.</span><span class="n">order</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">broken</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-7-215" name="__codelineno-7-215" href="#__codelineno-7-215"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  Kahn&#39;s algorithm reports valid: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">brokenResult</span><span class="p">.</span><span class="n">ok</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;no&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-216" name="__codelineno-7-216" href="#__codelineno-7-216"></a>
+<a id="__codelineno-7-217" name="__codelineno-7-217" href="#__codelineno-7-217"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">correctlyRejected</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">!</span><span class="n">brokenResult</span><span class="p">.</span><span class="n">ok</span><span class="p">;</span>
+<a id="__codelineno-7-218" name="__codelineno-7-218" href="#__codelineno-7-218"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">self-check: the normal DAG is confirmed valid AND cross-checked (%s);</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-219" name="__codelineno-7-219" href="#__codelineno-7-219"></a><span class="w">           </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">ok</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">independentCheckA</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-220" name="__codelineno-7-220" href="#__codelineno-7-220"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;the hand-broken cyclic graph is correctly REJECTED, not silently misordered (%s)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-221" name="__codelineno-7-221" href="#__codelineno-7-221"></a><span class="w">           </span><span class="n">correctlyRejected</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-7-222" name="__codelineno-7-222" href="#__codelineno-7-222"></a>
+<a id="__codelineno-7-223" name="__codelineno-7-223" href="#__codelineno-7-223"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="p">(</span><span class="n">result</span><span class="p">.</span><span class="n">ok</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">independentCheckA</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">correctlyRejected</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-7-224" name="__codelineno-7-224" href="#__codelineno-7-224"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>Compile and run:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>006_topological_order_and_cycle_detection.cpp<span class="w"> </span>-o<span class="w"> </span>006_topological_order_and_cycle_detection
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>./006_topological_order_and_cycle_detection
+</code></pre></div>
+<p><strong>Output:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>=== Section 4.3: topological order, and detecting a graph that has no valid one ===
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Part A -- valid DAG (6 nodes, built only through the graph API):
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    %0 = Input(a)
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    %1 = Input(b)
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    %2 = Add(t1) &lt;- %0, %1
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    %3 = Mul(t2) &lt;- %2, %0
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    %4 = ReLU(t3) &lt;- %2
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    %5 = Add(out) &lt;- %3, %4
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>  Kahn&#39;s algorithm order: %0 %1 %2 %3 %4 %5 
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>  Kahn&#39;s algorithm reports valid: yes
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>  independent positional cross-check agrees: confirmed
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>Part B -- deliberately hand-broken graph (2 nodes, x -&gt; y -&gt; x cycle
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>           forced by mutating node 0&#39;s inputs directly, bypassing the graph API):
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>    %0 = Input(x) &lt;- %1
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>    %1 = ReLU(y) &lt;- %0
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>  Kahn&#39;s algorithm processed 0 of 2 nodes before getting stuck
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>  Kahn&#39;s algorithm reports valid: no
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>self-check: the normal DAG is confirmed valid AND cross-checked (confirmed);
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a>the hand-broken cyclic graph is correctly REJECTED, not silently misordered (confirmed)
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">[COMMON TRAP] Assuming the graph API needs its own separate cycle check</p>
+<p>It's tempting to think <code>Graph</code> itself needs to actively guard against cycles -- some kind of check inside <code>addBinary</code>/<code>addUnary</code> refusing a bad call. It does not, and File 006's Part B shows exactly why: every normal call to that API can only take <code>Value</code>s some <em>earlier</em> call already returned, so there is no sequence of ordinary calls that could ever construct a cycle in the first place -- the guarantee comes from the API's own shape, not from a runtime check bolted onto it. Part B's cycle only exists because the code deliberately reached past the API (<code>mutableNode()</code>, a method File 005's own <code>Graph</code> does not even expose) specifically to build an invalid test case. A pass written later in this book that only ever calls the public <code>addBinary</code>/<code>addUnary</code>/<code>addUnary</code> API can trust the graph it builds is acyclic, for free.</p>
+</div>
+<h2 id="chapter-summary">Chapter Summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>CUDA Hammer's own IR is a graph, not a tree or a straight-line list, because a real tensor computation needs one computed value to be consumed by more than one later operation without recomputing it -- something Chapter 2's toy compiler structurally could never need, since it was always built by walking parsed text where each subexpression already appears exactly once. <code>Value</code> (a <code>{nodeId, outputIndex}</code> pair, never a raw pointer) identifies a specific node's output the way a library call slip identifies a shelf entry rather than gripping the book itself; <code>Node</code> holds an op kind, a debug name, and a list of input <code>Value</code>s as its own edges; <code>Graph</code> owns every <code>Node</code>. File 005 built a real six-node diamond DAG through that API and genuinely counted two things: that a computed, non-leaf node (<code>t1</code>) can have more than one consumer, and that flattening this same six-node graph into an equivalent tree (no sharing at all) would cost 10 nodes instead of 6 -- a real, counted representation-size cost of not sharing, the IR-size sibling of Chapter 1's own runtime memory-traffic argument. File 006 proved the graph this API builds is always acyclic two ways: a genuine topological sort (Kahn's algorithm), cross-checked by an independent positional validator, succeeds on a normally-built graph; the same checker correctly detects a cycle in a graph deliberately hand-broken by reaching past the normal API, rather than silently producing a wrong order. Chapter 5 builds a real frontend on top of this exact <code>Graph</code>/<code>Node</code>/<code>Value</code> foundation -- a way to construct these graphs from something closer to how a real user would describe a tensor computation, rather than the direct API calls this chapter used by hand.</p>
+<h2 id="self-check-questions">Self-Check Questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Why could Chapter 2's <code>lower()</code> never produce an IR temp with more than one consumer, structurally, regardless of what expression was parsed?</li>
+<li>File 005's <code>%0</code> (<code>a</code>) has 2 consumers, same as <code>t1</code>. Why does the chapter's own [COMMON TRAP] say this does not, by itself, prove a graph is needed?</li>
+<li>What does <code>Value</code> actually store, and why does <code>Graph</code> resolve a <code>Value</code> to a real <code>Node</code> through an id lookup (<code>Graph::node()</code>) rather than storing a <code>Node*</code> directly inside <code>Value</code>?</li>
+<li><code>outputIndex</code> is always <code>0</code> in this chapter's own code. What is the concrete argument for keeping it as a real field anyway, rather than removing it until it's needed?</li>
+<li>File 005's <code>expandToTreeNodeCount()</code> is deliberately not memoized. What would memoizing it actually defeat the purpose of measuring?</li>
+<li>Explain, in your own words, why CUDA Hammer's <code>addInput</code>/<code>addConst</code>/<code>addUnary</code>/<code>addBinary</code> API can never construct a cycle through ordinary use, without needing a runtime check inside those functions.</li>
+<li>File 006's Part B needed a method (<code>mutableNode()</code>) that File 005's own <code>Graph</code> does not expose in its own public interface. Why was that necessary to build a cyclic test case at all?</li>
+<li>If <code>topologicalSort()</code>'s own in-degree bookkeeping had a bug that caused it to report <code>ok = true</code> on a graph that actually had a cycle, would File 006's <code>independentlyValidatesOrder()</code> check catch that bug? Why or why not?</li>
+</ol>
+<h2 id="where-we-go-next">Where We Go Next<a class="headerlink" href="#where-we-go-next" title="Permanent link">&para;</a></h2>
+<p>This chapter designed and tested the <code>Value</code>/<code>Node</code>/<code>Graph</code> data structures every later chapter in this book builds on, and proved the one structural guarantee (acyclicity) everything downstream gets to assume for free. Chapter 5 builds CUDA Hammer's own frontend: a way to construct these same graphs that looks less like the direct <code>addBinary</code>/<code>addUnary</code> calls this chapter used by hand, and more like how a real user actually wants to describe a tensor computation.</p>
+<h2 id="worked-solutions">Worked Solutions<a class="headerlink" href="#worked-solutions" title="Permanent link">&para;</a></h2>
+<ol>
+<li><code>lower()</code> walks a parsed AST, and an AST node is only ever reachable from the one parent that owns it (<code>std::unique_ptr&lt;Expr&gt; left, right</code> -- exclusive ownership, not shared). Every IR instruction <code>lower()</code> emits corresponds to exactly one AST node, so an IR temp can only ever be read by the one instruction lowered from that AST node's one parent -- there is structurally no second parent that could reference the same temp a second time, because the AST itself never allows a node to have two parents.</li>
+<li>Because a tree can already "reuse" a leaf without any sharing infrastructure at all -- parsing <code>a + a</code> produces two separate <code>Variable</code> AST nodes that both independently look the name <code>a</code> up in the environment, with no shared node and no edge-sharing required. What a tree genuinely cannot represent is a <em>computed, non-leaf</em> result (like <code>t1</code>, an <code>Add</code> node's own output) being read by two different consumers without literally duplicating the <code>Add</code> operation itself -- that specific case, not mere name reuse, is the real test for whether a graph is needed.</li>
+<li><code>Value</code> stores <code>{nodeId, outputIndex}</code> -- two plain integers, not a pointer. <code>Graph</code> resolves it through <code>Graph::node()</code> (an id lookup into its own <code>vector&lt;unique_ptr&lt;Node&gt;&gt;</code>) rather than storing a <code>Node*</code> directly because an id-based lookup can be checked for validity cleanly (does this id exist in the graph, yes or no) and serializes trivially as plain data (exactly what Chapter 7's printer needs) -- a stale or dangling pointer offers neither property, even though in this specific implementation a <code>Node*</code> would technically stay valid too, since <code>Node</code> objects are individually heap-allocated through <code>unique_ptr</code> and so never move when the owning <code>vector</code> reallocates.</li>
+<li>Every op this chapter defines happens to have exactly one output, but a real op with two genuine outputs (a max-with-argmax op producing both a value and an index, for instance) is a real, foreseeable future need. Keeping <code>outputIndex</code> as a real field now, at zero cost since it is just always <code>0</code>, means that future op needs no change to <code>Value</code>'s own shape and no update to every call site across the rest of the book that already constructs a <code>Value</code> -- only a new node kind that happens to report more than one output.</li>
+<li>Memoizing <code>expandToTreeNodeCount()</code> would make it stop counting what an actual unshared tree would cost, and start silently re-deriving the graph's own sharing instead (a memoized call for <code>t1</code> would compute its subtree size once and reuse that cached answer for both <code>t2</code> and <code>t3</code> -- which is exactly what the real DAG already does, not what a tree would have to do). The whole point of the function is to answer "what would this cost WITHOUT the graph's sharing," so it has to actually re-walk <code>t1</code>'s subtree in full every time it is reached, once per consumer, the same redundant work a real unshared tree -- or File 1's own EAGER execution mode -- would actually perform.</li>
+<li>Every call to <code>addUnary</code>/<code>addBinary</code> takes one or more <code>Value</code>s as arguments, and the only <code>Value</code>s that exist to pass in are ones some <em>earlier</em> call to <code>addInput</code>/<code>addConst</code>/<code>addUnary</code>/<code>addBinary</code> already returned. A brand-new node being constructed right now cannot possibly receive, as one of its own inputs, a <code>Value</code> pointing at itself or at any node that will only be created later -- that <code>Value</code> simply does not exist yet to be passed in. The impossibility is structural, built into what arguments the API's own functions can even accept, not something any function body needs to actively check for.</li>
+<li>Because the public API (<code>addInput</code>/<code>addConst</code>/<code>addUnary</code>/<code>addBinary</code>) can only ever construct edges pointing backward at already-existing nodes, exactly the property that makes cycles impossible through ordinary use (per the answer to Question 6). The only way to build a genuine cycle at all is to modify an <em>already-existing</em> node's own <code>inputs</code> list after the fact, reaching past what the public API allows -- which is precisely why File 005's own <code>Graph</code> does not expose a way to do this, and File 006 has to add <code>mutableNode()</code> specifically, and only, to construct this one deliberately invalid test case.</li>
+<li>Yes. <code>independentlyValidatesOrder()</code> never looks at <code>topologicalSort()</code>'s own in-degree counters at all -- it takes the claimed order as a plain list of ids and checks, by position lookup alone, whether every node in that list genuinely appears after all of its own inputs' producer nodes. A bug in the in-degree bookkeeping that caused <code>topologicalSort()</code> to report <code>ok = true</code> on a genuinely cyclic graph would still have to produce <em>some</em> concrete order, and that order would necessarily place at least one node before one of its own producers (since a true topological order cannot exist for a cyclic graph) -- which is exactly the condition <code>independentlyValidatesOrder()</code> checks for, using a completely different method than the one that produced the (buggy) order in the first place.</li>
+</ol>
+<hr />
+<p><strong>Sources cited in this chapter:</strong> none -- CUDA Hammer's own <code>Value</code>/<code>Node</code>/<code>Graph</code> design is original to this book, not modeled on any specific external project's own source code (Chapter 3 already surveyed, and cited, how three real production compilers represent a comparable graph-shaped IR).</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part0/03-a-tour-of-real-ml-compilers-xla-tvm-and-triton/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 3. A Tour of Real ML Compilers: XLA, TVM, and Triton">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

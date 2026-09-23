@@ -1,0 +1,1151 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Tensor Compiler in C++, From a Minimal IR to Fused, Autotuned Kernels">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../02-what-a-compiler-pipeline-looks-like/">
+      
+      
+        <link rel="next" href="../../part1/04-representing-tensors-and-operations-as-a-graph/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>3. A Tour of Real ML Compilers: XLA, TVM, and Triton - CUDA Hammer -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#3-a-tour-of-real-ml-compilers-xla-tvm-and-triton" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="CUDA Hammer -- Under Development" class="md-header__button md-logo" aria-label="CUDA Hammer -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CUDA Hammer -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="CUDA Hammer -- Under Development" class="md-nav__button md-logo" aria-label="CUDA Hammer -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    CUDA Hammer -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-the-cost-of-eager-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. The Cost of Eager Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-what-a-compiler-pipeline-looks-like/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. What a Compiler Pipeline Looks Like
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#31-xla-fusing-at-the-hlo-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 XLA: Fusing at the HLO Level
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 XLA: Fusing at the HLO Level">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#32-tvm-separating-what-from-how-with-explicit-schedules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 TVM: Separating "What" From "How" With Explicit Schedules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 TVM: Separating &#34;What&#34; From &#34;How&#34; With Explicit Schedules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#33-triton-programming-at-the-block-level-not-the-thread-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Triton: Programming at the Block Level, Not the Thread Level
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3 Triton: Programming at the Block Level, Not the Thread Level">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Check Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-we-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where We Go Next
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked Solutions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/04-representing-tensors-and-operations-as-a-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Representing Tensors and Operations as a Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#31-xla-fusing-at-the-hlo-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 XLA: Fusing at the HLO Level
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.1 XLA: Fusing at the HLO Level">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#32-tvm-separating-what-from-how-with-explicit-schedules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 TVM: Separating "What" From "How" With Explicit Schedules
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.2 TVM: Separating &#34;What&#34; From &#34;How&#34; With Explicit Schedules">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#33-triton-programming-at-the-block-level-not-the-thread-level" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 Triton: Programming at the Block Level, Not the Thread Level
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.3 Triton: Programming at the Block Level, Not the Thread Level">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#intuition_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Intuition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#background_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Background
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chapter-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chapter Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#self-check-questions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Self-Check Questions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-we-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where We Go Next
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-solutions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Worked Solutions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="3-a-tour-of-real-ml-compilers-xla-tvm-and-triton">3. A Tour of Real ML Compilers: XLA, TVM, and Triton<a class="headerlink" href="#3-a-tour-of-real-ml-compilers-xla-tvm-and-triton" title="Permanent link">&para;</a></h1>
+<p><strong>What you will understand:</strong> that the vocabulary Chapter 2 built from a toy arithmetic-expression compiler -- IR, pass, lowering, codegen -- is not a simplification invented for this book. Three real, production ML compilers (XLA, TVM, Triton) are built from exactly those same four moves, under their own names, and this chapter maps each one's real, current, cited documentation onto that vocabulary before CUDA Hammer starts building its own version of it in Part 1.</p>
+<p><strong>What you need to know first:</strong> Chapter 2's vocabulary (lexer/parser/AST are not needed again here, but IR, pass, and codegen are used throughout). No prior exposure to XLA, TVM, or Triton is assumed.</p>
+<hr />
+<p>Every fact this chapter states about XLA, TVM, or Triton is cited to that project's own real, current documentation -- this chapter's own honesty discipline, stated once in <a href="../../getting-started/">Getting Started</a> and followed here rather than repeated on every paragraph. That also means this chapter's <code>code/</code> directory is empty: there is nothing to compile, because the claims here are about what three <em>other</em> projects' own real source and documentation say, not about anything this book measures itself. Chapter 4 returns to genuinely compiled, genuinely run C++ when CUDA Hammer's own graph IR starts.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2&#39;S VOCABULARY:   source --&gt; AST --&gt; lower --&gt; IR --&gt; passes --&gt; codegen
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>XLA     : StableHLO graph --&gt; HLO --&gt; HLO passes (fusion, CSE, DCE, ...) --&gt; LLVM --&gt; machine code
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>TVM     : Relay graph --&gt; TensorIR (TIR) --&gt; schedule primitives (split, fuse, reorder, ...) --&gt; codegen
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Triton  : Python kernel --&gt; Triton IR --&gt; block-level scheduling (automatic) --&gt; PTX / target ISA
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>each row below uses different names for the same four moves: build an IR,
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>transform it with passes or schedules, then generate real target code.
+</code></pre></div>
+<h2 id="31-xla-fusing-at-the-hlo-level">3.1 XLA: Fusing at the HLO Level<a class="headerlink" href="#31-xla-fusing-at-the-hlo-level" title="Permanent link">&para;</a></h2>
+<h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
+<p>Picture a factory with two stations on its line. The first station applies the same general-purpose tools to every product that passes through, regardless of which specific machine will assemble it later -- deduplicating parts, discarding anything unused, planning where boxes will sit in the warehouse. The second station is specialized per destination: a product headed to one assembly line gets fittings that product headed to a different line would never need. XLA's own compilation pipeline has exactly this two-station shape, and a further, final station turns the result into real machine code.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Phase 1 (target-independent, runs the same way for any backend):
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  StableHLO --&gt; [CSE, target-independent operation fusion, buffer analysis] --&gt; HLO
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Phase 2 (backend-specific, GPU shown here):
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  HLO --&gt; [further HLO passes: more fusion, pattern-match to optimized library calls] --&gt; optimized HLO
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>Phase 3 (codegen):
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  optimized HLO --&gt; [LLVM: low-level IR, optimization, and code generation] --&gt; machine code
+</code></pre></div>
+<h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
+<p>HLO ("High Level Operations") is XLA's own IR -- in Chapter 2's vocabulary, the thing a real ML framework's graph gets lowered <em>into</em>, the same role File 003's linear three-address code played for a parsed arithmetic expression. <a href="https://openxla.org/xla/architecture">XLA's own architecture documentation</a> describes StableHLO, the versioned operation set frontends target, as something that "provides a portability layer between ML frameworks and the compiler" -- multiple frameworks (JAX, PyTorch/XLA, TensorFlow) can all lower into the same StableHLO dialect, which XLA then converts into its internal HLO representation. From there, <a href="https://openxla.org/xla/hlo_passes">XLA's HLO passes documentation</a> states plainly that "a single HLO Pass can be comprised of one or many compiler optimizations and transformations, and XLA provides several hundred such passes" -- Chapter 2's single, simple <code>foldConstants()</code> pass is the same <em>kind</em> of thing as each one of those several hundred, just enormously smaller in scope. The documentation names several hardware-independent examples directly: an algebraic simplifier ("a grab bag of simplifications, optimizations, and canonicalizations"), constant folding, dead code elimination, and rematerialization (selectively recomputing a value instead of keeping it live, trading compute for memory).</p>
+<p>The specific pass this chapter cares most about is fusion, and <a href="https://openxla.org/xla/gpu_architecture">XLA's GPU architecture documentation</a> is unambiguous about its importance: "Fusion is XLA's single most important optimization, which groups multiple operations (e.g. addition into exponentiation into matmul) to a single kernel." The reason is exactly Chapter 1's own argument, now confirmed from XLA's own side: "since many GPU workloads tend to be memory-bound, fusion dramatically speeds up the execution by avoiding the writing of intermediate tensors to HBM and then reading them back, and instead passes them around in either registers or shared memory." XLA states this as a hard constraint on what counts as a fusion at all: "no intermediate storage inside the fusion is materialized in HBM," and "a fusion is always compiled to exactly one GPU kernel" -- which is precisely Chapter 1's FUSED diagram (one box, one kernel launch, intermediates held in registers) confirmed as a real production compiler's own design rule, not this book's own simplification.</p>
+<div class="admonition warning">
+<p class="admonition-title">[COMMON TRAP] Assuming XLA's fusion is a single pass</p>
+<p>The phrase "operator fusion" suggests one transformation, but XLA's own architecture documentation describes fusion happening at <em>two</em> separate points in the pipeline: target-independent fusion during Phase 1 (the same for every backend) and further, backend-specific fusion during Phase 2, where "backends may perform operation fusions beneficial for their architecture." A fusion decision that helps a GPU backend (grouping ops to keep values in fast on-chip memory instead of round-tripping through HBM) is not automatically the same decision a CPU backend would make, because a CPU backend has a different memory hierarchy to reason about -- which is exactly why XLA structures fusion as (at least) two separate passes at two separate pipeline stages instead of one.</p>
+</div>
+<h2 id="32-tvm-separating-what-from-how-with-explicit-schedules">3.2 TVM: Separating "What" From "How" With Explicit Schedules<a class="headerlink" href="#32-tvm-separating-what-from-how-with-explicit-schedules" title="Permanent link">&para;</a></h2>
+<h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
+<p>A recipe states what a dish is: these ingredients, combined in this way, produce this result. It says nothing about <em>how</em> a kitchen actually executes it -- whether one cook does every step in sequence, or three cooks divide the prep work, or the oven preheats while the vegetables are being chopped. Many different kitchen workflows produce the identical dish; some are simply faster. TVM's own design separates a tensor computation's definition from a <em>schedule</em> -- a chosen sequence of transformations describing how to actually execute that same, unchanged computation -- in exactly this way.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>WHAT (the computation, defined once, in TensorIR):
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  C[i, j] = sum_k A[i, k] * B[k, j]              -- one fixed mathematical definition
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>HOW (a schedule -- one of many valid choices for the SAME computation above):
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  schedule 1: split i, bind to GPU threads, k innermost   --&gt; one real kernel
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  schedule 2: tile i and j, vectorize the k loop           --&gt; a different real kernel
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  schedule 3: reorder k outermost, no tiling at all        --&gt; a third real kernel
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>all three schedules compute the identical C -- only their real, measured
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>speed on real hardware differs, which is exactly what CUDA Hammer&#39;s own
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>Part 5 autotuner will search over.
+</code></pre></div>
+<h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
+<p><a href="https://tvm.apache.org/docs/deep_dive/tensor_ir/index.html">TVM's own TensorIR documentation</a> states that "TensorIR is one of the core abstractions in the Apache TVM stack, used to represent and optimize primitive tensor functions" -- TIR is TVM's own IR for a single tensor computation, the same role HLO plays for XLA and CUDA Hammer's own linear IR will play starting in Chapter 4. What TIR adds beyond a plain IR is a <em>schedule</em>: a separate, explicit object recording which transformations have been applied to that IR's loop structure. <a href="https://tvm.apache.org/docs/v0.12.0/how_to/work_with_schedules/schedule_primitives.html">TVM's own schedule-primitives documentation</a> lists the concrete primitives a schedule is built from -- among them, <code>split</code> ("can split a specified axis into two axes by factor"), <code>tile</code> ("help you execute the computation tile by tile over two axes"), <code>reorder</code> ("can reorder the axes in the specified order"), <code>bind</code> ("can bind a specified axis with a thread axis, often used in gpu programming"), and <code>fuse</code> ("can fuse two consecutive axes of one computation"). Each of these is, in Chapter 2's vocabulary, a pass -- a transformation applied to an IR after it already exists, never touching source text again -- just one that transforms <em>loop structure</em> specifically rather than arithmetic expressions the way Chapter 2's own <code>foldConstants()</code> did.</p>
+<p>TVM's own documentation also distinguishes two different ways a schedule actually gets chosen: DLight, described as rule-based scheduling, and MetaSchedule, described as search-based auto-tuning. That distinction -- a fast, hand-written heuristic versus a slower, measurement-driven search over real alternatives -- is exactly the distinction CUDA Hammer's own Part 5 (Chapter 22, "Cost Models vs. Measurement-Based Autotuning" specifically) builds from scratch, under different names, once CUDA Hammer has its own schedule-like choices (tile sizes, loop orders) to search over.</p>
+<div class="admonition warning">
+<p class="admonition-title">[COMMON TRAP] Confusing TVM's <code>fuse</code> schedule primitive with XLA's operator fusion</p>
+<p>Both projects use the English word "fuse," and both use it for something that reduces overhead -- but they are not the same operation, applied at different levels of the same pipeline. TVM's <code>fuse</code> primitive, per its own documentation, "can fuse two consecutive axes of one computation": it collapses two <em>loop axes inside a single, already-defined tensor operation</em> into one axis, a purely structural change to that one operation's own loop nest. XLA's operator fusion groups <em>multiple separate operations</em> (an add, an exponentiation, a matmul) into a single kernel, eliminating the HBM round-trip between them. TVM has a separate concept for that second kind of fusion too (operator-level fusion across a Relay graph, distinct from the axis-level <code>fuse</code> schedule primitive named here) -- the trap is assuming a shared name means a shared operation, when the two "fuse" operations here apply to entirely different objects (one loop nest's own axes, versus a graph of otherwise-separate operations).</p>
+</div>
+<h2 id="33-triton-programming-at-the-block-level-not-the-thread-level">3.3 Triton: Programming at the Block Level, Not the Thread Level<a class="headerlink" href="#33-triton-programming-at-the-block-level-not-the-thread-level" title="Permanent link">&para;</a></h2>
+<h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
+<p>Giving driving directions to a single driver is one kind of instruction: turn left here, merge there, one vehicle following one route. Giving a route to a convoy's own dispatcher is a different kind of instruction entirely: the dispatcher receives the destination and decides internally how the convoy's individual vehicles space themselves, merge lanes, and pass through checkpoints -- details the original route never had to specify. CUDA's own programming model is the first kind: a programmer writes the code <em>one thread</em> executes, and the hardware replicates that same scalar program across every thread in a block. Triton's programming model is the second kind.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CUDA   -- &quot;Scalar Program, Blocked Threads&quot;:
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  programmer writes:    one thread&#39;s-worth of code, operating on a single acc[i]
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  hardware replicates:  that same scalar program across every thread in the block
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>Triton -- &quot;Blocked Program, Scalar Threads&quot;:
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  programmer writes:    one block&#39;s-worth of code, operating on a whole acc[MB, NB]
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  compiler figures out: how that block-level array maps onto real threads,
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>                         real shared memory, and real coalesced memory loads
+</code></pre></div>
+<h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
+<p><a href="https://triton-lang.org/main/programming-guide/chapter-1/introduction.html">Triton's own programming-guide introduction</a> states this contrast in exactly those terms: Triton is "Blocked Program, Scalar Threads," while CUDA is "Scalar Program, Blocked Threads." Concretely, a Triton kernel's own code operates on a multi-dimensional block directly -- an accumulator shaped <code>acc[MB, NB]</code>, not a single scalar per thread -- and the documentation states this block-structured approach can "lead to block-structured iteration spaces that offer programmers more flexibility than existing DSLs when implementing sparse operations." What that higher-level program buys the programmer is a long list of optimizations the Triton compiler now owns instead of the programmer: the same documentation states Triton "manages to apply a broad range of interesting optimization automatically (e.g., automatic coalescing, thread swizzling, pre-fetching, automatic vectorization, tensor core-aware instruction selection, shared memory allocation/synchronization, asynchronous copy scheduling)," achieved through "block-level data-flow analysis, a technique for scheduling iteration blocks statically." In Chapter 2's vocabulary, that scheduling step is Triton's own codegen stage -- the same stage File 003's <code>interpretIr()</code> occupied for CUDA Hammer's tiny toy language, just lowering to a real target ISA (PTX, for NVIDIA GPUs) instead of interpreting in place.</p>
+<div class="admonition warning">
+<p class="admonition-title">[COMMON TRAP] Assuming block-level programming means never thinking about tiling at all</p>
+<p>Triton automating "automatic coalescing," "shared memory allocation/synchronization," and the rest of that list (per its own documentation, quoted above) does not mean tile sizes themselves disappear from the programmer's job. A real Triton kernel still declares its own block dimensions explicitly (constants conventionally named <code>BLOCK_M</code>, <code>BLOCK_N</code>, and similar in Triton's own published kernels) -- what the compiler automates is <em>how</em> a chosen block maps onto real hardware threads and memory, not <em>what size</em> that block should be. Choosing that size well is still an open, measurable, hardware-dependent decision, which is exactly the kind of decision CUDA Hammer's own Part 5 autotuner is built to search over rather than guess at.</p>
+</div>
+<h2 id="chapter-summary">Chapter Summary<a class="headerlink" href="#chapter-summary" title="Permanent link">&para;</a></h2>
+<p>Three real, production ML compilers -- XLA, TVM, and Triton -- were shown here to be built from exactly the four moves Chapter 2's toy arithmetic compiler already introduced: build an IR, transform it with passes, generate real target code. XLA lowers a portable StableHLO graph into its own HLO IR and runs it through "several hundred" passes (per XLA's own documentation), including a target-independent fusion stage and a further backend-specific fusion stage, because XLA's own documentation calls fusion "XLA's single most important optimization" for exactly the memory-traffic reason Chapter 1 already quantified from scratch. TVM separates a tensor computation's fixed definition (TensorIR) from a schedule -- an explicit, chosen sequence of primitives like <code>split</code>, <code>tile</code>, <code>reorder</code>, and <code>fuse</code> -- and offers both a rule-based scheduler (DLight) and a search-based autotuner (MetaSchedule) for choosing one, foreshadowing the exact distinction CUDA Hammer's own Part 5 builds. Triton inverts CUDA's own programming model from "Scalar Program, Blocked Threads" to "Blocked Program, Scalar Threads" (Triton's own stated phrasing), letting its compiler automate coalescing, shared-memory management, and synchronization that a CUDA programmer would otherwise write by hand -- while still leaving the block-size decision itself to the programmer or an autotuner. Every fact in this chapter was cited to that project's own real, current documentation, never asserted from memory, closing out Part 0's vocabulary-building before Part 1 starts building CUDA Hammer's own graph IR from nothing.</p>
+<h2 id="self-check-questions">Self-Check Questions<a class="headerlink" href="#self-check-questions" title="Permanent link">&para;</a></h2>
+<ol>
+<li>XLA's fusion happens in (at least) two separate phases rather than one. Why might a fusion decision that benefits a GPU backend differ from one that benefits a CPU backend, given the "no intermediate storage materialized in HBM" constraint quoted in Section 3.1?</li>
+<li>TVM's <code>fuse</code> schedule primitive and XLA's operator fusion are both called "fusion," but they operate on different objects. What is each one actually fusing?</li>
+<li>In Chapter 2's own vocabulary (IR, pass, lowering, codegen), what role does TVM's schedule -- the sequence of <code>split</code>/<code>tile</code>/<code>reorder</code>/<code>fuse</code> primitives -- play?</li>
+<li>TVM offers both DLight (rule-based scheduling) and MetaSchedule (search-based autotuning). Which two chapters, by number, does CUDA Hammer's own table of contents devote to exactly this same distinction, and in which Part?</li>
+<li>Explain, in your own words, why Triton's "Blocked Program, Scalar Threads" model means the <em>compiler</em>, not the programmer, is responsible for automatic memory coalescing.</li>
+<li>Per the Section 3.3 [COMMON TRAP], what decision does a Triton kernel's own author still have to make, even though intra-block scheduling is automated?</li>
+<li>Name two hardware-independent HLO passes this chapter cites from XLA's own documentation, and match each to the general vocabulary term (pass) Chapter 2 introduced.</li>
+<li>Why does this chapter's own <code>code/</code> directory contain no compiled <code>.cpp</code> files, unlike Chapters 1 and 2 -- what does Getting Started's own honesty discipline say this chapter's claims are checked against instead?</li>
+</ol>
+<h2 id="where-we-go-next">Where We Go Next<a class="headerlink" href="#where-we-go-next" title="Permanent link">&para;</a></h2>
+<p>Part 0 is done: Chapter 1 quantified two real, independent costs eager execution pays; Chapter 2 built the general vocabulary (IR, pass, lowering, codegen) from a genuinely working toy compiler; Chapter 3 confirmed that same vocabulary is exactly what three real, production ML compilers are built from, under their own names. Part 1 starts CUDA Hammer itself: Chapter 4 designs the actual graph-shaped IR CUDA Hammer will represent tensors and operations with -- not an arithmetic expression's linear IR anymore, but a real computation graph, genuinely built and genuinely printed in C++, the first piece of CUDA Hammer's own compiler that every later chapter builds on.</p>
+<h2 id="worked-solutions">Worked Solutions<a class="headerlink" href="#worked-solutions" title="Permanent link">&para;</a></h2>
+<ol>
+<li>HBM (high-bandwidth memory) round trips are specifically a GPU memory-hierarchy concern -- a GPU has a real, distinct gap between HBM and on-chip registers/shared memory, which is exactly what XLA's own GPU fusion rule ("no intermediate storage inside the fusion is materialized in HBM") is written to avoid crossing. A CPU backend has a different memory hierarchy (cache levels, not a separate HBM/on-chip split of the same kind), so the specific fusion boundary that helps a GPU kernel avoid an HBM round trip is not necessarily the same boundary that helps a CPU kernel avoid a cache miss -- which is why XLA's own architecture documentation describes backend-specific fusion as a separate stage from the target-independent fusion every backend shares.</li>
+<li>TVM's <code>fuse</code> primitive fuses two consecutive <em>loop axes</em> belonging to one already-defined tensor operation -- a structural change to that one operation's own iteration space. XLA's operator fusion fuses multiple <em>separate operations</em> (per its own example, "addition into exponentiation into matmul") into a single compiled kernel, eliminating the memory round trip between them. One fuses axes within an operation; the other fuses operations within a graph.</li>
+<li>A schedule is a pass (or, since it is built from several composable primitives applied in sequence, a sequence of passes) -- it transforms an already-lowered IR (TensorIR) without ever returning to source text, exactly matching Chapter 2's own definition of what a pass is. The IR's meaning (the computation TensorIR represents) stays fixed; only its structure changes, the same correctness bar Chapter 2's <code>foldConstants()</code> pass had to clear.</li>
+<li>Chapter 22, "Cost Models vs. Measurement-Based Autotuning," in Part 5 (Autotuning), per CUDA Hammer's own table of contents.</li>
+<li>In CUDA's model, the programmer writes code for a single thread and the hardware replicates it across every thread in a block -- each thread's memory access is whatever that thread's own code computes, with no single vantage point that sees the whole block's memory pattern at once. In Triton's model, the programmer's code already describes a whole block's operation on a block-shaped array (<code>acc[MB, NB]</code>), so the compiler has full visibility into every memory access the entire block will make before generating any code -- exactly the vantage point needed to decide how to group those accesses into coalesced loads, which is not a decision any single thread's own code could make on its own.</li>
+<li>The block's own size -- the tile dimensions (conventionally named constants like <code>BLOCK_M</code>, <code>BLOCK_N</code> in Triton's own published kernels) are still chosen by the kernel's author or by an autotuner, even though the compiler automates how that chosen block maps onto real threads and memory once the size is fixed.</li>
+<li>The algebraic simplifier ("a grab bag of simplifications, optimizations, and canonicalizations," per XLA's own hlo_passes documentation) and constant folding are both hardware-independent HLO passes cited in Section 3.1; both are passes in Chapter 2's vocabulary -- transformations applied purely to an already-lowered IR, never touching source text -- and constant folding specifically is the exact same operation, under the exact same name, as Chapter 2's own <code>foldConstants()</code>, just operating on XLA's HLO graph instead of a linear three-address-code IR.</li>
+<li>This chapter's claims are about what three other real projects' own documentation and source state, not about anything this book measures or computes itself -- per Getting Started's own fifth honesty-discipline bullet, "real facts this book states about other compilers... are cited to that project's own real, current documentation or source, not asserted from memory." There is nothing here for this book's own toolchain to compile, because nothing here is a claim this book is making about its own code.</li>
+</ol>
+<hr />
+<p><strong>Sources cited in this chapter:</strong></p>
+<ul>
+<li>OpenXLA Project, <a href="https://openxla.org/xla/architecture">"XLA architecture"</a> -- the three-phase compilation pipeline (target-independent optimization, backend-specific optimization, LLVM-based codegen) and StableHLO's role as "a portability layer between ML frameworks and the compiler," used in Section 3.1.</li>
+<li>OpenXLA Project, <a href="https://openxla.org/xla/hlo_passes">"HLO Passes"</a> -- "a single HLO Pass can be comprised of one or many compiler optimizations and transformations, and XLA provides several hundred such passes," and the algebraic simplifier / constant folding / dead code elimination / rematerialization examples, used in Section 3.1 and Self-Check Question 7.</li>
+<li>OpenXLA Project, <a href="https://openxla.org/xla/gpu_architecture">"XLA:GPU Architecture Overview"</a> -- "Fusion is XLA's single most important optimization," the HBM-avoidance rationale, and the "a fusion is always compiled to exactly one GPU kernel" constraint, used in Section 3.1.</li>
+<li>Apache TVM, <a href="https://tvm.apache.org/docs/deep_dive/tensor_ir/index.html">"TensorIR"</a> -- "TensorIR is one of the core abstractions in the Apache TVM stack, used to represent and optimize primitive tensor functions," and the DLight/MetaSchedule distinction, used in Section 3.2.</li>
+<li>Apache TVM, <a href="https://tvm.apache.org/docs/v0.12.0/how_to/work_with_schedules/schedule_primitives.html">"Schedule Primitives in TVM"</a> -- the <code>split</code>, <code>tile</code>, <code>reorder</code>, <code>bind</code>, and <code>fuse</code> primitive descriptions, used in Section 3.2 and its [COMMON TRAP].</li>
+<li>Triton, <a href="https://triton-lang.org/main/programming-guide/chapter-1/introduction.html">"Introduction"</a> -- "Blocked Program, Scalar Threads" versus CUDA's "Scalar Program, Blocked Threads," the automatic-optimization list, and "block-level data-flow analysis," used in Section 3.3.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../02-what-a-compiler-pipeline-looks-like/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 2. What a Compiler Pipeline Looks Like">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                2. What a Compiler Pipeline Looks Like
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../part1/04-representing-tensors-and-operations-as-a-graph/" class="md-footer__link md-footer__link--next" aria-label="Next: 4. Representing Tensors and Operations as a Graph">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                4. Representing Tensors and Operations as a Graph
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
