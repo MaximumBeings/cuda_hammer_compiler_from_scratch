@@ -91,6 +91,8 @@ nav:
       - "22. Cost Models vs. Measurement-Based Autotuning": part5/22-cost-models-vs-measurement.md
       - "23. Building CUDA Hammer's Autotuner": part5/23-building-the-autotuner.md
       - "24. Caching and Reusing Autotuning Results": part5/24-caching-and-reusing-autotuning-results.md
+  - "Part 6 -- Case Studies of Real Compilers":
+      - "25. XLA: Fusion and Autotuning in a Real Production Compiler": part6/25-xla-fusion-and-autotuning-in-a-real-production-compiler.md
 
 extra:
   social: []
