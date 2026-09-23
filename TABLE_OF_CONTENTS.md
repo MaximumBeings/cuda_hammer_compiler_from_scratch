@@ -1,4 +1,4 @@
-# Hammer: A Tensor Compiler in C++ -- Table of Contents (planning document)
+# CUDA Hammer: A Tensor Compiler in C++ -- Table of Contents (planning document)
 
 Subtitle: From a Minimal IR to Fused, Autotuned Kernels
 
@@ -9,11 +9,11 @@ This is the full planned outline. Check this file first before starting any new 
 2. What a Compiler Pipeline Looks Like
 3. A Tour of Real ML Compilers: XLA, TVM, and Triton
 
-## Part 1 -- Hammer's IR: A Minimal Tensor Graph From Scratch
+## Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
 4. Representing Tensors and Operations as a Graph
-5. Building the Graph: Hammer's Frontend
+5. Building the Graph: CUDA Hammer's Frontend
 6. Graph Validation and Shape Inference
-7. Printing and Visualizing Hammer's IR
+7. Printing and Visualizing CUDA Hammer's IR
 
 ## Part 2 -- Basic Optimization Passes
 8. The Pass Manager: Structuring Compiler Transformations
@@ -29,7 +29,7 @@ This is the full planned outline. Check this file first before starting any new 
 16. Fusion Boundaries: What Can't Be Fused, and Why
 
 ## Part 4 -- Code Generation
-17. Lowering Hammer's IR to Loops
+17. Lowering CUDA Hammer's IR to Loops
 18. Generating CUDA C++ From the Fused IR
 19. Generating Vectorized CPU Code
 20. A JIT Backend: Compiling and Loading Generated Code at Runtime
@@ -37,10 +37,10 @@ This is the full planned outline. Check this file first before starting any new 
 ## Part 5 -- Autotuning
 21. The Search Space: Tile Sizes, Loop Orders, and Unrolling
 22. Cost Models vs. Measurement-Based Autotuning
-23. Building Hammer's Autotuner
+23. Building CUDA Hammer's Autotuner
 24. Caching and Reusing Tuned Schedules
 
-## Part 6 -- Case Studies: How Hammer Compares to Real Compilers
+## Part 6 -- Case Studies: How CUDA Hammer Compares to Real Compilers
 25. XLA's HLO and Fusion Passes
 26. TVM's Relay/TIR and Ansor Auto-Scheduling
 27. Triton's Block-Level Programming Model
@@ -49,7 +49,7 @@ This is the full planned outline. Check this file first before starting any new 
 30. Quantization-Aware Codegen
 
 ## Appendices
-- A. Installation and Setup -- Building Hammer's Toolchain
+- A. Installation and Setup -- Building CUDA Hammer's Toolchain
 - B. Practice Quiz
 - C. LLVM and MLIR: The Compiler Infrastructure You Get for Free
 - D. Polyhedral Compilation and Advanced Loop Transformations
