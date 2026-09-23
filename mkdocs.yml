@@ -67,6 +67,7 @@ nav:
       - "3. A Tour of Real ML Compilers: XLA, TVM, and Triton": part0/03-a-tour-of-real-ml-compilers-xla-tvm-and-triton.md
   - "Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch":
       - "4. Representing Tensors and Operations as a Graph": part1/04-representing-tensors-and-operations-as-a-graph.md
+      - "5. Building the Graph: CUDA Hammer's Frontend": part1/05-building-the-graph-cuda-hammers-frontend.md
 
 extra:
   social: []
