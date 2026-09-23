@@ -1,0 +1,20 @@
+/* Header bar text/icons in red, independent of the yellow/amber palette. */
+.md-header,
+.md-header__title,
+.md-header__topic,
+.md-header__button,
+.md-header__ellipsis,
+.md-tabs__link {
+  color: #c1121f !important;
+}
+
+.md-header__button svg,
+.md-search__icon svg,
+.md-header__button.md-icon svg {
+  fill: #c1121f !important;
+}
+
+.md-search__input,
+.md-search__input::placeholder {
+  color: #c1121f !important;
+}
