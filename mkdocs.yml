@@ -81,6 +81,8 @@ nav:
       - "14. Reduction Fusion": part3/14-reduction-fusion.md
       - "15. Loop Fusion and Tiling": part3/15-loop-fusion-and-tiling.md
       - "16. Fusion Boundaries": part3/16-fusion-boundaries.md
+  - "Part 4 -- Code Generation":
+      - "17. Lowering CUDA Hammer's IR to Loops": part4/17-lowering-to-loops.md
 
 extra:
   social: []
