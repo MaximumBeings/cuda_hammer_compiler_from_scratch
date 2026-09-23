@@ -70,6 +70,8 @@ nav:
       - "5. Building the Graph: CUDA Hammer's Frontend": part1/05-building-the-graph-cuda-hammers-frontend.md
       - "6. Graph Validation and Shape Inference": part1/06-graph-validation-and-shape-inference.md
       - "7. Printing and Visualizing CUDA Hammer's IR": part1/07-printing-and-visualizing-cuda-hammers-ir.md
+  - "Part 2 -- Basic Optimization Passes":
+      - "8. The Pass Manager: Structuring Compiler Transformations": part2/08-the-pass-manager-structuring-compiler-transformations.md
 
 extra:
   social: []
