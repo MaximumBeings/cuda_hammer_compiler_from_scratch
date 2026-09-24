@@ -108,6 +108,7 @@ nav:
       - "B. Practice Quiz": appendix/b-practice-quiz.md
       - "C. LLVM and MLIR -- The Compiler Infrastructure You Get for Free": appendix/c-llvm-and-mlir-the-compiler-infrastructure-you-get-for-free.md
       - "D. Polyhedral Compilation": appendix/d-polyhedral-compilation-what-a-real-scheduler-finds-that-cuda-hammers-search-never-did.md
+      - "E. Profiling and Benchmarking": appendix/e-profiling-and-benchmarking-what-real-hardware-counters-show-that-a-clock-alone-cant.md
 
 extra:
   social: []
