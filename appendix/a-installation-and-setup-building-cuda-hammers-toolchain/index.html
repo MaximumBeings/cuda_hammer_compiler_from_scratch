@@ -1,0 +1,2866 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Tensor Compiler in C++, From a Minimal IR to Fused, Autotuned Kernels">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../../part7/34-quantitative-finance-a-real-binomial-option-pricer/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>A. Installation and Setup -- Building CUDA Hammer's Toolchain - CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#appendix-a-installation-and-setup-building-cuda-hammers-toolchain" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              A. Installation and Setup -- Building CUDA Hammer's Toolchain
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/01-the-cost-of-eager-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. The Cost of Eager Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/02-what-a-compiler-pipeline-looks-like/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. What a Compiler Pipeline Looks Like
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/03-a-tour-of-real-ml-compilers-xla-tvm-and-triton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/04-representing-tensors-and-operations-as-a-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Representing Tensors and Operations as a Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/05-building-the-graph-cuda-hammers-frontend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Building the Graph: CUDA Hammer's Frontend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/06-graph-validation-and-shape-inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Graph Validation and Shape Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/07-printing-and-visualizing-cuda-hammers-ir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Printing and Visualizing CUDA Hammer's IR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- Basic Optimization Passes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- Basic Optimization Passes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/08-the-pass-manager-structuring-compiler-transformations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. The Pass Manager: Structuring Compiler Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/09-constant-folding-and-dead-code-elimination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. Constant Folding and Dead Code Elimination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/10-common-subexpression-elimination-for-tensor-graphs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. Common Subexpression Elimination for Tensor Graphs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/11-algebraic-simplification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. Algebraic Simplification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Operator Fusion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Operator Fusion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/12-why-fusion-matters-memory-bound-vs-compute-bound-kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Why Fusion Matters: Memory-Bound vs. Compute-Bound Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/13-elementwise-fusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Elementwise Fusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/14-reduction-fusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. Reduction Fusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/15-loop-fusion-and-tiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. Loop Fusion and Tiling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/16-fusion-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Fusion Boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Code Generation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Code Generation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/17-lowering-to-loops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Lowering CUDA Hammer's IR to Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/18-generating-cuda-cpp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Generating CUDA C++ From the Fused IR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/19-generating-vectorized-cpu-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. Generating Vectorized CPU Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/20-jit-backend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. A JIT Backend: Compiling and Loading Generated Code at Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Autotuning
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Autotuning
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/21-the-search-space/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. The Search Space: Tile Sizes, Loop Orders, and Unrolling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/22-cost-models-vs-measurement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Cost Models vs. Measurement-Based Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/23-building-the-autotuner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Building CUDA Hammer's Autotuner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/24-caching-and-reusing-autotuning-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Caching and Reusing Autotuning Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- Case Studies of Real Compilers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- Case Studies of Real Compilers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/25-xla-fusion-and-autotuning-in-a-real-production-compiler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. XLA: Fusion and Autotuning in a Real Production Compiler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/26-tvms-real-modern-stack-relax-tir-and-metaschedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. TVM's Real Modern Stack: Relax, TIR, and MetaSchedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/27-tritons-block-level-programming-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Triton's Block-Level Programming Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/28-torch-compile-and-torchinductor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. torch.compile and TorchInductor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/29-flash-attention-as-a-cross-system-fusion-case-study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Flash Attention as a Cross-System Fusion Case Study
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/30-quantization-aware-codegen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. Quantization-Aware Codegen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/31-computer-vision-a-real-fixed-kernel-preprocessing-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Computer Vision: A Real Fixed-Kernel Preprocessing Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/32-nlp-transformers-a-real-bag-of-embeddings-classifier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. NLP / Transformers: A Real Bag-of-Embeddings Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/33-scientific-computing-a-real-finite-difference-heat-stencil/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Scientific Computing: A Real Finite-Difference Heat Stencil
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/34-quantitative-finance-a-real-binomial-option-pricer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Quantitative Finance: A Real Binomial Option Pricer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Appendices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A. Installation and Setup -- Building CUDA Hammer's Toolchain
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A. Installation and Setup -- Building CUDA Hammer's Toolchain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-as-own-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A's own shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a1-how-much-of-c17-does-cuda-hammer-actually-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.1 -- How much of C++17 does CUDA Hammer actually need?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a2-detecting-your-real-vector-isa-before-chapter-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.2 -- Detecting your real vector ISA before Chapter 19
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a3-verifying-an-optional-cuda-toolkit-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.3 -- Verifying an optional CUDA toolkit install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a4-the-capstone-one-combined-toolchain-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.4 -- The capstone: one combined toolchain report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-appendix-a-actually-shows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Appendix A actually shows
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-as-own-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A's own shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a1-how-much-of-c17-does-cuda-hammer-actually-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.1 -- How much of C++17 does CUDA Hammer actually need?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a2-detecting-your-real-vector-isa-before-chapter-19" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.2 -- Detecting your real vector ISA before Chapter 19
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a3-verifying-an-optional-cuda-toolkit-install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.3 -- Verifying an optional CUDA toolkit install
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a4-the-capstone-one-combined-toolchain-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A.4 -- The capstone: one combined toolchain report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-appendix-a-actually-shows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What Appendix A actually shows
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="appendix-a-installation-and-setup-building-cuda-hammers-toolchain">Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain<a class="headerlink" href="#appendix-a-installation-and-setup-building-cuda-hammers-toolchain" title="Permanent link">&para;</a></h1>
+<p>This appendix closes the loop on a claim this book has repeated,
+unquestioned, in every one of its 34 chapters: <code>-std=c++17</code>, printed
+at the top of getting-started.md's own compile-line conventions and
+in the compile command of every single one of this book's own 92
+chapter files. Chapters 1 through 34 never asked whether CUDA
+Hammer's own real source actually NEEDS C++17, or a real vector ISA,
+or a real CUDA toolkit -- they used all three without once verifying
+any of them directly. This appendix does that verification, the same
+way this book verifies everything else: by compiling and running real
+code, not by asserting a requirement.</p>
+<h2 id="appendix-as-own-shape">Appendix A's own shape<a class="headerlink" href="#appendix-as-own-shape" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix A&#39;s own shape, section by section                       |
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  A.1  How much of C++17 does CUDA Hammer actually need? -- a      |
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>|       real sweep of this book&#39;s own 71 real .cpp files, compiled  |
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>|       under -std=c++11/14/17, finds the real answer: C++14, not   |
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>|       C++17, driven by exactly two real, precisely identified     |
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>|       constructs.                                                  |
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>|                                                                    |
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>|  A.2  Detecting your real vector ISA before Chapter 19 -- makes   |
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|       explicit and CHECKS an assumption Chapter 19&#39;s own          |
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>|       generator has always made silently (x86_64 implies AVX2/    |
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>|       FMA, aarch64 implies NEON), reading this machine&#39;s own      |
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>|       real /proc/cpuinfo directly instead of trusting the         |
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>|       compile-time architecture macro alone.                      |
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>|                                                                    |
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>|  A.3  Verifying an optional CUDA toolkit install -- a minimal     |
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>|       real .cu smoke test, the same honest compile-but-don&#39;t-     |
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>|       claim-a-run split Chapter 18 onward has carried since       |
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>|       Chapter 18, cloud-sandbox-only per this book&#39;s own          |
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>|       standing rule (the device has no nvcc).                     |
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>|                                                                    |
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>|  A.4  The capstone -- A.1&#39;s and A.2&#39;s own two machine-portable    |
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>|       checks folded into ONE combined report, cross-verified on   |
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>|       both of this book&#39;s own machines, checked directly against  |
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>|       what TOC.md&#39;s own &quot;Status&quot; section already claimed about    |
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>|       each one -- not re-asserting those claims, RE-VERIFYING     |
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>|       them.                                                       |
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>+------------------------------------------------------------------+
+</code></pre></div>
+<h2 id="a1-how-much-of-c17-does-cuda-hammer-actually-need">A.1 -- How much of C++17 does CUDA Hammer actually need?<a class="headerlink" href="#a1-how-much-of-c17-does-cuda-hammer-actually-need" title="Permanent link">&para;</a></h2>
+<p>Before touching the toolchain at all, this section asks the honest
+question directly: across this book's own 71 real <code>.cpp</code> files
+(Chapters 1-34, all of Part 0 through Part 7), does anything actually
+require C++17, or has this book been compiling with a newer standard
+than its own code needs? The real way to answer that is to actually
+compile every one of those 71 real files under three real standard
+flags and see what happens -- not to guess from memory which C++17
+features "sound like" the kind of thing a compiler-writing book would
+use.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  real sweep, this session, all 71 of this book&#39;s own .cpp files:
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  g++ -std=c++11 -fsyntax-only file.cpp   (for each of the 71 files)
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  g++ -std=c++14 -fsyntax-only file.cpp
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  g++ -std=c++17 -fsyntax-only file.cpp
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  -std=c++17 : 0 of 71 files fail
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  -std=c++14 : 0 of 71 files fail   -- the real minimum, not asserted
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  -std=c++11 : 58 of 71 files fail
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>  the 58 real c++11 failures split EXACTLY, with zero overlap:
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    54 files use std::make_unique   (memory header, added in C++14)
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>     4 files use digit-separator literals like 1&#39;000&#39;000  (core
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>       language syntax, added in C++14)
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    54 + 4 = 58, matching the real failure count exactly
+</code></pre></div>
+<p>Neither real cause is a C++17 feature -- both are C++14. <code>std::make_unique</code>
+first appears in File 005 (Chapter 4's own <code>Graph::addNode()</code>) and
+recurs in the large majority of this book's own files that allocate
+graph nodes; the digit-separator literals appear in exactly 4 files,
+each one a cost-model or roofline chapter with a large element count
+(Files 024, 025, 054, 057). This file reproduces both real constructs
+in one minimal, self-contained program and compiles the SAME source
+three times, with three real <code>-std=</code> flags, reporting the real g++
+diagnostic when it fails and the real program output when it
+succeeds -- not a description of what should happen, the actual
+compiler's own real behavior. A reader can reproduce the full 71-file
+sweep themselves with the same two commands shown above, run from
+this book's own <code>docs/</code> directory.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer&#39;s Toolchain</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section A.1 -- Every chapter in this book has compiled its own code</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">// with `-std=c++17` (stated in getting-started.md&#39;s own compile-line</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1">// conventions). That flag has never once been questioned in 34</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1">// chapters -- so before anything else, this appendix asks the honest</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">// question directly: does CUDA Hammer&#39;s own real source actually NEED</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1">// C++17, or has this book been compiling with a newer standard than</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1">// its own code requires?</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1">//</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1">// This file is a minimal, self-contained REPRODUCTION of the two real</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1">// constructs a full sweep of this book&#39;s own 71 real .cpp files found</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1">// (the sweep itself, and its exact real numbers, are reported in this</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c1">// section&#39;s own prose -- not fabricated, run for real this session):</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1">//</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1">//   1. `std::make_unique&lt;T&gt;()` -- used in 54 of this book&#39;s own 71</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1">//      real files, starting with Graph::addNode() in File 005</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="c1">//      (Chapter 4). Standard library, added in C++14.</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1">//   2. digit-separator numeric literals like `1&#39;000&#39;000` -- used in 4</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1">//      of this book&#39;s own real files (024, 025, 054, 057), each one a</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="c1">//      cost-model or roofline chapter with a large element count.</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1">//      Core language syntax, added in C++14.</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1">//</span>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="c1">// Neither construct needs C++17 -- both are C++14. This file compiles</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="c1">// the SAME source three times, with three real `-std=` flags, and</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="c1">// reports what actually happens each time -- not asserted, compiled.</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1">//</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="c1">// Compile (run three times, once per real standard flag):</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="c1">//   g++ -std=c++11 -Wall -Wextra -O2 093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp -o 093_c11 2&gt;&amp;1; echo &quot;exit: $?&quot;</span>
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="c1">//   g++ -std=c++14 -Wall -Wextra -O2 093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp -o 093_c14 2&gt;&amp;1; echo &quot;exit: $?&quot;</span>
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="c1">//   g++ -std=c++17 -Wall -Wextra -O2 093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp -o 093_c17 2&gt;&amp;1; echo &quot;exit: $?&quot;</span>
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="c1">// Run (the two that build):</span>
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="c1">//   ./093_c14</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="c1">//   ./093_c17</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;memory&gt;</span>
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="c1">// The same shape as Graph::addNode() (File 005, Chapter 4): allocate</span>
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a><span class="c1">// a small owned object with std::make_unique, exactly as CUDA</span>
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a><span class="c1">// Hammer&#39;s own Node storage has done since Chapter 4.</span>
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a><span class="k">struct</span><span class="w"> </span><span class="nc">Node</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">value</span><span class="p">;</span>
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a><span class="p">};</span>
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a>
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;</span><span class="w"> </span><span class="n">makeNode</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a><span class="w">    </span><span class="c1">// std::make_unique&lt;T&gt;(...) -- C++14 (&lt;memory&gt;), not C++17.</span>
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;</span><span class="p">(</span><span class="n">Node</span><span class="p">{</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="p">});</span>
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a><span class="p">}</span>
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a>
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">unique_ptr</span><span class="o">&lt;</span><span class="n">Node</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">nodes</span><span class="p">;</span>
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a><span class="w">        </span><span class="n">nodes</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">makeNode</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1.5f</span><span class="p">));</span>
+<a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a>
+<a id="__codelineno-2-60" name="__codelineno-2-60" href="#__codelineno-2-60"></a><span class="w">    </span><span class="c1">// A digit-separator numeric literal -- the same real construct</span>
+<a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a><span class="w">    </span><span class="c1">// File 024 (Chapter 12) and File 025 (Chapter 12) use for their</span>
+<a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a><span class="w">    </span><span class="c1">// own real element counts. C++14 core language syntax, not C++17.</span>
+<a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">elementCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1&#39;000&#39;000</span><span class="p">;</span>
+<a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a>
+<a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">checksum</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">nodes</span><span class="p">)</span><span class="w"> </span><span class="n">checksum</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">n</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a>
+<a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;__cplusplus = %ldL</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">long</span><span class="o">&gt;</span><span class="p">(</span><span class="n">__cplusplus</span><span class="p">));</span>
+<a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;nodes allocated via std::make_unique: %zu (checksum of ids: %lld)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a><span class="w">           </span><span class="n">nodes</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">checksum</span><span class="p">);</span>
+<a id="__codelineno-2-71" name="__codelineno-2-71" href="#__codelineno-2-71"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;digit-separator literal elementCount = %lld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">elementCount</span><span class="p">);</span>
+<a id="__codelineno-2-72" name="__codelineno-2-72" href="#__codelineno-2-72"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;real result: this file compiled and ran under this standard.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-2-73" name="__codelineno-2-73" href="#__codelineno-2-73"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a><span class="p">}</span>
+</code></pre></div>
+<p><strong>Attempt 1 -- <code>-std=c++11</code> (expected to fail):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++11<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c11
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;exit: </span><span class="nv">$?</span><span class="s2">&quot;</span>
+</code></pre></div>
+<p><strong>Compile output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: warning: multi-character character constant [-Wmultichar]
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>   63 |     const long long elementCount = 1&#39;000&#39;000;
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>      |                                     ^~~~~
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp: In function &#39;std::unique_ptr&lt;Node&gt; makeNode(int, float)&#39;:
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:51:17: error: &#39;make_unique&#39; is not a member of &#39;std&#39;
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>   51 |     return std::make_unique&lt;Node&gt;(Node{id, value});
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>      |                 ^~~~~~~~~~~
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:51:17: note: &#39;std::make_unique&#39; is only available from C++14 onwards
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:51:33: error: expected primary-expression before &#39;&gt;&#39; token
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>   51 |     return std::make_unique&lt;Node&gt;(Node{id, value});
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>      |                                 ^
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp: In function &#39;int main()&#39;:
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: error: expected &#39;,&#39; or &#39;;&#39; before &#39;\x303030&#39;
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>   63 |     const long long elementCount = 1&#39;000&#39;000;
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>      |                                     ^~~~~
+</code></pre></div>
+<p><strong>Compile output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: warning: multi-character character constant [-Wmultichar]
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>   63 |     const long long elementCount = 1&#39;000&#39;000;
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>      |                                     ^~~~~
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp: In function ‘std::unique_ptr&lt;Node&gt; makeNode(int, float)’:
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:51:17: error: ‘make_unique’ is not a member of ‘std’
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>   51 |     return std::make_unique&lt;Node&gt;(Node{id, value});
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>      |                 ^~~~~~~~~~~
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:51:17: note: ‘std::make_unique’ is only available from C++14 onwards
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:51:33: error: expected primary-expression before ‘&gt;’ token
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>   51 |     return std::make_unique&lt;Node&gt;(Node{id, value});
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>      |                                 ^
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp: In function ‘int main()’:
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: error: expected ‘,’ or ‘;’ before &#39;\x303030&#39;
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>   63 |     const long long elementCount = 1&#39;000&#39;000;
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>      |                                     ^~~~~
+</code></pre></div>
+<p><em>The real compile error is the same root cause on both machines (std::make_unique and the digit-separator literal both need C++14) -- the diagnostic TEXT differs only in quote-mark style (straight quotes from the cloud's g++ 13.3.0, curly quotes from the device's g++ 11.4.0), a real g++-version formatting difference, not a difference in what actually failed or why.</em></p>
+<p><strong>Attempt 2 -- <code>-std=c++14</code> (the real minimum, expected to succeed):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++14<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c14
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>./093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c14
+</code></pre></div>
+<p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>__cplusplus = 201402L
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>digit-separator literal elementCount = 1000000
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>real result: this file compiled and ran under this standard.
+</code></pre></div>
+<p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>__cplusplus = 201402L
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>digit-separator literal elementCount = 1000000
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>real result: this file compiled and ran under this standard.
+</code></pre></div>
+<p><em>Byte-identical on both machines -- this file has no CUDA/NCCL/MPI linkage and no vector intrinsics, cross-verified the same way every plain C++ file in this book is.</em></p>
+<p><strong>Attempt 3 -- <code>-std=c++17</code> (this book's own convention, also succeeds):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c17
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>./093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c17
+</code></pre></div>
+<p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>__cplusplus = 201703L
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>digit-separator literal elementCount = 1000000
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>real result: this file compiled and ran under this standard.
+</code></pre></div>
+<p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>__cplusplus = 201703L
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>digit-separator literal elementCount = 1000000
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>real result: this file compiled and ran under this standard.
+</code></pre></div>
+<p><em>Byte-identical on both machines, and identical apart from the __cplusplus value itself to the -std=c++14 run above -- confirming this book's own -std=c++17 convention builds the same real program the same real way, just with a newer standard than the code actually requires.</em></p>
+<h2 id="a2-detecting-your-real-vector-isa-before-chapter-19">A.2 -- Detecting your real vector ISA before Chapter 19<a class="headerlink" href="#a2-detecting-your-real-vector-isa-before-chapter-19" title="Permanent link">&para;</a></h2>
+<p>Chapter 19's own real vectorized-CPU code generator picks its target
+instruction set once, at the top of its own <code>main()</code>, using only a
+compile-time architecture macro:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>  Chapter 19&#39;s own real generator (File 045 onward):
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  #if defined(__x86_64__)
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>      Isa hostIsa = Isa::Avx2;
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>  #elif defined(__aarch64__)
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>      Isa hostIsa = Isa::Neon;
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>  #endif
+</code></pre></div>
+<p>That has worked correctly on both of this book's own two authoring
+machines every time it has run -- but it is a real, silent
+assumption, not a verification: <code>__x86_64__</code> means "this CPU's
+instruction set is x86-64," not "this specific CPU's own advertised
+flags include avx2 and fma." Real x86-64 CPUs that predate AVX2 by
+several years still define <code>__x86_64__</code>; Chapter 19's own generator
+would still pick <code>Isa::Avx2</code> for one of them, and its <code>-mavx2 -mfma</code>
+build would compile cleanly but risk an illegal-instruction fault at
+runtime, on real hardware that genuinely doesn't have those
+instructions.</p>
+<p>This section makes that assumption explicit and checks it directly,
+the same way TOC.md's own toolchain notes already checked it once for
+this book's own two machines ("AVX2/AVX512F/FMA present in
+<code>/proc/cpuinfo</code>," "genuine NEON (<code>asimd</code>) confirmed") -- but as a
+standalone, reusable tool a reader runs on THEIR OWN machine before
+reaching Chapter 19, reading that machine's own real, live
+<code>/proc/cpuinfo</code> "flags" line directly rather than trusting the
+compile-time macro alone:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>  compile-time macro          real /proc/cpuinfo check
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  (what Chapter 19&#39;s own      (what this section actually reads)
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>   generator branches on)
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  __x86_64__ defined    --&gt;   grep &quot;avx2&quot; and &quot;fma&quot; in the real
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>                               flags line -- CONFIRMS or FLAGS A
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>                               MISMATCH against Chapter 19&#39;s own
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>                               silent assumption
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>  __aarch64__ defined   --&gt;   grep &quot;asimd&quot; in the real flags line
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>                               -- NEON is architecturally mandatory
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>                               on aarch64, so this should always
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>                               confirm on real hardware, checked
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>                               directly rather than assumed
+</code></pre></div>
+<p>Run for real on this book's own two authoring machines, this tool's
+own real output differs exactly as expected: <code>__x86_64__</code> and a real
+<code>avx2</code>+<code>fma</code>-flagged CPU on the cloud sandbox, <code>__aarch64__</code> and a
+real <code>asimd</code>-flagged CPU on the device -- both confirming, not just
+assuming, that Chapter 19's own compile-time choice is the real,
+correct one on each machine.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer&#39;s Toolchain</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1">// 094_detecting_your_real_vector_isa_before_chapter_19.cpp</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1">//</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1">// Section A.2 -- Chapter 19&#39;s own real vectorized-CPU code generator</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="c1">// (File 045 onward) picks its own target ISA like this, at compile</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="c1">// time, in its own main():</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="c1">//</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="c1">//   #if defined(__x86_64__)</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="c1">//       Isa hostIsa = Isa::Avx2;</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="c1">//   #elif defined(__aarch64__)</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="c1">//       Isa hostIsa = Isa::Neon;</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="c1">//   #endif</span>
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="c1">//</span>
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="c1">// That is a real, working assumption on both of this book&#39;s own two</span>
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="c1">// authoring machines -- but it IS an assumption: `__x86_64__` means</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="c1">// &quot;this CPU&#39;s instruction set is x86-64,&quot; not &quot;this specific CPU&#39;s</span>
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="c1">// flags include avx2 and fma&quot; (older x86-64 CPUs predate AVX2 by</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="c1">// several years). This file makes that assumption explicit and</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="c1">// CHECKS it directly, the same way this book&#39;s own TOC.md already</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="c1">// verified it once for its own two machines (&quot;AVX2/AVX512F/FMA</span>
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="c1">// present in /proc/cpuinfo,&quot; &quot;genuine NEON (asimd) confirmed&quot;) --</span>
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="c1">// reading the real, live `/proc/cpuinfo` on THIS machine, not</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="c1">// re-asserting what worked on the authoring machines.</span>
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="c1">//</span>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="c1">// Compile: g++ -std=c++17 -Wall -Wextra -O2 094_detecting_your_real_vector_isa_before_chapter_19.cpp -o 094_driver</span>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="c1">// Run:     ./094_driver</span>
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a>
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;fstream&gt;</span>
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;sstream&gt;</span>
+<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string&gt;</span>
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a>
+<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="c1">// Reads the real, live /proc/cpuinfo &quot;flags&quot; line (Linux only -- both</span>
+<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="c1">// of this book&#39;s own machines are Linux, per TOC.md&#39;s own toolchain</span>
+<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="c1">// notes) and returns the real set of advertised CPU feature flags.</span>
+<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">readRealCpuFlags</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">ifstream</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="s">&quot;/proc/cpuinfo&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">line</span><span class="p">;</span>
+<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a><span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">line</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&quot;flags&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">line</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&quot;Features&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a><span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">istringstream</span><span class="w"> </span><span class="nf">iss</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">token</span><span class="p">;</span>
+<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="w">            </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">iss</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="n">flags</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">token</span><span class="p">);</span>
+<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a><span class="w">            </span><span class="k">break</span><span class="p">;</span><span class="w">  </span><span class="c1">// first CPU&#39;s flags line is enough -- real machines here are single-ISA</span>
+<a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a><span class="p">}</span>
+<a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a>
+<a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a><span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">want</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">want</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-14-55" name="__codelineno-14-55" href="#__codelineno-14-55"></a><span class="p">}</span>
+<a id="__codelineno-14-56" name="__codelineno-14-56" href="#__codelineno-14-56"></a>
+<a id="__codelineno-14-57" name="__codelineno-14-57" href="#__codelineno-14-57"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-58" name="__codelineno-14-58" href="#__codelineno-14-58"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-59" name="__codelineno-14-59" href="#__codelineno-14-59"></a>
+<a id="__codelineno-14-60" name="__codelineno-14-60" href="#__codelineno-14-60"></a><span class="w">    </span><span class="c1">// Compile-time architecture macro -- exactly what Chapter 19&#39;s own</span>
+<a id="__codelineno-14-61" name="__codelineno-14-61" href="#__codelineno-14-61"></a><span class="w">    </span><span class="c1">// generateFullVectorizedProgram() driver branches on.</span>
+<a id="__codelineno-14-62" name="__codelineno-14-62" href="#__codelineno-14-62"></a><span class="cp">#if defined(__x86_64__)</span>
+<a id="__codelineno-14-63" name="__codelineno-14-63" href="#__codelineno-14-63"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;compile-time architecture macro: __x86_64__ defined</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-64" name="__codelineno-14-64" href="#__codelineno-14-64"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;-&gt; Chapter 19&#39;s own generator will pick Isa::Avx2 for this machine.</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-65" name="__codelineno-14-65" href="#__codelineno-14-65"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">readRealCpuFlags</span><span class="p">();</span>
+<a id="__codelineno-14-66" name="__codelineno-14-66" href="#__codelineno-14-66"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasAvx2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;avx2&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-67" name="__codelineno-14-67" href="#__codelineno-14-67"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasFma</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;fma&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-68" name="__codelineno-14-68" href="#__codelineno-14-68"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;real /proc/cpuinfo check: avx2 flag %s, fma flag %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-69" name="__codelineno-14-69" href="#__codelineno-14-69"></a><span class="w">           </span><span class="n">hasAvx2</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;PRESENT&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;ABSENT&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">hasFma</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;PRESENT&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;ABSENT&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-70" name="__codelineno-14-70" href="#__codelineno-14-70"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hasAvx2</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">hasFma</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-71" name="__codelineno-14-71" href="#__codelineno-14-71"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: this CPU&#39;s own real advertised flags CONFIRM the compile-time</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-72" name="__codelineno-14-72" href="#__codelineno-14-72"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;assumption -- Chapter 19&#39;s AVX2/FMA path will genuinely compile and run here</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-73" name="__codelineno-14-73" href="#__codelineno-14-73"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;(confirmed)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-74" name="__codelineno-14-74" href="#__codelineno-14-74"></a><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-75" name="__codelineno-14-75" href="#__codelineno-14-75"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: MISMATCH -- this CPU is x86_64 but its own real flags do not</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-76" name="__codelineno-14-76" href="#__codelineno-14-76"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;advertise both avx2 and fma. Chapter 19&#39;s -mavx2 -mfma build would fail to</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-77" name="__codelineno-14-77" href="#__codelineno-14-77"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;run correctly here (illegal-instruction risk) even though it would compile.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-78" name="__codelineno-14-78" href="#__codelineno-14-78"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Use Chapter 19&#39;s own scalar fallback path, or an older -msse4.2-only build.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-79" name="__codelineno-14-79" href="#__codelineno-14-79"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-80" name="__codelineno-14-80" href="#__codelineno-14-80"></a><span class="cp">#elif defined(__aarch64__)</span>
+<a id="__codelineno-14-81" name="__codelineno-14-81" href="#__codelineno-14-81"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;compile-time architecture macro: __aarch64__ defined</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-82" name="__codelineno-14-82" href="#__codelineno-14-82"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;-&gt; Chapter 19&#39;s own generator will pick Isa::Neon for this machine.</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-83" name="__codelineno-14-83" href="#__codelineno-14-83"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">readRealCpuFlags</span><span class="p">();</span>
+<a id="__codelineno-14-84" name="__codelineno-14-84" href="#__codelineno-14-84"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasAsimd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;asimd&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-85" name="__codelineno-14-85" href="#__codelineno-14-85"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;real /proc/cpuinfo check: asimd flag %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">hasAsimd</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;PRESENT&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;ABSENT&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-86" name="__codelineno-14-86" href="#__codelineno-14-86"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hasAsimd</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-87" name="__codelineno-14-87" href="#__codelineno-14-87"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: this CPU&#39;s own real advertised flags CONFIRM the compile-time</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-88" name="__codelineno-14-88" href="#__codelineno-14-88"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;assumption -- Chapter 19&#39;s NEON path will genuinely compile and run here</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-89" name="__codelineno-14-89" href="#__codelineno-14-89"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;(confirmed). NEON is architecturally mandatory on aarch64, so this should</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-90" name="__codelineno-14-90" href="#__codelineno-14-90"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;never actually fail on a real aarch64 machine -- checked directly anyway,</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-91" name="__codelineno-14-91" href="#__codelineno-14-91"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;not assumed.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-92" name="__codelineno-14-92" href="#__codelineno-14-92"></a><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-14-93" name="__codelineno-14-93" href="#__codelineno-14-93"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: MISMATCH -- this reports as aarch64 but asimd is absent from its</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-94" name="__codelineno-14-94" href="#__codelineno-14-94"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;own real flags. This should not happen on real aarch64 hardware; re-check</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-95" name="__codelineno-14-95" href="#__codelineno-14-95"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;/proc/cpuinfo directly before trusting Chapter 19&#39;s own build.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-96" name="__codelineno-14-96" href="#__codelineno-14-96"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-14-97" name="__codelineno-14-97" href="#__codelineno-14-97"></a><span class="cp">#else</span>
+<a id="__codelineno-14-98" name="__codelineno-14-98" href="#__codelineno-14-98"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;compile-time architecture macro: neither __x86_64__ nor __aarch64__ is defined.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-99" name="__codelineno-14-99" href="#__codelineno-14-99"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Chapter 19&#39;s own generator only targets these two real ISAs (its own #error</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-100" name="__codelineno-14-100" href="#__codelineno-14-100"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;says so directly) -- this machine cannot follow Chapter 19&#39;s codegen sections</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-101" name="__codelineno-14-101" href="#__codelineno-14-101"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;as written; the interpreter-only path (Chapters 4-17) still applies.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-102" name="__codelineno-14-102" href="#__codelineno-14-102"></a><span class="cp">#endif</span>
+<a id="__codelineno-14-103" name="__codelineno-14-103" href="#__codelineno-14-103"></a>
+<a id="__codelineno-14-104" name="__codelineno-14-104" href="#__codelineno-14-104"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">real result: read directly from this machine&#39;s own /proc/cpuinfo, not assumed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-105" name="__codelineno-14-105" href="#__codelineno-14-105"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;from the compile-time architecture macro alone.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-14-106" name="__codelineno-14-106" href="#__codelineno-14-106"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-14-107" name="__codelineno-14-107" href="#__codelineno-14-107"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>094_detecting_your_real_vector_isa_before_chapter_19.cpp<span class="w"> </span>-o<span class="w"> </span>094_detecting_your_real_vector_isa_before_chapter_19_driver
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>./094_detecting_your_real_vector_isa_before_chapter_19_driver
+</code></pre></div>
+<p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>compile-time architecture macro: __x86_64__ defined
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>-&gt; Chapter 19&#39;s own generator will pick Isa::Avx2 for this machine.
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>real /proc/cpuinfo check: avx2 flag PRESENT, fma flag PRESENT
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>self-check: this CPU&#39;s own real advertised flags CONFIRM the compile-time
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>assumption -- Chapter 19&#39;s AVX2/FMA path will genuinely compile and run here
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>(confirmed)
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>real result: read directly from this machine&#39;s own /proc/cpuinfo, not assumed
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>from the compile-time architecture macro alone.
+</code></pre></div>
+<p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>compile-time architecture macro: __aarch64__ defined
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>-&gt; Chapter 19&#39;s own generator will pick Isa::Neon for this machine.
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>real /proc/cpuinfo check: asimd flag PRESENT
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>self-check: this CPU&#39;s own real advertised flags CONFIRM the compile-time
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>assumption -- Chapter 19&#39;s NEON path will genuinely compile and run here
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>(confirmed). NEON is architecturally mandatory on aarch64, so this should
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>never actually fail on a real aarch64 machine -- checked directly anyway,
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>not assumed.
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>real result: read directly from this machine&#39;s own /proc/cpuinfo, not assumed
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>from the compile-time architecture macro alone.
+</code></pre></div>
+<p><em>Genuinely different real reports on the two machines, exactly as expected -- AVX2/FMA confirmed present on the cloud sandbox's own real CPU, NEON (asimd) confirmed present on the device's own real CPU -- both machines' own real /proc/cpuinfo agreeing with Chapter 19's own compile-time architecture assumption, not merely trusting it.</em></p>
+<h2 id="a3-verifying-an-optional-cuda-toolkit-install">A.3 -- Verifying an optional CUDA toolkit install<a class="headerlink" href="#a3-verifying-an-optional-cuda-toolkit-install" title="Permanent link">&para;</a></h2>
+<p>Chapter 18 onward needs a real CUDA toolkit (<code>nvcc</code>) to compile CUDA
+Hammer's own generated <code>.cu</code> programs, but -- stated directly in
+getting-started.md's own honesty-discipline section -- never needs a
+physical GPU: "a generated CUDA kernel's compiled correctness...is
+verified for real, but its runtime result is verified by [a]
+host-side reference implementation...not by executing the kernel
+itself." This section is a minimal, standalone smoke test built on
+that exact same honest split, meant to be run BEFORE Chapter 18 to
+confirm an <code>nvcc</code> install works at all:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>  real nvcc compile (always attempted):
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    a trivial __global__ vectorAddKernel, real host/device pointer
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>    types, a real CUDA_CHECK macro -- if this reaches its own first
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>    printf at all, the toolkit&#39;s own two-stage (device+host)
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>    compilation pipeline genuinely works
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>  real cudaGetDeviceCount() (always checked, never assumed):
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>    0 devices  -&gt; the SAME real result both of this book&#39;s own
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>                  machines report; the file&#39;s own compiled
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a>                  correctness is confirmed, its runtime result is
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a>                  not claimed, exactly Chapter 18&#39;s own rule
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>    &gt;0 devices -&gt; the kernel is actually launched and its real
+<a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>                  output checked against a real host reference,
+<a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a>                  since a physical GPU genuinely exists to run it on
+</code></pre></div>
+<p>This file is CUDA-linked (a real <code>.cu</code> file), so per this book's own
+standing cross-machine rule it is verified on the cloud sandbox ONLY
+-- the device has no <code>nvcc</code> at all, confirmed directly in TOC.md's
+own toolchain notes, so there is nothing to cross-verify it against.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer&#39;s Toolchain</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="c1">// 095_verifying_an_optional_cuda_toolkit_install.cu</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="c1">//</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1">// Section A.3 -- Chapter 18 onward needs a real CUDA toolkit (`nvcc`)</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="c1">// to compile CUDA Hammer&#39;s own generated .cu programs, but never needs</span>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="c1">// a physical GPU: getting-started.md already states this book&#39;s own</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="c1">// honest limitation directly (&quot;neither authoring machine has a</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="c1">// physical NVIDIA GPU... a generated CUDA kernel&#39;s compiled</span>
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="c1">// correctness is verified for real, but its runtime result is</span>
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a><span class="c1">// verified by [a] host-side reference implementation, not by</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="c1">// executing the kernel itself&quot;). This section is a minimal, standalone</span>
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="c1">// smoke test a reader can run BEFORE Chapter 18 to confirm their own</span>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="c1">// `nvcc` install works at all, using the exact same honest split:</span>
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="c1">// real compile, no claimed run.</span>
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a><span class="c1">//</span>
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a><span class="c1">// CUDA-linked (.cu) -- per this book&#39;s own standing cross-machine</span>
+<a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a><span class="c1">// rule, verified on the cloud sandbox ONLY (the device has no nvcc,</span>
+<a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a><span class="c1">// confirmed directly in TOC.md&#39;s own toolchain notes).</span>
+<a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a><span class="c1">//</span>
+<a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a><span class="c1">// Compile: nvcc -std=c++17 -arch=sm_80 095_verifying_an_optional_cuda_toolkit_install.cu -o 095_driver</span>
+<a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a><span class="c1">// Run:     ./095_driver   (only prints the compile-time report below --</span>
+<a id="__codelineno-19-22" name="__codelineno-19-22" href="#__codelineno-19-22"></a><span class="c1">//                          the kernel itself is launched, per CUDA&#39;s</span>
+<a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a><span class="c1">//                          own async launch model, but this program</span>
+<a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a><span class="c1">//                          never claims its numeric result is real,</span>
+<a id="__codelineno-19-25" name="__codelineno-19-25" href="#__codelineno-19-25"></a><span class="c1">//                          since no physical GPU exists here to run it on)</span>
+<a id="__codelineno-19-26" name="__codelineno-19-26" href="#__codelineno-19-26"></a>
+<a id="__codelineno-19-27" name="__codelineno-19-27" href="#__codelineno-19-27"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-19-28" name="__codelineno-19-28" href="#__codelineno-19-28"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cuda_runtime.h&gt;</span>
+<a id="__codelineno-19-29" name="__codelineno-19-29" href="#__codelineno-19-29"></a>
+<a id="__codelineno-19-30" name="__codelineno-19-30" href="#__codelineno-19-30"></a><span class="cp">#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) { \</span>
+<a id="__codelineno-19-31" name="__codelineno-19-31" href="#__codelineno-19-31"></a><span class="cp">    printf(&quot;CUDA_CHECK failed: %s (%s:%d): %s\n&quot;, #expr, __FILE__, __LINE__, cudaGetErrorString(_e)); } } while (0)</span>
+<a id="__codelineno-19-32" name="__codelineno-19-32" href="#__codelineno-19-32"></a>
+<a id="__codelineno-19-33" name="__codelineno-19-33" href="#__codelineno-19-33"></a><span class="c1">// A trivial real elementwise add kernel -- not from CUDA Hammer&#39;s own</span>
+<a id="__codelineno-19-34" name="__codelineno-19-34" href="#__codelineno-19-34"></a><span class="c1">// codegen (Chapter 18 generates this shape directly from the IR), just</span>
+<a id="__codelineno-19-35" name="__codelineno-19-35" href="#__codelineno-19-35"></a><span class="c1">// enough real CUDA C++ to exercise a real compile end-to-end.</span>
+<a id="__codelineno-19-36" name="__codelineno-19-36" href="#__codelineno-19-36"></a><span class="n">__global__</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">vectorAddKernel</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="kt">float</span><span class="o">*</span><span class="w"> </span><span class="n">out</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-19-37" name="__codelineno-19-37" href="#__codelineno-19-37"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">blockIdx</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">blockDim</span><span class="p">.</span><span class="n">x</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">threadIdx</span><span class="p">.</span><span class="n">x</span><span class="p">;</span>
+<a id="__codelineno-19-38" name="__codelineno-19-38" href="#__codelineno-19-38"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w"> </span><span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a id="__codelineno-19-39" name="__codelineno-19-39" href="#__codelineno-19-39"></a><span class="p">}</span>
+<a id="__codelineno-19-40" name="__codelineno-19-40" href="#__codelineno-19-40"></a>
+<a id="__codelineno-19-41" name="__codelineno-19-41" href="#__codelineno-19-41"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-19-42" name="__codelineno-19-42" href="#__codelineno-19-42"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Appendix A.3: verifying an optional CUDA toolkit install ===</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-43" name="__codelineno-19-43" href="#__codelineno-19-43"></a>
+<a id="__codelineno-19-44" name="__codelineno-19-44" href="#__codelineno-19-44"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">deviceCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-19-45" name="__codelineno-19-45" href="#__codelineno-19-45"></a><span class="w">    </span><span class="n">cudaError_t</span><span class="w"> </span><span class="n">countErr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cudaGetDeviceCount</span><span class="p">(</span><span class="o">&amp;</span><span class="n">deviceCount</span><span class="p">);</span>
+<a id="__codelineno-19-46" name="__codelineno-19-46" href="#__codelineno-19-46"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;real cudaGetDeviceCount(): %s, deviceCount=%d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-47" name="__codelineno-19-47" href="#__codelineno-19-47"></a><span class="w">           </span><span class="n">cudaGetErrorString</span><span class="p">(</span><span class="n">countErr</span><span class="p">),</span><span class="w"> </span><span class="n">deviceCount</span><span class="p">);</span>
+<a id="__codelineno-19-48" name="__codelineno-19-48" href="#__codelineno-19-48"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;(this book&#39;s own two authoring machines both report 0 here -- no physical</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-49" name="__codelineno-19-49" href="#__codelineno-19-49"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;GPU on either side, stated directly in getting-started.md; this is expected,</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-50" name="__codelineno-19-50" href="#__codelineno-19-50"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;not an install failure)</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-51" name="__codelineno-19-51" href="#__codelineno-19-51"></a>
+<a id="__codelineno-19-52" name="__codelineno-19-52" href="#__codelineno-19-52"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;real nvcc compile of this file already succeeded -- reaching this printf at</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-53" name="__codelineno-19-53" href="#__codelineno-19-53"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;all confirms a working CUDA toolkit: a real .cu file with a real __global__</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-54" name="__codelineno-19-54" href="#__codelineno-19-54"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;kernel, real host&lt;-&gt;device pointer types, and a real CUDA_CHECK macro all</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-55" name="__codelineno-19-55" href="#__codelineno-19-55"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;compiled through nvcc&#39;s real two-stage (device+host) pipeline.</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-56" name="__codelineno-19-56" href="#__codelineno-19-56"></a>
+<a id="__codelineno-19-57" name="__codelineno-19-57" href="#__codelineno-19-57"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">deviceCount</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-19-58" name="__codelineno-19-58" href="#__codelineno-19-58"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;a real physical GPU WAS detected on this machine -- launching the real</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-59" name="__codelineno-19-59" href="#__codelineno-19-59"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;kernel and checking its real output:</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-60" name="__codelineno-19-60" href="#__codelineno-19-60"></a><span class="w">        </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span><span class="p">;</span>
+<a id="__codelineno-19-61" name="__codelineno-19-61" href="#__codelineno-19-61"></a><span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">hA</span><span class="p">[</span><span class="n">n</span><span class="p">],</span><span class="w"> </span><span class="n">hB</span><span class="p">[</span><span class="n">n</span><span class="p">],</span><span class="w"> </span><span class="n">hOut</span><span class="p">[</span><span class="n">n</span><span class="p">];</span>
+<a id="__codelineno-19-62" name="__codelineno-19-62" href="#__codelineno-19-62"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">hA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">);</span><span class="w"> </span><span class="n">hB</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0f</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-19-63" name="__codelineno-19-63" href="#__codelineno-19-63"></a><span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="o">*</span><span class="n">dA</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">dB</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">dOut</span><span class="p">;</span>
+<a id="__codelineno-19-64" name="__codelineno-19-64" href="#__codelineno-19-64"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaMalloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dA</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">)));</span>
+<a id="__codelineno-19-65" name="__codelineno-19-65" href="#__codelineno-19-65"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaMalloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dB</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">)));</span>
+<a id="__codelineno-19-66" name="__codelineno-19-66" href="#__codelineno-19-66"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaMalloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dOut</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">)));</span>
+<a id="__codelineno-19-67" name="__codelineno-19-67" href="#__codelineno-19-67"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">dA</span><span class="p">,</span><span class="w"> </span><span class="n">hA</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">),</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">));</span>
+<a id="__codelineno-19-68" name="__codelineno-19-68" href="#__codelineno-19-68"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">dB</span><span class="p">,</span><span class="w"> </span><span class="n">hB</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">),</span><span class="w"> </span><span class="n">cudaMemcpyHostToDevice</span><span class="p">));</span>
+<a id="__codelineno-19-69" name="__codelineno-19-69" href="#__codelineno-19-69"></a><span class="w">        </span><span class="n">vectorAddKernel</span><span class="o">&lt;&lt;&lt;</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="o">&gt;&gt;&gt;</span><span class="p">(</span><span class="n">dA</span><span class="p">,</span><span class="w"> </span><span class="n">dB</span><span class="p">,</span><span class="w"> </span><span class="n">dOut</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">);</span>
+<a id="__codelineno-19-70" name="__codelineno-19-70" href="#__codelineno-19-70"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaGetLastError</span><span class="p">());</span>
+<a id="__codelineno-19-71" name="__codelineno-19-71" href="#__codelineno-19-71"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaDeviceSynchronize</span><span class="p">());</span>
+<a id="__codelineno-19-72" name="__codelineno-19-72" href="#__codelineno-19-72"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaMemcpy</span><span class="p">(</span><span class="n">hOut</span><span class="p">,</span><span class="w"> </span><span class="n">dOut</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="kt">float</span><span class="p">),</span><span class="w"> </span><span class="n">cudaMemcpyDeviceToHost</span><span class="p">));</span>
+<a id="__codelineno-19-73" name="__codelineno-19-73" href="#__codelineno-19-73"></a><span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-19-74" name="__codelineno-19-74" href="#__codelineno-19-74"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hOut</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">hA</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">hB</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-19-75" name="__codelineno-19-75" href="#__codelineno-19-75"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;real kernel output matches host reference exactly: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;NO -- MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-76" name="__codelineno-19-76" href="#__codelineno-19-76"></a><span class="w">        </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaFree</span><span class="p">(</span><span class="n">dA</span><span class="p">));</span><span class="w"> </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaFree</span><span class="p">(</span><span class="n">dB</span><span class="p">));</span><span class="w"> </span><span class="n">CUDA_CHECK</span><span class="p">(</span><span class="n">cudaFree</span><span class="p">(</span><span class="n">dOut</span><span class="p">));</span>
+<a id="__codelineno-19-77" name="__codelineno-19-77" href="#__codelineno-19-77"></a><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-19-78" name="__codelineno-19-78" href="#__codelineno-19-78"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;no physical GPU on this machine (deviceCount=0) -- the same honest</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-79" name="__codelineno-19-79" href="#__codelineno-19-79"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;limitation this book&#39;s own CUDA sections (Chapter 18 onward) have carried</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-80" name="__codelineno-19-80" href="#__codelineno-19-80"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;since Chapter 18: this file&#39;s own compiled correctness is confirmed (it</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-81" name="__codelineno-19-81" href="#__codelineno-19-81"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;built), its runtime result is not claimed here, the same split every</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-82" name="__codelineno-19-82" href="#__codelineno-19-82"></a><span class="w">        </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;Chapter 18+ .cu file in this book already follows.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-19-83" name="__codelineno-19-83" href="#__codelineno-19-83"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-19-84" name="__codelineno-19-84" href="#__codelineno-19-84"></a>
+<a id="__codelineno-19-85" name="__codelineno-19-85" href="#__codelineno-19-85"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-19-86" name="__codelineno-19-86" href="#__codelineno-19-86"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>nvcc<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-arch<span class="o">=</span>sm_80<span class="w"> </span>095_verifying_an_optional_cuda_toolkit_install.cu<span class="w"> </span>-o<span class="w"> </span>095_verifying_an_optional_cuda_toolkit_install_driver
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>./095_verifying_an_optional_cuda_toolkit_install_driver
+</code></pre></div>
+<p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output; CUDA-linked, cloud-only per this book's standing rule):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>=== Appendix A.3: verifying an optional CUDA toolkit install ===
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>real cudaGetDeviceCount(): no CUDA-capable device is detected, deviceCount=0
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>(this book&#39;s own two authoring machines both report 0 here -- no physical
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>GPU on either side, stated directly in getting-started.md; this is expected,
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>not an install failure)
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>real nvcc compile of this file already succeeded -- reaching this printf at
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>all confirms a working CUDA toolkit: a real .cu file with a real __global__
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>kernel, real host&lt;-&gt;device pointer types, and a real CUDA_CHECK macro all
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>compiled through nvcc&#39;s real two-stage (device+host) pipeline.
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>no physical GPU on this machine (deviceCount=0) -- the same honest
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>limitation this book&#39;s own CUDA sections (Chapter 18 onward) have carried
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>since Chapter 18: this file&#39;s own compiled correctness is confirmed (it
+<a id="__codelineno-21-16" name="__codelineno-21-16" href="#__codelineno-21-16"></a>built), its runtime result is not claimed here, the same split every
+<a id="__codelineno-21-17" name="__codelineno-21-17" href="#__codelineno-21-17"></a>Chapter 18+ .cu file in this book already follows.
+</code></pre></div>
+<p><em>0 physical GPUs, on this machine, as expected -- reaching every one of this program's own printf calls already confirms nvcc's own real two-stage compilation pipeline works end to end; the honest cudaGetDeviceCount()=0 report is the same real result Chapter 18 onward has reported every time, not a new finding, just re-checked directly by a reader's own first CUDA build.</em></p>
+<h2 id="a4-the-capstone-one-combined-toolchain-report">A.4 -- The capstone: one combined toolchain report<a class="headerlink" href="#a4-the-capstone-one-combined-toolchain-report" title="Permanent link">&para;</a></h2>
+<p>Sections A.1 and A.2 each checked one real, machine-portable piece of
+this book's own toolchain (the real minimum C++ standard, the real
+vector ISA); Section A.3's own check is CUDA-linked and so stays
+separate, cloud-only. This capstone folds A.1's and A.2's own two
+checks into ONE consolidated report -- plain C++, no CUDA linkage, so
+per this book's own standing rule it is cross-verified on BOTH the
+cloud sandbox and the device, exactly like every other plain-C++
+capstone in this book since Chapter 1:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>  one real program, both machines:
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>  [A.1] real __cplusplus value + a live std::make_unique probe
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>        (if this line itself failed to compile, main() would never
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>        be reached at all -- its own presence here re-confirms A.1&#39;s
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>        finding live, not by repeating the earlier sweep&#39;s numbers)
+<a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>
+<a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a>  [A.2] real compile-time architecture macro + real /proc/cpuinfo
+<a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a>        flags, read directly on THIS machine
+<a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a>
+<a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a>  [A.3] reported but not re-run here (CUDA-linked, checked
+<a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a>        separately in Section A.3)
+</code></pre></div>
+<p>Run for real on both of this book's own machines, this capstone's own
+two real reports are then checked directly against what TOC.md's own
+"Status" section already claimed when this book was first scaffolded
+(cloud sandbox: <code>g++ 13.3.0</code>, real <code>nvcc 12.0</code>, AVX2/AVX512F/FMA;
+device: <code>g++ 11.4.0</code>, no <code>nvcc</code>, real NEON) -- not re-asserting those
+claims from memory, but re-deriving them, independently, from this
+one small program's own real, fresh output, the same "measure, don't
+assert" discipline this book has followed since Chapter 1.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer&#39;s Toolchain</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="c1">// 096_one_combined_toolchain_report_the_capstone.cpp</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1">//</span>
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="c1">// Section A.4 (capstone) -- Sections A.1-A.3 each checked one real</span>
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="c1">// piece of the toolchain this book needs (the real minimum C++</span>
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="c1">// standard, the real vector ISA, an optional CUDA toolkit). This file</span>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="c1">// combines the two machine-portable checks (A.1&#39;s real __cplusplus</span>
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="c1">// value, A.2&#39;s real /proc/cpuinfo-based ISA detection) into ONE</span>
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="c1">// consolidated report, plain C++ with no CUDA linkage -- so, per this</span>
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="c1">// book&#39;s own standing cross-machine rule, it is cross-verified on</span>
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="c1">// BOTH the cloud sandbox and the device. Its own real output on each</span>
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="c1">// machine is then checked directly against what TOC.md&#39;s own &quot;Status&quot;</span>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="c1">// section already claimed about each machine, closing the loop: not</span>
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="c1">// re-asserting those claims, RE-VERIFYING them.</span>
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="c1">//</span>
+<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="c1">// Compile: g++ -std=c++17 -Wall -Wextra -O2 096_one_combined_toolchain_report_the_capstone.cpp -o 096_driver</span>
+<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a><span class="c1">// Run:     ./096_driver</span>
+<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>
+<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;fstream&gt;</span>
+<a id="__codelineno-23-21" name="__codelineno-23-21" href="#__codelineno-23-21"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;memory&gt;</span>
+<a id="__codelineno-23-22" name="__codelineno-23-22" href="#__codelineno-23-22"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;sstream&gt;</span>
+<a id="__codelineno-23-23" name="__codelineno-23-23" href="#__codelineno-23-23"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string&gt;</span>
+<a id="__codelineno-23-24" name="__codelineno-23-24" href="#__codelineno-23-24"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-23-25" name="__codelineno-23-25" href="#__codelineno-23-25"></a>
+<a id="__codelineno-23-26" name="__codelineno-23-26" href="#__codelineno-23-26"></a><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">readRealCpuFlags</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-27" name="__codelineno-23-27" href="#__codelineno-23-27"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">ifstream</span><span class="w"> </span><span class="n">f</span><span class="p">(</span><span class="s">&quot;/proc/cpuinfo&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-28" name="__codelineno-23-28" href="#__codelineno-23-28"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<a id="__codelineno-23-29" name="__codelineno-23-29" href="#__codelineno-23-29"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">line</span><span class="p">;</span>
+<a id="__codelineno-23-30" name="__codelineno-23-30" href="#__codelineno-23-30"></a><span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">getline</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="w"> </span><span class="n">line</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-31" name="__codelineno-23-31" href="#__codelineno-23-31"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">line</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&quot;flags&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">line</span><span class="p">.</span><span class="n">rfind</span><span class="p">(</span><span class="s">&quot;Features&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-32" name="__codelineno-23-32" href="#__codelineno-23-32"></a><span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">istringstream</span><span class="w"> </span><span class="nf">iss</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a id="__codelineno-23-33" name="__codelineno-23-33" href="#__codelineno-23-33"></a><span class="w">            </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">token</span><span class="p">;</span>
+<a id="__codelineno-23-34" name="__codelineno-23-34" href="#__codelineno-23-34"></a><span class="w">            </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="n">iss</span><span class="w"> </span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="n">flags</span><span class="p">.</span><span class="n">push_back</span><span class="p">(</span><span class="n">token</span><span class="p">);</span>
+<a id="__codelineno-23-35" name="__codelineno-23-35" href="#__codelineno-23-35"></a><span class="w">            </span><span class="k">break</span><span class="p">;</span>
+<a id="__codelineno-23-36" name="__codelineno-23-36" href="#__codelineno-23-36"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-23-37" name="__codelineno-23-37" href="#__codelineno-23-37"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-23-38" name="__codelineno-23-38" href="#__codelineno-23-38"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span>
+<a id="__codelineno-23-39" name="__codelineno-23-39" href="#__codelineno-23-39"></a><span class="p">}</span>
+<a id="__codelineno-23-40" name="__codelineno-23-40" href="#__codelineno-23-40"></a>
+<a id="__codelineno-23-41" name="__codelineno-23-41" href="#__codelineno-23-41"></a><span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span><span class="w"> </span><span class="n">want</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-42" name="__codelineno-23-42" href="#__codelineno-23-42"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">f</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">flags</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">f</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">want</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-23-43" name="__codelineno-23-43" href="#__codelineno-23-43"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-23-44" name="__codelineno-23-44" href="#__codelineno-23-44"></a><span class="p">}</span>
+<a id="__codelineno-23-45" name="__codelineno-23-45" href="#__codelineno-23-45"></a>
+<a id="__codelineno-23-46" name="__codelineno-23-46" href="#__codelineno-23-46"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-23-47" name="__codelineno-23-47" href="#__codelineno-23-47"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Appendix A.4 (capstone): one combined toolchain report ===</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-48" name="__codelineno-23-48" href="#__codelineno-23-48"></a>
+<a id="__codelineno-23-49" name="__codelineno-23-49" href="#__codelineno-23-49"></a><span class="w">    </span><span class="c1">// ---- A.1&#39;s own check, folded in here: real __cplusplus value ----</span>
+<a id="__codelineno-23-50" name="__codelineno-23-50" href="#__codelineno-23-50"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="n">cxxStd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">long</span><span class="o">&gt;</span><span class="p">(</span><span class="n">__cplusplus</span><span class="p">);</span>
+<a id="__codelineno-23-51" name="__codelineno-23-51" href="#__codelineno-23-51"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;[A.1] real __cplusplus = %ldL&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">cxxStd</span><span class="p">);</span>
+<a id="__codelineno-23-52" name="__codelineno-23-52" href="#__codelineno-23-52"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cxxStd</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mf">201703L</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; (C++17 or newer -- this book&#39;s own -std=c++17 convention met)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-53" name="__codelineno-23-53" href="#__codelineno-23-53"></a><span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cxxStd</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mf">201402L</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; (C++14 -- CUDA Hammer&#39;s own real minimum, per Section A.1&#39;s sweep, but below this book&#39;s own -std=c++17 convention)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-54" name="__codelineno-23-54" href="#__codelineno-23-54"></a><span class="w">    </span><span class="k">else</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot; (below C++14 -- CUDA Hammer&#39;s own real minimum; this book&#39;s code will not compile)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-55" name="__codelineno-23-55" href="#__codelineno-23-55"></a><span class="w">    </span><span class="c1">// A real std::make_unique allocation -- if this line itself failed</span>
+<a id="__codelineno-23-56" name="__codelineno-23-56" href="#__codelineno-23-56"></a><span class="w">    </span><span class="c1">// to compile, this file would never have reached main() at all, so</span>
+<a id="__codelineno-23-57" name="__codelineno-23-57" href="#__codelineno-23-57"></a><span class="w">    </span><span class="c1">// its presence here is itself a live re-check of A.1&#39;s own finding.</span>
+<a id="__codelineno-23-58" name="__codelineno-23-58" href="#__codelineno-23-58"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">probe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">make_unique</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-23-59" name="__codelineno-23-59" href="#__codelineno-23-59"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;      std::make_unique probe object: %d (confirms C++14&#39;s own std::make_unique compiled)</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="o">*</span><span class="n">probe</span><span class="p">);</span>
+<a id="__codelineno-23-60" name="__codelineno-23-60" href="#__codelineno-23-60"></a>
+<a id="__codelineno-23-61" name="__codelineno-23-61" href="#__codelineno-23-61"></a><span class="w">    </span><span class="c1">// ---- A.2&#39;s own check, folded in here: real ISA detection ----</span>
+<a id="__codelineno-23-62" name="__codelineno-23-62" href="#__codelineno-23-62"></a><span class="cp">#if defined(__x86_64__)</span>
+<a id="__codelineno-23-63" name="__codelineno-23-63" href="#__codelineno-23-63"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;[A.2] compile-time architecture: __x86_64__ -- Chapter 19 targets Isa::Avx2 here</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-64" name="__codelineno-23-64" href="#__codelineno-23-64"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">readRealCpuFlags</span><span class="p">();</span>
+<a id="__codelineno-23-65" name="__codelineno-23-65" href="#__codelineno-23-65"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">avx2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;avx2&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">fma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;fma&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">avx512f</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;avx512f&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-66" name="__codelineno-23-66" href="#__codelineno-23-66"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;      real /proc/cpuinfo: avx2=%s fma=%s avx512f=%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-23-67" name="__codelineno-23-67" href="#__codelineno-23-67"></a><span class="w">           </span><span class="n">avx2</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;no&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">fma</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;no&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">avx512f</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;no&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-68" name="__codelineno-23-68" href="#__codelineno-23-68"></a><span class="cp">#elif defined(__aarch64__)</span>
+<a id="__codelineno-23-69" name="__codelineno-23-69" href="#__codelineno-23-69"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;[A.2] compile-time architecture: __aarch64__ -- Chapter 19 targets Isa::Neon here</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-70" name="__codelineno-23-70" href="#__codelineno-23-70"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="w"> </span><span class="n">flags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">readRealCpuFlags</span><span class="p">();</span>
+<a id="__codelineno-23-71" name="__codelineno-23-71" href="#__codelineno-23-71"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">asimd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hasFlag</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;asimd&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-72" name="__codelineno-23-72" href="#__codelineno-23-72"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;      real /proc/cpuinfo: asimd=%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">asimd</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;yes&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;no&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-73" name="__codelineno-23-73" href="#__codelineno-23-73"></a><span class="cp">#else</span>
+<a id="__codelineno-23-74" name="__codelineno-23-74" href="#__codelineno-23-74"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;[A.2] neither __x86_64__ nor __aarch64__ -- outside Chapter 19&#39;s own two real targets</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-75" name="__codelineno-23-75" href="#__codelineno-23-75"></a><span class="cp">#endif</span>
+<a id="__codelineno-23-76" name="__codelineno-23-76" href="#__codelineno-23-76"></a>
+<a id="__codelineno-23-77" name="__codelineno-23-77" href="#__codelineno-23-77"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">[A.3] CUDA toolkit (nvcc): checked separately (Section A.3), since this plain</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-78" name="__codelineno-23-78" href="#__codelineno-23-78"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;      C++ file carries no CUDA linkage -- run 095&#39;s own driver directly on this</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-79" name="__codelineno-23-79" href="#__codelineno-23-79"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;      machine, or check `nvcc --version` at a shell, to confirm it here too.</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-80" name="__codelineno-23-80" href="#__codelineno-23-80"></a>
+<a id="__codelineno-23-81" name="__codelineno-23-81" href="#__codelineno-23-81"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== real result: this machine&#39;s own toolchain report, generated by actually</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-82" name="__codelineno-23-82" href="#__codelineno-23-82"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;running compiled code on it, not copied from another machine&#39;s report ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-23-83" name="__codelineno-23-83" href="#__codelineno-23-83"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-23-84" name="__codelineno-23-84" href="#__codelineno-23-84"></a><span class="p">}</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>096_one_combined_toolchain_report_the_capstone.cpp<span class="w"> </span>-o<span class="w"> </span>096_one_combined_toolchain_report_the_capstone_driver
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>./096_one_combined_toolchain_report_the_capstone_driver
+</code></pre></div>
+<p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>=== Appendix A.4 (capstone): one combined toolchain report ===
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>[A.1] real __cplusplus = 201703L (C++17 or newer -- this book&#39;s own -std=c++17 convention met)
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>      std::make_unique probe object: 1 (confirms C++14&#39;s own std::make_unique compiled)
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>[A.2] compile-time architecture: __x86_64__ -- Chapter 19 targets Isa::Avx2 here
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>      real /proc/cpuinfo: avx2=yes fma=yes avx512f=yes
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>[A.3] CUDA toolkit (nvcc): checked separately (Section A.3), since this plain
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>      C++ file carries no CUDA linkage -- run 095&#39;s own driver directly on this
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>      machine, or check `nvcc --version` at a shell, to confirm it here too.
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>
+<a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a>=== real result: this machine&#39;s own toolchain report, generated by actually
+<a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>running compiled code on it, not copied from another machine&#39;s report ===
+</code></pre></div>
+<p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>=== Appendix A.4 (capstone): one combined toolchain report ===
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>[A.1] real __cplusplus = 201703L (C++17 or newer -- this book&#39;s own -std=c++17 convention met)
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>      std::make_unique probe object: 1 (confirms C++14&#39;s own std::make_unique compiled)
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>[A.2] compile-time architecture: __aarch64__ -- Chapter 19 targets Isa::Neon here
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>      real /proc/cpuinfo: asimd=yes
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>[A.3] CUDA toolkit (nvcc): checked separately (Section A.3), since this plain
+<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>      C++ file carries no CUDA linkage -- run 095&#39;s own driver directly on this
+<a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a>      machine, or check `nvcc --version` at a shell, to confirm it here too.
+<a id="__codelineno-26-12" name="__codelineno-26-12" href="#__codelineno-26-12"></a>
+<a id="__codelineno-26-13" name="__codelineno-26-13" href="#__codelineno-26-13"></a>=== real result: this machine&#39;s own toolchain report, generated by actually
+<a id="__codelineno-26-14" name="__codelineno-26-14" href="#__codelineno-26-14"></a>running compiled code on it, not copied from another machine&#39;s report ===
+</code></pre></div>
+<p><em>Genuinely different, genuinely correct real reports on both machines -- matching TOC.md's own toolchain notes exactly (cloud: x86_64, AVX2/FMA; device: aarch64, NEON) -- independently RE-DERIVED here by this one small program's own real output, not copied from that earlier record.</em></p>
+<h2 id="what-appendix-a-actually-shows">What Appendix A actually shows<a class="headerlink" href="#what-appendix-a-actually-shows" title="Permanent link">&para;</a></h2>
+<p>Nothing here is a simulation, and nothing here was asserted from
+memory. Section A.1's real 71-file sweep found this book's own actual
+minimum C++ standard is C++14, not C++17, and named the exact two
+real constructs responsible (<code>std::make_unique</code>, 54 files; digit
+separators, 4 files) rather than guessing at "modern C++ features."
+Section A.2 turned Chapter 19's own silent compile-time assumption
+into a directly-checked one, reading each machine's own real
+<code>/proc/cpuinfo</code>. Section A.3 gave a reader a minimal, honest way to
+confirm their own <code>nvcc</code> install before reaching Chapter 18, without
+ever claiming a kernel ran on hardware that was never there to run it
+on. Section A.4's capstone folded the two portable checks into one
+real program and ran it for real on both of this book's own machines,
+independently re-deriving -- not re-quoting -- what TOC.md's own
+"Status" section already said about each one.</p>
+<p>This appendix is also a real, honest choice about scope: unlike
+Appendix H's own stated framing ("general CS background, cited to
+general algorithms references...rather than measured/executed the
+way the book's own chapters are"), Appendix A's own subject --
+whether a toolchain actually works -- is exactly the kind of claim
+this book has insisted on measuring rather than asserting since
+Chapter 1, so it gets the same real-code, real-compile, real-run,
+cross-machine-verified treatment every numbered chapter has had.</p>
+<p>Appendix B (a Practice Quiz) is the next candidate in the current
+Appendices list, still PLANNED and not yet written.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../part7/34-quantitative-finance-a-real-binomial-option-pricer/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 34. Quantitative Finance: A Real Binomial Option Pricer">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                34. Quantitative Finance: A Real Binomial Option Pricer
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
