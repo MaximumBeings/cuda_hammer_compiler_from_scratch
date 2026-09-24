@@ -1,0 +1,2415 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Tensor Compiler in C++, From a Minimal IR to Fused, Autotuned Kernels">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../a-installation-and-setup-building-cuda-hammers-toolchain/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>B. Practice Quiz - CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#appendix-b-practice-quiz" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              B. Practice Quiz
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/01-the-cost-of-eager-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. The Cost of Eager Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/02-what-a-compiler-pipeline-looks-like/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. What a Compiler Pipeline Looks Like
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/03-a-tour-of-real-ml-compilers-xla-tvm-and-triton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/04-representing-tensors-and-operations-as-a-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Representing Tensors and Operations as a Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/05-building-the-graph-cuda-hammers-frontend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Building the Graph: CUDA Hammer's Frontend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/06-graph-validation-and-shape-inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Graph Validation and Shape Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/07-printing-and-visualizing-cuda-hammers-ir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Printing and Visualizing CUDA Hammer's IR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- Basic Optimization Passes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- Basic Optimization Passes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/08-the-pass-manager-structuring-compiler-transformations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. The Pass Manager: Structuring Compiler Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/09-constant-folding-and-dead-code-elimination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. Constant Folding and Dead Code Elimination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/10-common-subexpression-elimination-for-tensor-graphs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. Common Subexpression Elimination for Tensor Graphs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/11-algebraic-simplification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. Algebraic Simplification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Operator Fusion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Operator Fusion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/12-why-fusion-matters-memory-bound-vs-compute-bound-kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Why Fusion Matters: Memory-Bound vs. Compute-Bound Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/13-elementwise-fusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Elementwise Fusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/14-reduction-fusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. Reduction Fusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/15-loop-fusion-and-tiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. Loop Fusion and Tiling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/16-fusion-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Fusion Boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Code Generation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Code Generation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/17-lowering-to-loops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Lowering CUDA Hammer's IR to Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/18-generating-cuda-cpp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Generating CUDA C++ From the Fused IR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/19-generating-vectorized-cpu-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. Generating Vectorized CPU Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/20-jit-backend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. A JIT Backend: Compiling and Loading Generated Code at Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Autotuning
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Autotuning
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/21-the-search-space/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. The Search Space: Tile Sizes, Loop Orders, and Unrolling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/22-cost-models-vs-measurement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Cost Models vs. Measurement-Based Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/23-building-the-autotuner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Building CUDA Hammer's Autotuner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/24-caching-and-reusing-autotuning-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Caching and Reusing Autotuning Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- Case Studies of Real Compilers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- Case Studies of Real Compilers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/25-xla-fusion-and-autotuning-in-a-real-production-compiler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. XLA: Fusion and Autotuning in a Real Production Compiler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/26-tvms-real-modern-stack-relax-tir-and-metaschedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. TVM's Real Modern Stack: Relax, TIR, and MetaSchedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/27-tritons-block-level-programming-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Triton's Block-Level Programming Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/28-torch-compile-and-torchinductor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. torch.compile and TorchInductor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/29-flash-attention-as-a-cross-system-fusion-case-study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Flash Attention as a Cross-System Fusion Case Study
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/30-quantization-aware-codegen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. Quantization-Aware Codegen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/31-computer-vision-a-real-fixed-kernel-preprocessing-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Computer Vision: A Real Fixed-Kernel Preprocessing Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/32-nlp-transformers-a-real-bag-of-embeddings-classifier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. NLP / Transformers: A Real Bag-of-Embeddings Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/33-scientific-computing-a-real-finite-difference-heat-stencil/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Scientific Computing: A Real Finite-Difference Heat Stencil
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/34-quantitative-finance-a-real-binomial-option-pricer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Quantitative Finance: A Real Binomial Option Pricer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Appendices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../a-installation-and-setup-building-cuda-hammers-toolchain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A. Installation and Setup -- Building CUDA Hammer's Toolchain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    B. Practice Quiz
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    B. Practice Quiz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#part-0-why-compile-tensor-programs-at-all-chapters-1-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 0 -- Why Compile Tensor Programs At All (Chapters 1-3)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-cuda-hammers-ir-a-minimal-tensor-graph-from-scratch-chapters-4-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch (Chapters 4-7)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-basic-optimization-passes-chapters-8-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2 -- Basic Optimization Passes (Chapters 8-11)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-operator-fusion-chapters-12-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 3 -- Operator Fusion (Chapters 12-16)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-code-generation-chapters-17-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 4 -- Code Generation (Chapters 17-20)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-5-autotuning-chapters-21-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 5 -- Autotuning (Chapters 21-24)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-6-case-studies-how-cuda-hammer-compares-to-real-compilers-chapters-25-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 6 -- Case Studies: How CUDA Hammer Compares to Real Compilers (Chapters 25-30)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-7-cuda-hammer-in-practice-real-world-domain-applications-chapters-31-34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications (Chapters 31-34)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-a-installation-and-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A -- Installation and Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#part-0-why-compile-tensor-programs-at-all-chapters-1-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 0 -- Why Compile Tensor Programs At All (Chapters 1-3)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-cuda-hammers-ir-a-minimal-tensor-graph-from-scratch-chapters-4-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch (Chapters 4-7)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-basic-optimization-passes-chapters-8-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2 -- Basic Optimization Passes (Chapters 8-11)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-operator-fusion-chapters-12-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 3 -- Operator Fusion (Chapters 12-16)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-code-generation-chapters-17-20" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 4 -- Code Generation (Chapters 17-20)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-5-autotuning-chapters-21-24" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 5 -- Autotuning (Chapters 21-24)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-6-case-studies-how-cuda-hammer-compares-to-real-compilers-chapters-25-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 6 -- Case Studies: How CUDA Hammer Compares to Real Compilers (Chapters 25-30)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-7-cuda-hammer-in-practice-real-world-domain-applications-chapters-31-34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications (Chapters 31-34)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-a-installation-and-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A -- Installation and Setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="appendix-b-practice-quiz">Appendix B: Practice Quiz<a class="headerlink" href="#appendix-b-practice-quiz" title="Permanent link">&para;</a></h1>
+<p>Every question below is grounded in a real, specific fact this book already established somewhere in Chapters 1-34 or Appendix A -- a real measured number, a real quoted source, a real compiled/run result, or a real design decision this book's own code demonstrated rather than merely stated. None of these answers is a paraphrase of "what the chapter was about"; each one names the exact real fact, and the exact chapter and file where it was established, so this appendix can double as a fast way to relocate something you remember reading but can't quite place.</p>
+<p>Click a question to reveal its answer.</p>
+<h2 id="part-0-why-compile-tensor-programs-at-all-chapters-1-3">Part 0 -- Why Compile Tensor Programs At All (Chapters 1-3)<a class="headerlink" href="#part-0-why-compile-tensor-programs-at-all-chapters-1-3" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. Chapter 1 quantified two real, independent costs of eager execution. What was the real memory-traffic formula, and what real NVIDIA-cited figure did the second cost use?</summary>
+<p>The memory-traffic model: <code>eager(N) = N * 2 * array_bytes</code> versus <code>fused = 2 * array_bytes</code>, checked for N=1..8 with the EAGER and FUSED outputs verified bit-identical. The second real cost used NVIDIA's own cited kernel-launch-overhead figure -- 9.6us per kernel, from NVIDIA's "Getting Started with CUDA Graphs" blog post -- applied via a real formula to the same chain lengths.</p>
+<p><em>(Chapter 1, "The Cost of Eager Execution")</em></p>
+</details>
+<details class="question">
+<summary>Q2. Chapter 2 built a real constant-folding pass on a tiny arithmetic-expression IR. What real reduction did it achieve across its 5 test expressions, and what was the maximum reduction on any single one?</summary>
+<p>A 66.7% total instruction reduction across the 5 test expressions, with one expression folding to 100% -- zero instructions left at all. Correctness was checked by interpreting before and after folding on every expression, all matching.</p>
+<p><em>(Chapter 2, File 004)</em></p>
+</details>
+<details class="question">
+<summary>Q3. What real, directly quoted claim did Chapter 3 cite from XLA's own documentation about fusion, and which two real strategies did it contrast for TVM's own scheduling?</summary>
+<p>"Fusion is XLA's single most important optimization," quoted directly from openxla.org. For TVM, it contrasted DLight (rule-based scheduling) against MetaSchedule (search-based scheduling) -- foreshadowing this book's own Part 5.</p>
+<p><em>(Chapter 3, "A Tour of Real ML Compilers: XLA, TVM, and Triton")</em></p>
+</details>
+<details class="question">
+<summary>Q4. Chapter 3 described Triton's own programming model as 'inverted' relative to CUDA's. Inverted how?</summary>
+<p>Triton's own real model is "Blocked Program, Scalar Threads" -- the inverse of CUDA's own "Scalar Program, Blocked Threads" -- cited directly to triton-lang.org's own programming-guide introduction.</p>
+<p><em>(Chapter 3, Section 3.3)</em></p>
+</details>
+<h2 id="part-1-cuda-hammers-ir-a-minimal-tensor-graph-from-scratch-chapters-4-7">Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch (Chapters 4-7)<a class="headerlink" href="#part-1-cuda-hammers-ir-a-minimal-tensor-graph-from-scratch-chapters-4-7" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. Chapter 4's diamond graph shares one computed node (<code>t1</code>) between two consumers. How many nodes does the real shared graph use, versus an equivalent unshared tree, and what function computed the unshared figure?</summary>
+<p>6 nodes shared, versus 10 nodes for an equivalent unshared tree -- computed by a deliberately unmemoized recursive function, <code>expandToTreeNodeCount()</code>, echoing Chapter 1's own memory-traffic argument as a real, counted IR-size cost of not sharing.</p>
+<p><em>(Chapter 4, File 005)</em></p>
+</details>
+<details class="question">
+<summary>Q2. What real algorithm does Chapter 4 use for topological sort, and how was a deliberately broken graph's cycle actually detected?</summary>
+<p>Kahn's algorithm, cross-checked by an independent positional validator. A cycle was deliberately introduced by reaching past the public API via <code>mutableNode()</code> to mutate an existing node's inputs after construction -- and the same checker correctly detected it, proving the normal API's cycle-freedom-by-construction guarantee by breaking it on purpose.</p>
+<p><em>(Chapter 4, File 006)</em></p>
+</details>
+<details class="question">
+<summary>Q3. What is CUDA Hammer's own real frontend grammar (Chapter 5), and what was the strong correctness check used on the parser?</summary>
+<p>A minimal, flat text grammar -- <code>"name = op(arg, ...)"</code>, every right-hand side a call, no exceptions -- parsed straight into a Graph with no AST stage, the same real architecture choice LLVM's own IR text format uses. The strong check: parsing the Chapter 4 diamond program produced a graph that <code>graphsStructurallyEqual()</code> confirmed was node-for-node, edge-for-edge IDENTICAL to the graph Chapter 4 built by hand.</p>
+<p><em>(Chapter 5, File 007)</em></p>
+</details>
+<details class="question">
+<summary>Q4. Where does Shape information live in CUDA Hammer's own IR, and what real external source did Chapter 6 cite for its broadcasting rule?</summary>
+<p>Shape lives as a separate, computed side table (<code>map&lt;nodeId, Shape&gt;</code>) -- never a field on <code>Node</code> itself, a deliberate pass/IR separation, not an oversight. The broadcasting rule is the real NumPy broadcasting rule, quoted directly from numpy.org's own documentation.</p>
+<p><em>(Chapter 6, File 009)</em></p>
+</details>
+<h2 id="part-2-basic-optimization-passes-chapters-8-11">Part 2 -- Basic Optimization Passes (Chapters 8-11)<a class="headerlink" href="#part-2-basic-optimization-passes-chapters-8-11" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. What is <code>TransformPass</code>'s real type signature in Chapter 8, and what real design gap in <code>Graph</code> motivated that signature?</summary>
+<p><code>TransformPass = std::function&lt;Graph(const Graph&amp;)&gt;</code> -- a real design consequence of <code>Graph</code> having no node-removal API at all, stated explicitly as groundwork for Chapter 9's upcoming dead-code elimination.</p>
+<p><em>(Chapter 8, File 013)</em></p>
+</details>
+<details class="question">
+<summary>Q2. In Chapter 9's own capstone (File 017), what real node-count sequence results from running constant folding then dead-code elimination on a 7-node graph, and what does running DCE ALONE on the unfolded graph prove?</summary>
+<p>7 (original) -&gt; 7 (after folding -- unchanged, since folding only replaces computations, never removes nodes) -&gt; 3 (after DCE). Running DCE alone on the unfolded original graph removes nothing (7-&gt;7) -- a real, executed proof that order matters, not an assertion.</p>
+<p><em>(Chapter 9, File 017)</em></p>
+</details>
+<details class="question">
+<summary>Q3. What real, honestly conservative limitation does Chapter 10's <code>cseKey()</code> have with respect to commutativity?</summary>
+<p><code>add(a,b)</code> and <code>add(b,a)</code> are mathematically identical but get DIFFERENT keys, since operand order is encoded and commutativity is never checked -- deliberately NOT merged. Staying conservative here avoids the much worse alternative: silently merging operands for an operation that ISN'T actually commutative, a real correctness bug.</p>
+<p><em>(Chapter 10, File 019)</em></p>
+</details>
+<details class="question">
+<summary>Q4. What real hazard does Chapter 11's own Part C demonstrate between <code>algebraicSimplificationPass()</code> and Chapter 9's 'the last node is the output' convention?</summary>
+<p>When <code>algebraicSimplificationPass()</code> elides the literal LAST node a graph ever added, Chapter 9's own convention (which <code>deadCodeEliminationPass()</code> depends on directly) silently ends up pointing at the WRONG node afterward -- proven with real, minimal, executable code, framed as an open question carried forward with no fix offered, not silently patched.</p>
+<p><em>(Chapter 11, File 023)</em></p>
+</details>
+<h2 id="part-3-operator-fusion-chapters-12-16">Part 3 -- Operator Fusion (Chapters 12-16)<a class="headerlink" href="#part-3-operator-fusion-chapters-12-16" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. What is Chapter 12's real closed-form arithmetic-intensity formula for an UNFUSED chain of K unary elementwise ops, and why is it independent of K?</summary>
+<p><code>AI_unfused = 1 / (2 * bytesPerElement)</code> -- a constant independent of K, because both memory traffic and compute work scale by K in exact lockstep, so K cancels completely out of the ratio.</p>
+<p><em>(Chapter 12, File 024)</em></p>
+</details>
+<details class="question">
+<summary>Q2. What real ridge point did Chapter 12 compute from NVIDIA's own cited A100 datasheet, and at exactly what K did a FUSED chain cross from memory-bound to compute-bound?</summary>
+<p>12.5402 FLOPs/byte, computed from the A100's real 19.5 TFLOPS FP32 and 1,555 GB/s bandwidth figures. The fused chain crosses into compute-bound at exactly K=101 (K=100 is confirmed not yet compute-bound).</p>
+<p><em>(Chapter 12, File 025)</em></p>
+</details>
+<details class="question">
+<summary>Q3. What real new IR node kind did Chapter 13 introduce -- the first new kind since Chapter 4 -- and what real rule decides whether a value gets inlined into it?</summary>
+<p><code>OpKind::FusedElementwise</code>. A single-consumer Add/Mul/ReLU gets inlined as an internal <code>FusedStep</code>; anything with MORE than one consumer stays external -- proven directly on Chapter 4's own diamond graph, where <code>t1</code> (2 consumers) stays materialized as its own node while the single-consumer chain around it fuses into one.</p>
+<p><em>(Chapter 13, Files 027-028)</em></p>
+</details>
+<details class="question">
+<summary>Q4. What real new fusion rule did Chapter 14 add specifically for <code>Sum</code> nodes, and what real gap did it fix in Chapter 12's own <code>totalFlops()</code>?</summary>
+<p>A <code>Sum</code> node's own output is ALWAYS kept external, regardless of consumer count -- even with exactly one consumer, unlike every other op. It also fixed a real gap in <code>totalFlops()</code>: an N-element <code>Sum</code> needs N-1 real additions, not N, since Chapter 12's own convention had assumed output-element-count always equals operation-count (true for Add/Mul/ReLU, false for Sum).</p>
+<p><em>(Chapter 14, Files 030 and 032)</em></p>
+</details>
+<h2 id="part-4-code-generation-chapters-17-20">Part 4 -- Code Generation (Chapters 17-20)<a class="headerlink" href="#part-4-code-generation-chapters-17-20" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. What real, hand-derived per-element results did Chapter 17's <code>evaluateArrays()</code> confirm at specific non-uniform positions in the diamond graph's own <code>out</code> node?</summary>
+<p><code>out[0]=22</code>, <code>out[5]=182</code>, <code>out[11]=676</code> -- all hand-derived BEFORE running the code, then confirmed exactly, along with full per-element agreement across all 12 positions between the original and fused graphs.</p>
+<p><em>(Chapter 17, File 039)</em></p>
+</details>
+<details class="question">
+<summary>Q2. Why does Chapter 18's CUDA reduction kernel need <code>atomicAdd()</code> instead of a plain <code>*out += step</code>, and is <code>atomicAdd()</code> the fastest real approach?</summary>
+<p>One thread per reduce element doing <code>*out += step</code> directly is a genuine data race -- a non-atomic read-modify-write on the same address with no ordering guarantee, a classic lost-update bug. <code>atomicAdd()</code> is stated explicitly as the CORRECT approach, not the fastest one: a real high-performance reduction would use shared-memory tree reduction or warp-shuffle instructions, named directly as an out-of-scope limitation.</p>
+<p><em>(Chapter 18, File 043)</em></p>
+</details>
+<details class="question">
+<summary>Q3. What real argument-order difference between AVX2's and NEON's real FMA intrinsics does Chapter 19's <code>vecFma()</code> exist to hide?</summary>
+<p>AVX2's <code>_mm256_fmadd_ps(a,b,c)</code> computes <code>a*b+c</code> (accumulator last); NEON's <code>vfmaq_f32(c,a,b)</code> computes <code>c+a*b</code> (accumulator first) -- the same three real operands, genuinely different argument order between the two real ISAs, hidden behind CUDA Hammer's own single <code>vecFma()</code> call.</p>
+<p><em>(Chapter 19, toolchain investigation and File 046)</em></p>
+</details>
+<details class="question">
+<summary>Q4. What real architecture fact did Chapter 20 confirm about the device via <code>uname -a</code>, and why did that make its JIT loader simpler than Chapter 19's own vectorized backend?</summary>
+<p>The device -- physically Apple Silicon hardware -- is confirmed a genuine aarch64 LINUX virtual machine (<code>Linux claude 6.8.0-138-generic ... aarch64 GNU/Linux</code>), not native macOS. Both machines produce the same real ELF 64-bit shared-object format, so <code>dlopen()</code>/<code>dlsym()</code>/<code>dlclose()</code>, <code>-shared -fPIC</code>, and <code>-ldl</code> need ZERO per-architecture special-casing -- a genuinely simpler mechanical story than Chapter 19's own real AVX2-vs-NEON intrinsic split.</p>
+<p><em>(Chapter 20, File 048)</em></p>
+</details>
+<h2 id="part-5-autotuning-chapters-21-24">Part 5 -- Autotuning (Chapters 21-24)<a class="headerlink" href="#part-5-autotuning-chapters-21-24" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. What real IEEE-754 float32 non-associativity example did Chapter 21 measure, and what real discrepancy did it find between forward and reverse summation order?</summary>
+<p>Summing <code>16777216.0</code> (2^24, float32's own exactness limit) plus sixteen <code>1.0</code>'s: FORWARD order (big value first) silently absorbs all 16 increments and stays at <code>16777216.0</code>, while REVERSE order recovers the true <code>16777232.0</code> -- a real 16.0 discrepancy, directly explaining why every <code>evaluateArrays()</code>-vs-generated-code check since Chapter 17 uses a tolerance rather than exact equality.</p>
+<p><em>(Chapter 21, File 052)</em></p>
+</details>
+<details class="question">
+<summary>Q2. How many real schedules did Chapter 21's <code>enumerateSchedules()</code> produce for the concrete <code>LoopNest[dim0:6, dim1:8]</code>, and how was that count derived?</summary>
+<p>128 real schedules: 4 tile candidates x 4 tile candidates x 2 loop orders x 4 unroll candidates -- confirmed to match <code>enumerateSchedules()</code>'s own actual output count exactly.</p>
+<p><em>(Chapter 21, File 053)</em></p>
+</details>
+<details class="question">
+<summary>Q3. Chapter 22's loop-overhead cost model is monotonic by construction. What real, machine-specific turnover point did real measurement find that the model structurally cannot predict?</summary>
+<p>Real measurement found a genuine turnover point in chunk-size cost, at a DIFFERENT chunk size on each real machine: chunkSize=32 on the cloud sandbox's x86-64, chunkSize=8 on the device's aarch64 -- both real, honestly reported, machine-specific findings the monotonic model cannot see by construction.</p>
+<p><em>(Chapter 22, File 054)</em></p>
+</details>
+<details class="question">
+<summary>Q4. In Chapter 23's real autotuner, what honest miss did BOTH machines share when checking the cost model's top-8 shortlist against real exhaustive measurement -- and did the hybrid approach still win on speed?</summary>
+<p>On both real machines, the true best schedule (found only by exhaustive real measurement) was NOT inside the cost model's own top-8 shortlist. Yet the hybrid approach (measuring only the top-8) still won on real wall-clock time by a real margin: 2.96-3.10x across 3 cloud runs, 4.90x on the device.</p>
+<p><em>(Chapter 23, File 059)</em></p>
+</details>
+<h2 id="part-6-case-studies-how-cuda-hammer-compares-to-real-compilers-chapters-25-30">Part 6 -- Case Studies: How CUDA Hammer Compares to Real Compilers (Chapters 25-30)<a class="headerlink" href="#part-6-case-studies-how-cuda-hammer-compares-to-real-compilers-chapters-25-30" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. What real XLA fusion boundary did Chapter 25 find that is LOOSER than Chapter 13's own 'more than one consumer stays external' rule?</summary>
+<p>Real XLA fuses the WHOLE diamond graph -- including the shared <code>t1</code> node -- into ONE <code>kind=kLoop</code> fusion. Its real rule is "every consumer stays in the group," genuinely looser than Chapter 13's own rule that any node with more than one consumer must stay external.</p>
+<p><em>(Chapter 25, "XLA: Fusion and Autotuning in a Real Production Compiler")</em></p>
+</details>
+<details class="question">
+<summary>Q2. What real, honest retitling did Chapter 26 have to make about TVM's own Python bindings, and why?</summary>
+<p>Chapter 3's and the prior TOC's own real binding names (<code>tvm.relay</code>, <code>tvm.auto_scheduler</code>, <code>tvm.autotvm</code>, <code>tvm.tir</code>) do NOT exist in the real, installed <code>apache-tvm==0.26.0</code> release used this session -- the real current bindings are <code>tvm.relax</code>, <code>tvm.s_tir</code> (plus <code>meta_schedule</code>), and <code>tvm.tirx</code> -- retitled honestly rather than left stated incorrectly.</p>
+<p><em>(Chapter 26, "TVM's Real Modern Stack: Relax, TIR, and MetaSchedule")</em></p>
+</details>
+<details class="question">
+<summary>Q3. What real finding did Chapter 27 make about fusion in Triton that contrasts with every graph compiler studied earlier in Part 6?</summary>
+<p>Triton has no separate fusion PASS at all -- fusion is a PROGRAMMER'S language-level choice, the opposite shape from XLA's and Relax's automatic whole-graph fusion. Real compiled TTIR proved a hand-fused kernel uses 3 loads/1 store versus two hand-split kernels' 4 loads/2 stores -- 50% more real memory traffic from materializing the intermediate <code>t1</code>.</p>
+<p><em>(Chapter 27, Files 069-070)</em></p>
+</details>
+<details class="question">
+<summary>Q4. Did Chapter 29 find that XLA, Relax, or Inductor could automatically DISCOVER Flash Attention's own online-softmax fusion boundary from ordinary primitives?</summary>
+<p>No -- none of the three real systems re-derives online-softmax from primitives; Flash Attention needed a genuinely new ALGORITHM (Milakov and Gimelshein's online-softmax, applied by Dao et al.'s Flash Attention), not a fusion boundary any of them could discover automatically. Triton (Chapter 27) is the one system where the programmer writes that kernel by hand -- exactly what File 076 did.</p>
+<p><em>(Chapter 29, "Flash Attention as a Cross-System Fusion Case Study")</em></p>
+</details>
+<h2 id="part-7-cuda-hammer-in-practice-real-world-domain-applications-chapters-31-34">Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications (Chapters 31-34)<a class="headerlink" href="#part-7-cuda-hammer-in-practice-real-world-domain-applications-chapters-31-34" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. What real staging technique did Section 31.2's 3x3 filter use, since CUDA Hammer's IR has no shift/gather op, and which real production library's own documentation was it cited to?</summary>
+<p>im2col-style pre-shifted inputs -- 9 real host-side neighbor shifts, zero-padded at the border, feeding an unrolled <code>Mul</code>/<code>Add</code> graph. Cited directly to NVIDIA's own real CUTLASS documentation ("constructs the convolution matrix explicitly via...im2col"), including its own stated real cost ("replicates each activation element by a factor equal the filter size").</p>
+<p><em>(Section 31.2, File 082)</em></p>
+</details>
+<details class="question">
+<summary>Q2. Since CUDA Hammer's <code>Sum</code> has never had a per-row/batched reduction, what real workaround did Section 32.1 use for LayerNorm-style mean-centering, and what real boundary did it state directly rather than fake?</summary>
+<p>It reruns the existing two-pass Sum-then-Const calibration pattern ONCE PER TOKEN, in a host-side loop -- 4 independent small graphs, not one big one. It states directly that it computes <code>x - mean</code> only, never the variance/<code>sqrt</code>/divide half of real LayerNorm, since this IR has neither <code>sqrt</code> nor division, and nothing fakes a standard deviation with a hardcoded constant.</p>
+<p><em>(Section 32.1, File 084)</em></p>
+</details>
+<details class="question">
+<summary>Q3. What real physical finding did Section 33.2's 5-step heat-stencil chain make about total heat conservation, and at exactly which step did real heat begin to leak?</summary>
+<p>Total heat stayed EXACTLY conserved through step 3 (sum=200.0000), then genuinely leaked starting at step 4 (sum=199.2188, matching a hand derivation exactly) as the disturbance reached the zero-padded boundary approximation -- a real physical consequence of that boundary technique, not an artifact to explain away.</p>
+<p><em>(Section 33.2, File 088)</em></p>
+</details>
+<details class="question">
+<summary>Q4. What real structural finding did Section 34.2 make about representing a binomial option tree, in direct contrast to Sections 31.2's and 33.1's own staging techniques?</summary>
+<p>A tree's own parent-child relationship is IRREGULAR but completely, statically known at build time -- exactly what an ordinary CUDA Hammer <code>Value</code> reference already expresses, the SAME mechanism Chapter 4's own diamond graph used for one node feeding two consumers. Unlike Section 31.2/33.1, it needed NO im2col-style staging; unlike Section 33.2, it needed no host-orchestrated re-evaluation between levels -- the whole tree is one static graph, evaluated once.</p>
+<p><em>(Section 34.2, File 091)</em></p>
+</details>
+<h2 id="appendix-a-installation-and-setup">Appendix A -- Installation and Setup<a class="headerlink" href="#appendix-a-installation-and-setup" title="Permanent link">&para;</a></h2>
+<details class="question">
+<summary>Q1. What real minimum C++ standard did Appendix A.1's real 71-file sweep find CUDA Hammer's own source actually needs, and what two real constructs were responsible?</summary>
+<p>C++14 -- not C++17, despite <code>-std=c++17</code> being used in every compile command throughout this entire book. 58 of the book's 71 real <code>.cpp</code> files fail to compile under <code>-std=c++11</code>, splitting exactly into 54 files using <code>std::make_unique</code> and 4 files using digit-separator literals like <code>1'000'000</code>, both real C++14 features, with zero overlap and zero failures under <code>-std=c++14</code> or <code>-std=c++17</code>.</p>
+<p><em>(Appendix A.1, File 093)</em></p>
+</details>
+<details class="question">
+<summary>Q2. What silent compile-time assumption has Chapter 19's own vectorized-CPU generator always made about ISA support, and how did Appendix A.2 check it directly instead of trusting it?</summary>
+<p>It assumes <code>__x86_64__</code> implies AVX2/FMA support and <code>__aarch64__</code> implies NEON support, using only the compile-time architecture macro with no direct hardware-flag check. Appendix A.2 checks this directly by reading each machine's own real, live <code>/proc/cpuinfo</code> "flags" line -- confirmed correct on both of this book's own machines.</p>
+<p><em>(Appendix A.2, File 094)</em></p>
+</details>
+<details class="question">
+<summary>Q3. What real limitation does Appendix A.3's own CUDA toolkit smoke test carry, matching Chapter 18's own established discipline exactly?</summary>
+<p>It confirms <code>nvcc</code>'s real two-stage compile pipeline genuinely works, and honestly reports <code>cudaGetDeviceCount()=0</code> on a machine with no physical GPU -- never claiming a kernel's runtime result on hardware that isn't there, the same compile-but-don't-claim-a-run split Chapter 18 onward has carried since Chapter 18.</p>
+<p><em>(Appendix A.3, File 095)</em></p>
+</details>
+<details class="question">
+<summary>Q4. What real, honestly-noted difference showed up in the <code>-std=c++11</code> compile-error TEXT between the cloud sandbox and the device in Appendix A.1, and what actually caused it?</summary>
+<p>The real compile-error text differs only in quote-mark style -- straight quotes from the cloud sandbox's g++13.3.0, curly quotes from the device's g++11.4.0 -- a real g++-version formatting difference, not a difference in root cause: both machines fail for the identical reason (<code>std::make_unique</code> and the digit-separator literal both need C++14).</p>
+<p><em>(Appendix A.1 and A.4, Files 093 and 096)</em></p>
+</details>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../a-installation-and-setup-building-cuda-hammers-toolchain/" class="md-footer__link md-footer__link--prev" aria-label="Previous: A. Installation and Setup -- Building CUDA Hammer&#39;s Toolchain">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                A. Installation and Setup -- Building CUDA Hammer's Toolchain
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
