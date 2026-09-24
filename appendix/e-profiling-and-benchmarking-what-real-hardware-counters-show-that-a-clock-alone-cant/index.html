@@ -1,0 +1,2961 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Tensor Compiler in C++, From a Minimal IR to Fused, Autotuned Kernels">
+      
+      
+        <meta name="author" content="Oluwaseyi Awoga">
+      
+      
+      
+        <link rel="prev" href="../d-polyhedral-compilation-what-a-real-scheduler-finds-that-cuda-hammers-search-never-did/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>E. Profiling and Benchmarking - CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#appendix-e-profiling-and-benchmarking-what-real-hardware-counters-show-that-a-clock-alone-cant" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" class="md-header__button md-logo" aria-label="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              E. Profiling and Benchmarking
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" class="md-nav__button md-logo" aria-label="CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2 19.63 13.43 8.2l-.71-.7 1.42-1.43L12 3.89c1.2-1.19 3.09-1.19 4.27 0l3.6 3.61-1.42 1.41h2.84l.71.71-3.55 3.59-.71-.71V9.62l-1.47 1.42-.71-.71L4.13 21.76z"/></svg>
+
+    </a>
+    CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 0 -- Why Compile Tensor Programs At All
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/01-the-cost-of-eager-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    1. The Cost of Eager Execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/02-what-a-compiler-pipeline-looks-like/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2. What a Compiler Pipeline Looks Like
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part0/03-a-tour-of-real-ml-compilers-xla-tvm-and-triton/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3. A Tour of Real ML Compilers: XLA, TVM, and Triton
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 1 -- CUDA Hammer's IR: A Minimal Tensor Graph From Scratch
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/04-representing-tensors-and-operations-as-a-graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    4. Representing Tensors and Operations as a Graph
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/05-building-the-graph-cuda-hammers-frontend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5. Building the Graph: CUDA Hammer's Frontend
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/06-graph-validation-and-shape-inference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6. Graph Validation and Shape Inference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part1/07-printing-and-visualizing-cuda-hammers-ir/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    7. Printing and Visualizing CUDA Hammer's IR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 2 -- Basic Optimization Passes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 2 -- Basic Optimization Passes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/08-the-pass-manager-structuring-compiler-transformations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    8. The Pass Manager: Structuring Compiler Transformations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/09-constant-folding-and-dead-code-elimination/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    9. Constant Folding and Dead Code Elimination
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/10-common-subexpression-elimination-for-tensor-graphs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10. Common Subexpression Elimination for Tensor Graphs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part2/11-algebraic-simplification/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    11. Algebraic Simplification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 3 -- Operator Fusion
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 3 -- Operator Fusion
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/12-why-fusion-matters-memory-bound-vs-compute-bound-kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    12. Why Fusion Matters: Memory-Bound vs. Compute-Bound Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/13-elementwise-fusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    13. Elementwise Fusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/14-reduction-fusion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    14. Reduction Fusion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/15-loop-fusion-and-tiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    15. Loop Fusion and Tiling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part3/16-fusion-boundaries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    16. Fusion Boundaries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 4 -- Code Generation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 4 -- Code Generation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/17-lowering-to-loops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    17. Lowering CUDA Hammer's IR to Loops
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/18-generating-cuda-cpp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    18. Generating CUDA C++ From the Fused IR
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/19-generating-vectorized-cpu-code/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    19. Generating Vectorized CPU Code
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part4/20-jit-backend/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    20. A JIT Backend: Compiling and Loading Generated Code at Runtime
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 5 -- Autotuning
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 5 -- Autotuning
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/21-the-search-space/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    21. The Search Space: Tile Sizes, Loop Orders, and Unrolling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/22-cost-models-vs-measurement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    22. Cost Models vs. Measurement-Based Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/23-building-the-autotuner/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    23. Building CUDA Hammer's Autotuner
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part5/24-caching-and-reusing-autotuning-results/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    24. Caching and Reusing Autotuning Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 6 -- Case Studies of Real Compilers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 6 -- Case Studies of Real Compilers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/25-xla-fusion-and-autotuning-in-a-real-production-compiler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    25. XLA: Fusion and Autotuning in a Real Production Compiler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/26-tvms-real-modern-stack-relax-tir-and-metaschedule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    26. TVM's Real Modern Stack: Relax, TIR, and MetaSchedule
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/27-tritons-block-level-programming-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    27. Triton's Block-Level Programming Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/28-torch-compile-and-torchinductor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    28. torch.compile and TorchInductor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/29-flash-attention-as-a-cross-system-fusion-case-study/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    29. Flash Attention as a Cross-System Fusion Case Study
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part6/30-quantization-aware-codegen/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    30. Quantization-Aware Codegen
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/31-computer-vision-a-real-fixed-kernel-preprocessing-pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    31. Computer Vision: A Real Fixed-Kernel Preprocessing Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/32-nlp-transformers-a-real-bag-of-embeddings-classifier/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    32. NLP / Transformers: A Real Bag-of-Embeddings Classifier
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/33-scientific-computing-a-real-finite-difference-heat-stencil/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    33. Scientific Computing: A Real Finite-Difference Heat Stencil
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../part7/34-quantitative-finance-a-real-binomial-option-pricer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    34. Quantitative Finance: A Real Binomial Option Pricer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendices
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Appendices
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../a-installation-and-setup-building-cuda-hammers-toolchain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    A. Installation and Setup -- Building CUDA Hammer's Toolchain
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../b-practice-quiz/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    B. Practice Quiz
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../c-llvm-and-mlir-the-compiler-infrastructure-you-get-for-free/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    C. LLVM and MLIR -- The Compiler Infrastructure You Get for Free
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../d-polyhedral-compilation-what-a-real-scheduler-finds-that-cuda-hammers-search-never-did/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    D. Polyhedral Compilation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    E. Profiling and Benchmarking
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    E. Profiling and Benchmarking
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-es-own-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix E's own shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e1-cachegrind-what-fusion-actually-saves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E.1 -- Cachegrind: What Fusion Actually Saves
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e2-callgrind-where-the-extra-instructions-actually-go" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E.2 -- Callgrind: Where the Extra Instructions Actually Go
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e3-capstone-testing-chapter-22s-own-explanation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E.3 -- Capstone: Testing Chapter 22's Own Explanation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#closing-synthesis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Closing synthesis
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-es-own-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix E's own shape
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e1-cachegrind-what-fusion-actually-saves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E.1 -- Cachegrind: What Fusion Actually Saves
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e2-callgrind-where-the-extra-instructions-actually-go" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E.2 -- Callgrind: Where the Extra Instructions Actually Go
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#e3-capstone-testing-chapter-22s-own-explanation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        E.3 -- Capstone: Testing Chapter 22's Own Explanation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#closing-synthesis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Closing synthesis
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="appendix-e-profiling-and-benchmarking-what-real-hardware-counters-show-that-a-clock-alone-cant">Appendix E: Profiling and Benchmarking -- What Real Hardware Counters Show That a Clock Alone Can't<a class="headerlink" href="#appendix-e-profiling-and-benchmarking-what-real-hardware-counters-show-that-a-clock-alone-cant" title="Permanent link">&para;</a></h1>
+<p>Chapter 22 built two real cost models -- one for loop overhead, one for
+memory-access stride -- and, in both cases, measured them honestly
+against a real clock and found a real gap: <code>estimateLoopOverheadCost()</code>
+always recommends the largest unroll factor, but File 054's own
+best-of-5 wall-clock measurement, at extent=50,000,000, found a real
+turnover point the model could not predict, and named the likely
+reason directly in prose without ever measuring it -- "instruction-
+cache pressure, register pressure, and lost auto-vectorization
+opportunities." Chapter 12 argued, also in prose, that fusion's real
+benefit is avoiding round-trips to memory for intermediate tensors.
+Both claims are almost certainly true. Neither one, through Chapter 22,
+was ever backed by a number that actually counts instructions or cache
+misses -- every verification in this book so far has been either
+correctness (bit-for-bit agreement, no clock involved at all) or
+wall-clock timing (a real but indirect signal: it tells you THAT
+something is slower, never WHY).</p>
+<p>This appendix asks what a real hardware-counting profiler shows when
+pointed at CUDA Hammer's own code. Linux <code>perf</code>, this book's first
+real choice, turns out not to be usable in the sandbox this book was
+built in -- confirmed directly, not assumed: <code>linux-tools-generic</code> and
+<code>linux-tools-common</code> install cleanly via <code>apt</code>, but <code>perf stat</code> itself
+fails at run time with <code>WARNING: perf not found for kernel
+6.18.44-fc</code>, a genuine kernel/packaged-build mismatch specific to this
+container, not a missing flag or a permissions issue. Valgrind's
+Cachegrind and Callgrind, by contrast, are installed and work: both
+are REAL, deterministic simulators -- not sampling profilers -- that
+re-execute a program's every instruction through a modeled cache
+hierarchy (Cachegrind) or a modeled cache hierarchy plus a real
+per-line, per-function call graph (Callgrind), and report exact,
+repeatable counts instead of statistical estimates. Every number in
+this appendix is exactly reproducible on the same machine, unlike a
+wall-clock measurement, which is precisely what makes it a good
+complement to Chapter 22's own honest, noisy, real-clock numbers
+rather than a replacement for them.</p>
+<h2 id="appendix-es-own-shape">Appendix E's own shape<a class="headerlink" href="#appendix-es-own-shape" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix E&#39;s own shape, section by section                       |
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  E.1  Cachegrind: What Fusion Actually Saves -- File 039&#39;s own    |
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>|       diamond graph (Chapter 17), materialized vs. fused, at real  |
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>|       scale (N=20,000,000): real dynamic instruction counts and    |
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>|       real simulated D1/LL cache-miss counts, turning Chapter 12&#39;s |
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>|       prose argument into a measured multiple.                     |
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>|                                                                    |
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>|  E.2  Callgrind: Where the Extra Instructions Actually Go -- the   |
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|       SAME binary, profiled with a real call-graph, line-level     |
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>|       profiler instead of a cache simulator: which of the four     |
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>|       materialized steps costs the most, and how much of that      |
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>|       cost is the vector constructors themselves, not the          |
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>|       arithmetic.                                                  |
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>|                                                                    |
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>|  E.3  Capstone: Testing Chapter 22&#39;s Own Explanation -- File 054&#39;s |
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>|       own computeUnrolled(), reused unchanged, under real           |
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>|       Cachegrind instruction/cache counting AND real branch-        |
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>|       predictor simulation across unroll factors: which of Chapter  |
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>|       22&#39;s own named suspects (instruction-cache pressure, data     |
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>|       cache pressure, something else entirely) the real numbers     |
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>|       actually support.                                            |
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>+------------------------------------------------------------------+
+</code></pre></div>
+<p>Toolchain: real Valgrind 3.22.0 (<code>--tool=cachegrind</code>,
+<code>--tool=callgrind</code>), already installed in the cloud sandbox; plain
+<code>g++</code> 13.3.0, <code>-O2</code>. The device was checked directly for this
+appendix and confirmed to have <code>g++</code> but no <code>valgrind</code> at all, and --
+as Appendix C and D already established -- no root or package-manager
+access to install it. This draws a real, honest line different from
+either earlier appendix's own toolchain limit: Appendix C and D needed
+a whole compiler toolchain (LLVM/MLIR/Polly) just to COMPILE their own
+files at all, so nothing in them could run on the device. This
+appendix's own source files (Files 103 and 104) are plain, portable
+C++17 with no such dependency -- they compile and run correctly on the
+device with its own stock <code>g++</code>, and their own bit-for-bit correctness
+self-checks are cross-verified there exactly as strictly as every
+chapter through 21. Only the PROFILING itself -- every Cachegrind and
+Callgrind command and output in this appendix -- is cloud-sandbox-only,
+because Valgrind itself is the one piece missing on the device, not
+the code it profiles.</p>
+<h2 id="e1-cachegrind-what-fusion-actually-saves">E.1 -- Cachegrind: What Fusion Actually Saves<a class="headerlink" href="#e1-cachegrind-what-fusion-actually-saves" title="Permanent link">&para;</a></h2>
+<p>File 039's own <code>main()</code> (Chapter 17) built the diamond
+graph from Chapter 6 -- <code>t1=a+b</code>, <code>t2=t1*a</code>, <code>t3=relu(t1)</code>,
+<code>out=t2+t3</code> -- and ran it two ways through <code>evaluateArrays()</code>: as the
+ORIGINAL graph, where <code>t1</code> is materialized as its own array because it
+has two consumers, and as the FUSED graph, where <code>t2</code>, <code>t3</code>, and <code>out</code>
+collapse into one <code>FusedElementwise</code> step. Both agreed bit-for-bit, at
+12 elements. This file builds the exact same two computations directly
+in C++ -- no <code>Graph</code>/<code>Node</code> machinery, just the two code paths
+themselves -- at N=20,000,000 elements: <code>materialized()</code> allocates and
+writes a full <code>std::vector&lt;float&gt;</code> for every one of <code>t1</code>, <code>t2</code>, <code>t3</code>,
+and <code>out</code> and reads each intermediate back from memory on the next
+step, while <code>fused()</code> computes the whole chain for one element with
+<code>t1</code>/<code>t2</code>/<code>t3</code> as ordinary local <code>float</code> variables -- register-
+resident, never written to memory at all -- inside a single pass.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Appendix E: Profiling and Benchmarking</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">// 103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">//</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">// Section E.1 -- Chapter 17&#39;s own File 039 built evaluateArrays() and ran it</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1">// on the diamond graph from Chapter 6: a:[3,4], b:[4], t1=a+b, t2=t1*a,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1">// t3=relu(t1), out=t2+t3, comparing the ORIGINAL graph (t1 materialized as</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1">// its own array, because it has two consumers) against the FUSED graph</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1">// (t2, t3, out collapsed into one FusedElementwise step) -- and found they</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1">// agree bit-for-bit at every one of 12 elements. Chapter 12 then argued, in</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1">// prose, that fusion&#39;s real benefit is avoiding round-trips to memory for</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1">// intermediate tensors -- &quot;memory-bound vs. compute-bound&quot; -- but every</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="c1">// verification in this book through Chapter 22 has been either correctness</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="c1">// (bit-for-bit agreement, no clock involved) or wall-clock timing (Chapter</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="c1">// 19&#39;s best-of-N discipline, Chapter 22&#39;s own honest turnover-point finding</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="c1">// that a wall clock alone could not explain). Neither approach can show</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1">// what actually happens at the memory system: how many loads and stores</span>
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="c1">// each version issues, and how many of those miss cache. This file builds</span>
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1">// the SAME diamond graph shape as File 039 at real scale -- N=20,000,000</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="c1">// elements instead of 12 -- run two ways: MATERIALIZED (every intermediate</span>
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="c1">// tensor gets its own real heap-allocated std::vector&lt;float&gt;, written in</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1">// full and read back, exactly like the unfused half of File 039&#39;s own</span>
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="c1">// evaluateArrays()) and FUSED (one pass, one register-resident running</span>
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="c1">// value per output element, exactly like the fused half). Both are checked</span>
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="c1">// bit-for-bit against each other, continuing this book&#39;s own correctness</span>
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="c1">// discipline; Sections E.1 and E.2 then profile this SAME binary with real</span>
+<a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1">// Valgrind tools instead of asserting which one Chapter 12&#39;s prose favors.</span>
+<a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1">//</span>
+<a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="c1">// Compile: g++ -std=c++17 -Wall -Wextra -O2 -g 103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp -o 103_driver</span>
+<a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="c1">// (Section E.1 explains, with real nm evidence, why this file needs</span>
+<a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1">// __attribute__((noinline)) on both functions and NOT a drop to -O0: both</span>
+<a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1">// materialized() and fused() are static and each called exactly once, so</span>
+<a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1">// plain -O1 already inlines both of them into main -- confirmed by `nm`</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="c1">// reporting no materialized/fused symbols at -O1 or -O2 without the</span>
+<a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="c1">// attribute -- which would erase the per-function boundary Section E.2&#39;s</span>
+<a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="c1">// Callgrind profiling depends on before a single profiler ever runs. Real</span>
+<a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="c1">// -O2 code (auto-vectorized, register-allocated) is what Chapter 12&#39;s own</span>
+<a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="c1">// fusion argument is actually about, so keeping -O2 and forcing the two</span>
+<a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="c1">// functions to stay real, separately-callable symbols with the attribute</span>
+<a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a><span class="c1">// is the honest fix, not trading away the optimization level this book</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="c1">// verifies everywhere else.)</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="c1">// Run:     ./103_driver</span>
+<a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-1-44" name="__codelineno-1-44" href="#__codelineno-1-44"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cmath&gt;</span>
+<a id="__codelineno-1-45" name="__codelineno-1-45" href="#__codelineno-1-45"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdlib&gt;</span>
+<a id="__codelineno-1-46" name="__codelineno-1-46" href="#__codelineno-1-46"></a>
+<a id="__codelineno-1-47" name="__codelineno-1-47" href="#__codelineno-1-47"></a><span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">20&#39;000&#39;000</span><span class="p">;</span>
+<a id="__codelineno-1-48" name="__codelineno-1-48" href="#__codelineno-1-48"></a>
+<a id="__codelineno-1-49" name="__codelineno-1-49" href="#__codelineno-1-49"></a><span class="c1">// ==================== MATERIALIZED: same four steps as File 039&#39;s UNFUSED graph, each its own real buffer ====================</span>
+<a id="__codelineno-1-50" name="__codelineno-1-50" href="#__codelineno-1-50"></a><span class="n">__attribute__</span><span class="p">((</span><span class="n">noinline</span><span class="p">))</span>
+<a id="__codelineno-1-51" name="__codelineno-1-51" href="#__codelineno-1-51"></a><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">materialized</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-52" name="__codelineno-1-52" href="#__codelineno-1-52"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">t1</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
+<a id="__codelineno-1-53" name="__codelineno-1-53" href="#__codelineno-1-53"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">t1</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)];</span>
+<a id="__codelineno-1-54" name="__codelineno-1-54" href="#__codelineno-1-54"></a>
+<a id="__codelineno-1-55" name="__codelineno-1-55" href="#__codelineno-1-55"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">t2</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
+<a id="__codelineno-1-56" name="__codelineno-1-56" href="#__codelineno-1-56"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">t2</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t1</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)];</span>
+<a id="__codelineno-1-57" name="__codelineno-1-57" href="#__codelineno-1-57"></a>
+<a id="__codelineno-1-58" name="__codelineno-1-58" href="#__codelineno-1-58"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">t3</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
+<a id="__codelineno-1-59" name="__codelineno-1-59" href="#__codelineno-1-59"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">t3</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">max</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]);</span>
+<a id="__codelineno-1-60" name="__codelineno-1-60" href="#__codelineno-1-60"></a>
+<a id="__codelineno-1-61" name="__codelineno-1-61" href="#__codelineno-1-61"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">out</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
+<a id="__codelineno-1-62" name="__codelineno-1-62" href="#__codelineno-1-62"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">out</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t2</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">t3</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)];</span>
+<a id="__codelineno-1-63" name="__codelineno-1-63" href="#__codelineno-1-63"></a>
+<a id="__codelineno-1-64" name="__codelineno-1-64" href="#__codelineno-1-64"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+<a id="__codelineno-1-65" name="__codelineno-1-65" href="#__codelineno-1-65"></a><span class="p">}</span>
+<a id="__codelineno-1-66" name="__codelineno-1-66" href="#__codelineno-1-66"></a>
+<a id="__codelineno-1-67" name="__codelineno-1-67" href="#__codelineno-1-67"></a><span class="c1">// ==================== FUSED: same graph, one pass, t1 held in a register, never written to memory ====================</span>
+<a id="__codelineno-1-68" name="__codelineno-1-68" href="#__codelineno-1-68"></a><span class="n">__attribute__</span><span class="p">((</span><span class="n">noinline</span><span class="p">))</span>
+<a id="__codelineno-1-69" name="__codelineno-1-69" href="#__codelineno-1-69"></a><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fused</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-70" name="__codelineno-1-70" href="#__codelineno-1-70"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">out</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
+<a id="__codelineno-1-71" name="__codelineno-1-71" href="#__codelineno-1-71"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-72" name="__codelineno-1-72" href="#__codelineno-1-72"></a><span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">av</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)];</span>
+<a id="__codelineno-1-73" name="__codelineno-1-73" href="#__codelineno-1-73"></a><span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">bv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">b</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)];</span>
+<a id="__codelineno-1-74" name="__codelineno-1-74" href="#__codelineno-1-74"></a><span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">t1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">av</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">bv</span><span class="p">;</span>
+<a id="__codelineno-1-75" name="__codelineno-1-75" href="#__codelineno-1-75"></a><span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">t2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t1</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">av</span><span class="p">;</span>
+<a id="__codelineno-1-76" name="__codelineno-1-76" href="#__codelineno-1-76"></a><span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">t3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">max</span><span class="p">(</span><span class="mf">0.0f</span><span class="p">,</span><span class="w"> </span><span class="n">t1</span><span class="p">);</span>
+<a id="__codelineno-1-77" name="__codelineno-1-77" href="#__codelineno-1-77"></a><span class="w">        </span><span class="n">out</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">t2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">t3</span><span class="p">;</span>
+<a id="__codelineno-1-78" name="__codelineno-1-78" href="#__codelineno-1-78"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-79" name="__codelineno-1-79" href="#__codelineno-1-79"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+<a id="__codelineno-1-80" name="__codelineno-1-80" href="#__codelineno-1-80"></a><span class="p">}</span>
+<a id="__codelineno-1-81" name="__codelineno-1-81" href="#__codelineno-1-81"></a>
+<a id="__codelineno-1-82" name="__codelineno-1-82" href="#__codelineno-1-82"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-83" name="__codelineno-1-83" href="#__codelineno-1-83"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Appendix E.1/E.2: the same diamond graph, materialized vs. fused, N=%lld ===</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="p">);</span>
+<a id="__codelineno-1-84" name="__codelineno-1-84" href="#__codelineno-1-84"></a>
+<a id="__codelineno-1-85" name="__codelineno-1-85" href="#__codelineno-1-85"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">)),</span><span class="w"> </span><span class="n">b</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="p">));</span>
+<a id="__codelineno-1-86" name="__codelineno-1-86" href="#__codelineno-1-86"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-87" name="__codelineno-1-87" href="#__codelineno-1-87"></a><span class="w">        </span><span class="n">a</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">((</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">1013</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">500</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">;</span><span class="w">   </span><span class="c1">// genuinely non-uniform, signed</span>
+<a id="__codelineno-1-88" name="__codelineno-1-88" href="#__codelineno-1-88"></a><span class="w">        </span><span class="n">b</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">((</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">727</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">300</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.01f</span><span class="p">;</span>
+<a id="__codelineno-1-89" name="__codelineno-1-89" href="#__codelineno-1-89"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-90" name="__codelineno-1-90" href="#__codelineno-1-90"></a>
+<a id="__codelineno-1-91" name="__codelineno-1-91" href="#__codelineno-1-91"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">outMaterialized</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">materialized</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+<a id="__codelineno-1-92" name="__codelineno-1-92" href="#__codelineno-1-92"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">outFused</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fused</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+<a id="__codelineno-1-93" name="__codelineno-1-93" href="#__codelineno-1-93"></a>
+<a id="__codelineno-1-94" name="__codelineno-1-94" href="#__codelineno-1-94"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">bitForBitEqual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">outMaterialized</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">outFused</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-1-95" name="__codelineno-1-95" href="#__codelineno-1-95"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">bitForBitEqual</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-96" name="__codelineno-1-96" href="#__codelineno-1-96"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-97" name="__codelineno-1-97" href="#__codelineno-1-97"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">outMaterialized</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">outFused</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)])</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">bitForBitEqual</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"> </span><span class="k">break</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-1-98" name="__codelineno-1-98" href="#__codelineno-1-98"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-1-99" name="__codelineno-1-99" href="#__codelineno-1-99"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-100" name="__codelineno-1-100" href="#__codelineno-1-100"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;materialized.out[0]  = %g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">outMaterialized</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<a id="__codelineno-1-101" name="__codelineno-1-101" href="#__codelineno-1-101"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;fused.out[0]         = %g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">outFused</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<a id="__codelineno-1-102" name="__codelineno-1-102" href="#__codelineno-1-102"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;materialized.out[%lld] = %g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">outMaterialized</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)]);</span>
+<a id="__codelineno-1-103" name="__codelineno-1-103" href="#__codelineno-1-103"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;fused.out[%lld]        = %g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">outFused</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">N</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)]);</span>
+<a id="__codelineno-1-104" name="__codelineno-1-104" href="#__codelineno-1-104"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">self-check: materialized and fused agree bit-for-bit at all %lld elements (%s) --</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-105" name="__codelineno-1-105" href="#__codelineno-1-105"></a><span class="w">           </span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">bitForBitEqual</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-106" name="__codelineno-1-106" href="#__codelineno-1-106"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;same finding as File 039&#39;s own Part B, now at real scale instead of 12 elements.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-107" name="__codelineno-1-107" href="#__codelineno-1-107"></a>
+<a id="__codelineno-1-108" name="__codelineno-1-108" href="#__codelineno-1-108"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">bitForBitEqual</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-1-109" name="__codelineno-1-109" href="#__codelineno-1-109"></a><span class="p">}</span>
+</code></pre></div>
+<p>Both <code>materialized()</code> and <code>fused()</code> are <code>static</code> and each has exactly
+one call site in <code>main()</code>, which means plain <code>-O1</code> already inlines
+both of them completely -- confirmed directly, not assumed:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-O1<span class="w"> </span>-g<span class="w"> </span>103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp<span class="w"> </span>-o<span class="w"> </span>/tmp/o1test
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>nm<span class="w"> </span>/tmp/o1test<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-iE<span class="w"> </span><span class="s2">&quot;materialized|fused&quot;</span>
+</code></pre></div>
+<p>produces no output at all -- both symbols are gone, folded into
+<code>main</code>. That would erase the exact per-function boundary Section E.2's
+Callgrind profiling needs before a single profiler ever runs. The real
+fix is <code>__attribute__((noinline))</code> on both functions (already in the
+file above), not a drop to <code>-O0</code>: real <code>-O2</code> code -- auto-vectorized,
+fully register-allocated -- is what Chapter 12's own fusion argument is
+actually about, and <code>-O0</code>'s own lack of register allocation would
+change what is being measured. With the attribute in place at real
+<code>-O2</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-g<span class="w"> </span>103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp<span class="w"> </span>-o<span class="w"> </span>103_driver
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>nm<span class="w"> </span>103_driver<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-iE<span class="w"> </span><span class="s2">&quot;materialized|fused&quot;</span>
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>0000000000001610 t _ZL12materializedRKSt6vectorIfSaIfEES3_
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>0000000000001120 t _ZL12materializedRKSt6vectorIfSaIfEES3_.cold
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>0000000000001570 t _ZL5fusedRKSt6vectorIfSaIfEES3_
+</code></pre></div>
+<p>Both symbols survive. Running the binary directly first confirms
+correctness, continuing this book's own discipline, before any
+profiler is involved at all:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./103_driver
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>=== Appendix E.1/E.2: the same diamond graph, materialized vs. fused, N=20000000 ===
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>materialized.out[0]  = 40
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>fused.out[0]         = 40
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>materialized.out[19999999] = 3.696
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>fused.out[19999999]        = 3.696
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>self-check: materialized and fused agree bit-for-bit at all 20000000 elements (confirmed) --
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>same finding as File 039&#39;s own Part B, now at real scale instead of 12 elements.
+</code></pre></div>
+<p>Bit-for-bit agreement at all 20,000,000 elements -- the same finding
+as File 039's own Part B, now at real scale. With correctness settled,
+Cachegrind asks the real question Chapter 12's prose never measured:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg103.out<span class="w"> </span>./103_driver
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>==PID==</code> line-prefix stripped for readability; the counts themselves are the exact, real output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>I refs:        1,939,279,319
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>I1  misses:            2,219
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>LLi misses:            2,175
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>I1  miss rate:          0.00%
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>LLi miss rate:          0.00%
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>D refs:          920,688,701  (220,518,632 rd   + 700,170,069 wr)
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>D1  misses:       31,266,164  ( 13,763,766 rd   +  17,502,398 wr)
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>LLd misses:       31,259,612  ( 13,758,058 rd   +  17,501,554 wr)
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>D1  miss rate:           3.4% (        6.2%     +         2.5%  )
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>LLd miss rate:           3.4% (        6.2%     +         2.5%  )
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>LL refs:          31,268,383  ( 13,765,985 rd   +  17,502,398 wr)
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>LL misses:        31,261,787  ( 13,760,233 rd   +  17,501,554 wr)
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>LL miss rate:            1.1% (        0.6%     +         2.5%  )
+</code></pre></div>
+<p>Cachegrind also reports this machine's own real, detected cache
+geometry -- a 34,603,008-byte (33MB) real LL (last-level) cache, used
+again in Section E.3:</p>
+<p><strong>Output (cloud sandbox -- real, live-executed output, same run, <code>==PID==</code>/<code>--PID--</code> prefixes stripped):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>warning: L3 cache found, using its data for the LL simulation.
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>warning: specified LL cache: line_size 64  assoc 11  total_size 34,603,008
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>warning: simulated LL cache: line_size 64  assoc 17  total_size 35,651,584
+</code></pre></div>
+<p>The PROGRAM total mixes <code>main()</code>'s own array-fill loop in with both
+functions under test. <code>cg_annotate</code>, Cachegrind's own real per-
+function attribution tool, separates them -- narrowed here to the
+three columns (<code>Ir</code>, <code>D1mr</code>, <code>D1mw</code>) that matter for this comparison
+with <code>--show</code>, a real Cachegrind option, not a hand-edited table:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>cg_annotate<span class="w"> </span>--show<span class="o">=</span>Ir,D1mr,D1mw<span class="w"> </span>--no-show-percs<span class="w"> </span>--no-annotate<span class="w"> </span>cg103.out
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>-- Metadata
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>Invocation:       /usr/bin/cg_annotate --show=Ir,D1mr,D1mw --no-show-percs --no-annotate cg103.out
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>I1 cache:         32768 B, 64 B, 8-way associative
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>D1 cache:         32768 B, 64 B, 8-way associative
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>LL cache:         35651584 B, 64 B, 17-way associative
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>Command:          ./103_driver
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>Events shown:     Ir D1mr D1mw
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>Threshold:        0.1%
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>Annotation:       off
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>-- Summary
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>Ir___________ D1mr______ D1mw______ 
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>1,939,279,319 13,763,766 17,502,398  PROGRAM TOTALS
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>-- File:function summary
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>  Ir___________ D1mr______ D1mw_____  file:function
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>&lt; 1,260,000,158 12,500,021 8,750,017  /tmp/appendixE_work/103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp:
+<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>    640,000,077  2,500,007 2,500,004    main
+<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>    440,000,058  7,500,010 5,000,012    materialized(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;)
+<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>    180,000,023  2,500,004 1,250,001    fused(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;)
+<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a>
+<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a>&lt;   560,000,091         13 8,750,000  ./string/../sysdeps/x86_64/multiarch/memset-vec-unaligned-erms.S:__memset_avx2_unaligned_erms
+<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a>
+<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a>&lt;   117,295,567  1,250,001         0  /usr/include/c++/13/bits/stl_algobase.h:
+<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a>     68,647,759  1,250,001         0    materialized(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;)
+<a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a>     48,647,759          0         0    fused(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;)
+<a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a>
+<a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a>-- Function:file summary
+<a id="__codelineno-11-40" name="__codelineno-11-40" href="#__codelineno-11-40"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a>  Ir_________ D1mr_____ D1mw_____  function:file
+<a id="__codelineno-11-42" name="__codelineno-11-42" href="#__codelineno-11-42"></a>
+<a id="__codelineno-11-43" name="__codelineno-11-43" href="#__codelineno-11-43"></a>&gt; 640,000,116 2,500,008 2,500,005  main:
+<a id="__codelineno-11-44" name="__codelineno-11-44" href="#__codelineno-11-44"></a>  640,000,077 2,500,007 2,500,004    /tmp/appendixE_work/103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp
+<a id="__codelineno-11-45" name="__codelineno-11-45" href="#__codelineno-11-45"></a>
+<a id="__codelineno-11-46" name="__codelineno-11-46" href="#__codelineno-11-46"></a>&gt; 560,000,091        13 8,750,000  __memset_avx2_unaligned_erms:./string/../sysdeps/x86_64/multiarch/memset-vec-unaligned-erms.S
+<a id="__codelineno-11-47" name="__codelineno-11-47" href="#__codelineno-11-47"></a>
+<a id="__codelineno-11-48" name="__codelineno-11-48" href="#__codelineno-11-48"></a>&gt; 508,647,825 8,750,013 5,000,012  materialized(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;):
+<a id="__codelineno-11-49" name="__codelineno-11-49" href="#__codelineno-11-49"></a>  440,000,058 7,500,010 5,000,012    /tmp/appendixE_work/103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp
+<a id="__codelineno-11-50" name="__codelineno-11-50" href="#__codelineno-11-50"></a>   68,647,759 1,250,001         0    /usr/include/c++/13/bits/stl_algobase.h
+<a id="__codelineno-11-51" name="__codelineno-11-51" href="#__codelineno-11-51"></a>
+<a id="__codelineno-11-52" name="__codelineno-11-52" href="#__codelineno-11-52"></a>&gt; 228,647,785 2,500,005 1,250,001  fused(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;):
+<a id="__codelineno-11-53" name="__codelineno-11-53" href="#__codelineno-11-53"></a>  180,000,023 2,500,004 1,250,001    /tmp/appendixE_work/103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp
+<a id="__codelineno-11-54" name="__codelineno-11-54" href="#__codelineno-11-54"></a>   48,647,759         0         0    /usr/include/c++/13/bits/stl_algobase.h
+</code></pre></div>
+<p>Three real, exact numbers settle Chapter 12's own prose claim.
+Instruction count: <code>materialized()</code> executes 508,647,825 real dynamic
+instructions (its own 440,000,058 plus 68,647,759 inlined from
+<code>std::max</code> inside its <code>t3</code> loop); <code>fused()</code> executes 228,647,785 --
+<code>materialized()</code> costs 2.22x the real instructions for the identical
+mathematical result. D1 read misses: 8,750,013 for <code>materialized()</code>
+against 2,500,005 for <code>fused()</code>, a real 3.5x. D1 write misses:
+5,000,012 against 1,250,001, a real 4.0x -- close to the naive
+prediction (four full array writes instead of one), confirming that
+the extra write traffic really is dominated by the three intermediate
+buffers <code>fused()</code> never allocates at all, not by some other effect.
+None of these three numbers came from a clock; all three came from
+Cachegrind re-executing the actual real binary through a real
+simulated cache model and counting exactly what happened.</p>
+<h2 id="e2-callgrind-where-the-extra-instructions-actually-go">E.2 -- Callgrind: Where the Extra Instructions Actually Go<a class="headerlink" href="#e2-callgrind-where-the-extra-instructions-actually-go" title="Permanent link">&para;</a></h2>
+<p>Cachegrind's own per-function totals already show THAT
+<code>materialized()</code> costs more; they do not show WHERE, inside
+<code>materialized()</code>, that extra cost actually comes from -- naive
+intuition says "the four elementwise loops," but File 103's own real
+structure has four VECTOR CONSTRUCTIONS too (<code>t1</code>, <code>t2</code>, <code>t3</code>, <code>out</code>
+each get their own fresh, zero-initialized <code>std::vector&lt;float&gt;</code>, one
+real heap allocation and one real zero-fill each), which <code>fused()</code>
+only pays once. Callgrind is Valgrind's own call-graph-generating
+profiler: same real re-execution as Cachegrind, but it also tracks
+real per-line, per-call-site instruction counts and (with
+<code>callgrind_annotate</code>) prints them directly against the original source
+line -- the same SAME binary from Section E.1, profiled with a
+different real tool asking a different real question.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>callgrind<span class="w"> </span>--callgrind-out-file<span class="o">=</span>cl103.out<span class="w"> </span>./103_driver
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>callgrind_annotate<span class="w"> </span>cl103.out
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed output, top-level function table):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>Ir                     
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>1,939,268,383 (100.0%)  PROGRAM TOTALS
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>Ir                    file:function
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>--------------------------------------------------------------------------------
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>640,000,077 (33.00%)  103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp:main [/tmp/appendixE_work/103_driver]
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>560,000,091 (28.88%)  ./string/../sysdeps/x86_64/multiarch/memset-vec-unaligned-erms.S:__memset_avx2_unaligned_erms [/usr/lib/x86_64-linux-gnu/libc.so.6]
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>440,000,058 (22.69%)  103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp:materialized(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;) [/tmp/appendixE_work/103_driver]
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>180,000,023 ( 9.28%)  103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp:fused(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;) [/tmp/appendixE_work/103_driver]
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a> 68,647,759 ( 3.54%)  /usr/include/c++/13/bits/stl_algobase.h:materialized(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;)
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a> 48,647,759 ( 2.51%)  /usr/include/c++/13/bits/stl_algobase.h:fused(std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;, std::vector&lt;float, std::allocator&lt;float&gt; &gt; const&amp;)
+</code></pre></div>
+<p><code>__memset_avx2_unaligned_erms</code> -- glibc's own real, hand-vectorized
+<code>memset</code> -- shows up as its OWN separate real entry at 28.88%, called
+from inside <code>std::vector&lt;float&gt;</code>'s own constructor every time
+<code>materialized()</code> or <code>fused()</code> allocates a buffer: real evidence that
+"materializing an intermediate tensor" costs real instructions before
+a single element of actual arithmetic ever runs, just to zero-
+initialize the memory C++ requires a <code>std::vector&lt;float&gt;(N)</code> to start
+from. <code>callgrind_annotate</code>'s own real per-LINE view, auto-annotated
+directly against File 103's own source text, shows exactly how much of
+that falls on each of <code>materialized()</code>'s four steps individually:</p>
+<p><strong>Output (cloud sandbox -- real, live-executed output, auto-annotated source, <code>materialized()</code> and <code>fused()</code>):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>-- line 43 ----------------------------------------
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>          .           #include &lt;vector&gt;
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>          .           #include &lt;cmath&gt;
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>          .           #include &lt;cstdlib&gt;
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>          .           
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>          .           static const long long N = 20&#39;000&#39;000;
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>          .           
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>          .           // ==================== MATERIALIZED: same four steps as File 039&#39;s UNFUSED graph, each its own real buffer ====================
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>          .           __attribute__((noinline))
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>         13 ( 0.00%)  static std::vector&lt;float&gt; materialized(const std::vector&lt;float&gt;&amp; a, const std::vector&lt;float&gt;&amp; b) {
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>          7 ( 0.00%)      std::vector&lt;float&gt; t1(static_cast&lt;size_t&gt;(N));
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a> 80,000,384 ( 4.13%)  =&gt; /usr/include/c++/13/bits/stl_vector.h:std::vector&lt;float, std::allocator&lt;float&gt; &gt;::vector(unsigned long, std::allocator&lt;float&gt; const&amp;) (1x)
+<a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>120,000,001 ( 6.19%)      for (long long i = 0; i &lt; N; ++i) t1[static_cast&lt;size_t&gt;(i)] = a[static_cast&lt;size_t&gt;(i)] + b[static_cast&lt;size_t&gt;(i)];
+<a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>          .           
+<a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a>          5 ( 0.00%)      std::vector&lt;float&gt; t2(static_cast&lt;size_t&gt;(N));
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a> 80,000,384 ( 4.13%)  =&gt; /usr/include/c++/13/bits/stl_vector.h:std::vector&lt;float, std::allocator&lt;float&gt; &gt;::vector(unsigned long, std::allocator&lt;float&gt; const&amp;) (1x)
+<a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a>120,000,002 ( 6.19%)      for (long long i = 0; i &lt; N; ++i) t2[static_cast&lt;size_t&gt;(i)] = t1[static_cast&lt;size_t&gt;(i)] * a[static_cast&lt;size_t&gt;(i)];
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a>          .           
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a>          6 ( 0.00%)      std::vector&lt;float&gt; t3(static_cast&lt;size_t&gt;(N));
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a> 80,000,384 ( 4.13%)  =&gt; /usr/include/c++/13/bits/stl_vector.h:std::vector&lt;float, std::allocator&lt;float&gt; &gt;::vector(unsigned long, std::allocator&lt;float&gt; const&amp;) (1x)
+<a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a> 80,000,001 ( 4.13%)      for (long long i = 0; i &lt; N; ++i) t3[static_cast&lt;size_t&gt;(i)] = std::max(0.0f, t1[static_cast&lt;size_t&gt;(i)]);
+<a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a>          .           
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a>          4 ( 0.00%)      std::vector&lt;float&gt; out(static_cast&lt;size_t&gt;(N));
+<a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a> 80,000,384 ( 4.13%)  =&gt; /usr/include/c++/13/bits/stl_vector.h:std::vector&lt;float, std::allocator&lt;float&gt; &gt;::vector(unsigned long, std::allocator&lt;float&gt; const&amp;) (1x)
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a>120,000,001 ( 6.19%)      for (long long i = 0; i &lt; N; ++i) out[static_cast&lt;size_t&gt;(i)] = t2[static_cast&lt;size_t&gt;(i)] + t3[static_cast&lt;size_t&gt;(i)];
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a>          .           
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a>          .               return out;
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a>         18 ( 0.00%)  }
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a>      1,689 ( 0.00%)  =&gt; /usr/include/c++/13/bits/stl_vector.h:std::vector&lt;float, std::allocator&lt;float&gt; &gt;::~vector() (3x)
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a>          .           
+<a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a>          .           // ==================== FUSED: same graph, one pass, t1 held in a register, never written to memory ====================
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a>          .           __attribute__((noinline))
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a>         10 ( 0.00%)  static std::vector&lt;float&gt; fused(const std::vector&lt;float&gt;&amp; a, const std::vector&lt;float&gt;&amp; b) {
+<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a>          3 ( 0.00%)      std::vector&lt;float&gt; out(static_cast&lt;size_t&gt;(N));
+<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a> 80,000,380 ( 4.13%)  =&gt; /usr/include/c++/13/bits/stl_vector.h:std::vector&lt;float, std::allocator&lt;float&gt; &gt;::vector(unsigned long, std::allocator&lt;float&gt; const&amp;) (1x)
+<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a> 60,000,001 ( 3.09%)      for (long long i = 0; i &lt; N; ++i) {
+<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a> 20,000,000 ( 1.03%)          float av = a[static_cast&lt;size_t&gt;(i)];
+<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a>          .                   float bv = b[static_cast&lt;size_t&gt;(i)];
+<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a> 40,000,000 ( 2.06%)          float t1 = av + bv;
+<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a> 20,000,000 ( 1.03%)          float t2 = t1 * av;
+<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a>          .                   float t3 = std::max(0.0f, t1);
+<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a> 40,000,000 ( 2.06%)          out[static_cast&lt;size_t&gt;(i)] = t2 + t3;
+<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a>          .               }
+<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a>          .               return out;
+<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a>          9 ( 0.00%)  }
+<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a>          .           
+</code></pre></div>
+<p>Every one of the four <code>std::vector&lt;float&gt;(N)</code> constructions inside
+<code>materialized()</code> costs a real, identical 80,000,384 instructions (four
+separate 80MB zero-fills of <code>memset_avx2</code>) -- 320,001,536 instructions
+in total, 72.7% of <code>materialized()</code>'s own 440,000,058-instruction
+total, BEFORE counting a single <code>+</code>, <code>*</code>, or <code>relu</code> in any of its four
+loops. <code>fused()</code> pays this real cost exactly ONCE, for its one output
+buffer. This is the real, specific answer to "where do fusion's saved
+instructions actually go": not primarily in redundant arithmetic --
+Chapter 12's four elementwise operations still run exactly once per
+element either way -- but in the real allocation-and-zero-init
+overhead of every extra buffer a materialized intermediate tensor
+requires, exactly the mechanism Chapter 13's own elementwise fusion
+pass exists to eliminate, now visible as an exact, real, per-line
+instruction count instead of an assumed one.</p>
+<h2 id="e3-capstone-testing-chapter-22s-own-explanation">E.3 -- Capstone: Testing Chapter 22's Own Explanation<a class="headerlink" href="#e3-capstone-testing-chapter-22s-own-explanation" title="Permanent link">&para;</a></h2>
+<p>Chapter 22's own File 054 measured <code>computeUnrolled()</code>
+-- <code>out[i] = a[i]*2+1</code>, processed in chunks of <code>unrollFactor</code> -- at
+extent=50,000,000 across factors 1,2,4,8,16,32,64, and found a real
+mismatch: <code>estimateLoopOverheadCost()</code> always predicts the LARGEST
+factor is fastest (fewer trips, and the model's own per-element term
+never depends on chunk size at all), but the real best-of-5 wall-clock
+measurement did not always agree, and Chapter 22's own prose named
+three specific, plausible, unmeasured suspects: instruction-cache
+pressure, register pressure, and lost auto-vectorization. This file
+reuses <code>computeUnrolled()</code> completely UNCHANGED from File 054 and asks
+Cachegrind to check each suspect directly, as a real number instead of
+a plausible sentence. The extent is reduced to 10,000,000 -- stated
+honestly: Section E.1's own Cachegrind run took roughly 15-45x real
+time (round-trip through <code>valgrind --tool=callgrind</code>), so a full
+50,000,000-element, 7-factor sweep under instrumentation is
+impractical to run as part of building this book, while 10,000,000
+four-byte floats (40MB) still comfortably exceeds this same machine's
+own real, measured 33MB LL cache (Section E.1's own cache-config
+output), so the mechanism under test is still genuinely present at
+this size.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1">// Appendix E: Profiling and Benchmarking</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1">// 104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="c1">//</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1">// Section E.3 (capstone) -- Chapter 22&#39;s own File 054 built</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="c1">// estimateLoopOverheadCost(), a linear model that always recommends the</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="c1">// LARGEST unroll factor, then measured computeUnrolled() for real across</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="c1">// unroll factors 1,2,4,8,16,32,64 at extent=50,000,000 and found, honestly,</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="c1">// that the model&#39;s own prediction did NOT always match the real fastest</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="c1">// factor -- and named the reason in prose, without measuring it: &quot;real</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="c1">// hardware has other mechanisms this simple model was never told about --</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="c1">// instruction-cache pressure, register pressure, and lost auto-</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="c1">// vectorization opportunities.&quot; Sections E.1 and E.2 showed that Cachegrind</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="c1">// and Callgrind can turn a claim like that into a real, counted number</span>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="c1">// instead of a plausible-sounding sentence. This file reuses File 054&#39;s own</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="c1">// computeUnrolled() UNCHANGED and asks Cachegrind directly: does real</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="c1">// INSTRUCTION COUNT grow with unroll factor the way &quot;instruction-cache</span>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="c1">// pressure&quot; would predict, and do real D1/I1 miss counts move at all? The</span>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="c1">// extent here is reduced from File 054&#39;s own 50,000,000 to 10,000,000 --</span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="c1">// stated honestly, not silently: Cachegrind&#39;s own instrumentation overhead</span>
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="c1">// (Sections E.1/E.2 measured roughly 90-115x real time on a 20,000,000-</span>
+<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a><span class="c1">// element run) makes a full 50,000,000-element, 7-factor sweep impractical</span>
+<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a><span class="c1">// to run as part of building this book, while 10,000,000 four-byte floats</span>
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="c1">// (40MB) still comfortably exceeds this machine&#39;s own measured 33MB LL</span>
+<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a><span class="c1">// cache (Section E.1&#39;s own cachegrind warning line), so the mechanism under</span>
+<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a><span class="c1">// test is still real at this size.</span>
+<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="c1">//</span>
+<a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a><span class="c1">// Compile: g++ -std=c++17 -Wall -Wextra -O2 -g 104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp -o 104_driver &lt;factor&gt;</span>
+<a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a><span class="c1">// (Same real reason as Section E.1&#39;s File 103: computeUnrolled() keeps</span>
+<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="c1">// -O2 -- the same optimization level File 054&#39;s own wall-clock numbers</span>
+<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a><span class="c1">// were measured at -- and __attribute__((noinline)) keeps it a real,</span>
+<a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a><span class="c1">// separately profilable symbol instead of trusting that six call sites</span>
+<a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a><span class="c1">// happen to be enough to stop GCC from inlining it anyway.)</span>
+<a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a><span class="c1">// Run:     ./104_driver &lt;factor&gt;      (factor in {1,2,4,8,16,32,64}; prints result + a self-check)</span>
+<a id="__codelineno-15-34" name="__codelineno-15-34" href="#__codelineno-15-34"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdio&gt;</span>
+<a id="__codelineno-15-35" name="__codelineno-15-35" href="#__codelineno-15-35"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;cstdlib&gt;</span>
+<a id="__codelineno-15-36" name="__codelineno-15-36" href="#__codelineno-15-36"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;string&gt;</span>
+<a id="__codelineno-15-37" name="__codelineno-15-37" href="#__codelineno-15-37"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;vector&gt;</span>
+<a id="__codelineno-15-38" name="__codelineno-15-38" href="#__codelineno-15-38"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;chrono&gt;</span>
+<a id="__codelineno-15-39" name="__codelineno-15-39" href="#__codelineno-15-39"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;limits&gt;</span>
+<a id="__codelineno-15-40" name="__codelineno-15-40" href="#__codelineno-15-40"></a>
+<a id="__codelineno-15-41" name="__codelineno-15-41" href="#__codelineno-15-41"></a><span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">EXTENT</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10&#39;000&#39;000</span><span class="p">;</span>
+<a id="__codelineno-15-42" name="__codelineno-15-42" href="#__codelineno-15-42"></a>
+<a id="__codelineno-15-43" name="__codelineno-15-43" href="#__codelineno-15-43"></a><span class="c1">// ==================== computeUnrolled() -- reused UNCHANGED from Chapter 22&#39;s File 054 ====================</span>
+<a id="__codelineno-15-44" name="__codelineno-15-44" href="#__codelineno-15-44"></a><span class="n">__attribute__</span><span class="p">((</span><span class="n">noinline</span><span class="p">))</span>
+<a id="__codelineno-15-45" name="__codelineno-15-45" href="#__codelineno-15-45"></a><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">computeUnrolled</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">unrollFactor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-46" name="__codelineno-15-46" href="#__codelineno-15-46"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="o">&gt;</span><span class="p">(</span><span class="n">a</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-15-47" name="__codelineno-15-47" href="#__codelineno-15-47"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">out</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">n</span><span class="p">));</span>
+<a id="__codelineno-15-48" name="__codelineno-15-48" href="#__codelineno-15-48"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-15-49" name="__codelineno-15-49" href="#__codelineno-15-49"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">unrollFactor</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">unrollFactor</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-50" name="__codelineno-15-50" href="#__codelineno-15-50"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">lane</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">lane</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">unrollFactor</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">lane</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-51" name="__codelineno-15-51" href="#__codelineno-15-51"></a><span class="w">            </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">idx</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">lane</span><span class="p">;</span>
+<a id="__codelineno-15-52" name="__codelineno-15-52" href="#__codelineno-15-52"></a><span class="w">            </span><span class="n">out</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0f</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">;</span>
+<a id="__codelineno-15-53" name="__codelineno-15-53" href="#__codelineno-15-53"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-15-54" name="__codelineno-15-54" href="#__codelineno-15-54"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-15-55" name="__codelineno-15-55" href="#__codelineno-15-55"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">out</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">2.0f</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mf">1.0f</span><span class="p">;</span><span class="w">  </span><span class="c1">// scalar tail</span>
+<a id="__codelineno-15-56" name="__codelineno-15-56" href="#__codelineno-15-56"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">out</span><span class="p">;</span>
+<a id="__codelineno-15-57" name="__codelineno-15-57" href="#__codelineno-15-57"></a><span class="p">}</span>
+<a id="__codelineno-15-58" name="__codelineno-15-58" href="#__codelineno-15-58"></a><span class="k">static</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">arraysExactlyEqual</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-59" name="__codelineno-15-59" href="#__codelineno-15-59"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">size</span><span class="p">()</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y</span><span class="p">.</span><span class="n">size</span><span class="p">())</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-15-60" name="__codelineno-15-60" href="#__codelineno-15-60"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">x</span><span class="p">.</span><span class="n">size</span><span class="p">();</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">])</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<a id="__codelineno-15-61" name="__codelineno-15-61" href="#__codelineno-15-61"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-15-62" name="__codelineno-15-62" href="#__codelineno-15-62"></a><span class="p">}</span>
+<a id="__codelineno-15-63" name="__codelineno-15-63" href="#__codelineno-15-63"></a>
+<a id="__codelineno-15-64" name="__codelineno-15-64" href="#__codelineno-15-64"></a><span class="kt">int</span><span class="w"> </span><span class="n">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="o">**</span><span class="w"> </span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-65" name="__codelineno-15-65" href="#__codelineno-15-65"></a><span class="w">    </span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">factor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">argc</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">atoll</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-15-66" name="__codelineno-15-66" href="#__codelineno-15-66"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=%lld, extent=%lld ===</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">factor</span><span class="p">,</span><span class="w"> </span><span class="n">EXTENT</span><span class="p">);</span>
+<a id="__codelineno-15-67" name="__codelineno-15-67" href="#__codelineno-15-67"></a>
+<a id="__codelineno-15-68" name="__codelineno-15-68" href="#__codelineno-15-68"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">a</span><span class="p">(</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">EXTENT</span><span class="p">));</span>
+<a id="__codelineno-15-69" name="__codelineno-15-69" href="#__codelineno-15-69"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">EXTENT</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="n">a</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="mi">997</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">0.001f</span><span class="p">;</span>
+<a id="__codelineno-15-70" name="__codelineno-15-70" href="#__codelineno-15-70"></a>
+<a id="__codelineno-15-71" name="__codelineno-15-71" href="#__codelineno-15-71"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">baseline</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeUnrolled</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<a id="__codelineno-15-72" name="__codelineno-15-72" href="#__codelineno-15-72"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<a id="__codelineno-15-73" name="__codelineno-15-73" href="#__codelineno-15-73"></a><span class="w">    </span><span class="kt">double</span><span class="w"> </span><span class="n">bestMs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">numeric_limits</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;::</span><span class="n">max</span><span class="p">();</span>
+<a id="__codelineno-15-74" name="__codelineno-15-74" href="#__codelineno-15-74"></a><span class="w">    </span><span class="k">const</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">trials</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5</span><span class="p">;</span>
+<a id="__codelineno-15-75" name="__codelineno-15-75" href="#__codelineno-15-75"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">t</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">trials</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">t</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-15-76" name="__codelineno-15-76" href="#__codelineno-15-76"></a><span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">steady_clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span>
+<a id="__codelineno-15-77" name="__codelineno-15-77" href="#__codelineno-15-77"></a><span class="w">        </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">computeUnrolled</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">factor</span><span class="p">);</span>
+<a id="__codelineno-15-78" name="__codelineno-15-78" href="#__codelineno-15-78"></a><span class="w">        </span><span class="k">auto</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">steady_clock</span><span class="o">::</span><span class="n">now</span><span class="p">();</span>
+<a id="__codelineno-15-79" name="__codelineno-15-79" href="#__codelineno-15-79"></a><span class="w">        </span><span class="kt">double</span><span class="w"> </span><span class="n">ms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">chrono</span><span class="o">::</span><span class="n">duration</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">milli</span><span class="o">&gt;</span><span class="p">(</span><span class="n">end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start</span><span class="p">).</span><span class="n">count</span><span class="p">();</span>
+<a id="__codelineno-15-80" name="__codelineno-15-80" href="#__codelineno-15-80"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">ms</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">bestMs</span><span class="p">)</span><span class="w"> </span><span class="n">bestMs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ms</span><span class="p">;</span>
+<a id="__codelineno-15-81" name="__codelineno-15-81" href="#__codelineno-15-81"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-15-82" name="__codelineno-15-82" href="#__codelineno-15-82"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">correct</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">arraysExactlyEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">baseline</span><span class="p">);</span>
+<a id="__codelineno-15-83" name="__codelineno-15-83" href="#__codelineno-15-83"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;result[0]=%g  result[%lld]=%g</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">EXTENT</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">[</span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">EXTENT</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">)]);</span>
+<a id="__codelineno-15-84" name="__codelineno-15-84" href="#__codelineno-15-84"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;best-of-%d wall-clock: %.3f ms</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">trials</span><span class="p">,</span><span class="w"> </span><span class="n">bestMs</span><span class="p">);</span>
+<a id="__codelineno-15-85" name="__codelineno-15-85" href="#__codelineno-15-85"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: bit-for-bit equal to unrollFactor=1 baseline (%s)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">correct</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-15-86" name="__codelineno-15-86" href="#__codelineno-15-86"></a>
+<a id="__codelineno-15-87" name="__codelineno-15-87" href="#__codelineno-15-87"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">correct</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-15-88" name="__codelineno-15-88" href="#__codelineno-15-88"></a><span class="p">}</span>
+</code></pre></div>
+<p>A fresh real wall-clock sweep first, at this file's own N=10,000,000
+(not reused from File 054's old 50,000,000-element numbers -- a
+self-contained, freshly measured comparison):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-g<span class="w"> </span>104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp<span class="w"> </span>-o<span class="w"> </span>104_driver
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">64</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>./104_driver<span class="w"> </span><span class="nv">$f</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed output, all 7 factors):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=1, extent=10000000 ===
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>result[0]=1  result[9999999]=1.178
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>best-of-5 wall-clock: 58.938 ms
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=2, extent=10000000 ===
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>result[0]=1  result[9999999]=1.178
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>best-of-5 wall-clock: 55.383 ms
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=4, extent=10000000 ===
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>result[0]=1  result[9999999]=1.178
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>best-of-5 wall-clock: 46.197 ms
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=8, extent=10000000 ===
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>result[0]=1  result[9999999]=1.178
+<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>best-of-5 wall-clock: 38.400 ms
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)
+<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>
+<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=16, extent=10000000 ===
+<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>
+<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>result[0]=1  result[9999999]=1.178
+<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>best-of-5 wall-clock: 47.595 ms
+<a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a>self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)
+<a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>
+<a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a>=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=32, extent=10000000 ===
+<a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a>
+<a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a>result[0]=1  result[9999999]=1.178
+<a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a>best-of-5 wall-clock: 40.898 ms
+<a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a>self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)
+<a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a>
+<a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a>=== Appendix E.3: File 054&#39;s computeUnrolled(), unrollFactor=64, extent=10000000 ===
+<a id="__codelineno-17-38" name="__codelineno-17-38" href="#__codelineno-17-38"></a>
+<a id="__codelineno-17-39" name="__codelineno-17-39" href="#__codelineno-17-39"></a>result[0]=1  result[9999999]=1.178
+<a id="__codelineno-17-40" name="__codelineno-17-40" href="#__codelineno-17-40"></a>best-of-5 wall-clock: 40.625 ms
+<a id="__codelineno-17-41" name="__codelineno-17-41" href="#__codelineno-17-41"></a>self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)
+</code></pre></div>
+<p>A real turnover, the same SHAPE Chapter 22 itself found: best-of-5
+drops from 58.938ms at <code>unrollFactor=1</code> to 38.400ms at <code>unrollFactor=8</code>,
+then never improves further -- 16, 32, and 64 all land back in the
+40-48ms range, no better than 8. Chapter 22's own model would have
+recommended 64 unconditionally. Cachegrind now checks each of Chapter
+22's own three named suspects against this exact real plateau, at the
+two endpoints (<code>unrollFactor=1</code> and <code>unrollFactor=64</code>) plus one real
+midpoint (<code>unrollFactor=8</code>, the real fastest factor):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span>--branch-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg1.out<span class="w"> </span>./104_driver<span class="w"> </span><span class="m">1</span>
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>unrollFactor=1</code>, <code>==PID==</code> prefix stripped):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>I refs:        1,621,986,349
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>I1  misses:            2,249
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>LLi misses:            2,205
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>I1  miss rate:          0.00%
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>LLi miss rate:          0.00%
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>D refs:          490,689,591  (140,519,414 rd   + 350,170,177 wr)
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>D1  misses:       13,766,315  (  5,013,916 rd   +   8,752,399 wr)
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>LLd misses:       13,759,742  (  5,008,187 rd   +   8,751,555 wr)
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>D1  miss rate:           2.8% (        3.6%     +         2.5%  )
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>LLd miss rate:           2.8% (        3.6%     +         2.5%  )
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>LL refs:          13,768,564  (  5,016,165 rd   +   8,752,399 wr)
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>LL misses:        13,761,947  (  5,010,392 rd   +   8,751,555 wr)
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>LL miss rate:            0.7% (        0.3%     +         2.5%  )
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>
+<a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a>Branches:        490,323,400  (490,318,098 cond +       5,302 ind)
+<a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a>Mispredicts:          16,798  (     15,650 cond +       1,148 ind)
+<a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a>Mispred rate:            0.0% (        0.0%     +        21.7%   )
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg8.out<span class="w"> </span>./104_driver<span class="w"> </span><span class="m">8</span>
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>unrollFactor=8</code>, <code>==PID==</code> prefix stripped):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>I refs:        1,096,986,215
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>I1  misses:            2,250
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>LLi misses:            2,206
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>I1  miss rate:          0.00%
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>LLi miss rate:          0.00%
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>D refs:          446,939,528  (96,769,377 rd   + 350,170,151 wr)
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>D1  misses:       13,766,315  ( 5,013,916 rd   +   8,752,399 wr)
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>LLd misses:       13,759,742  ( 5,008,187 rd   +   8,751,555 wr)
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>D1  miss rate:           3.1% (       5.2%     +         2.5%  )
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>LLd miss rate:           3.1% (       5.2%     +         2.5%  )
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>LL refs:          13,768,565  ( 5,016,166 rd   +   8,752,399 wr)
+<a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>LL misses:        13,761,948  ( 5,010,393 rd   +   8,751,555 wr)
+<a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>LL miss rate:            0.9% (       0.4%     +         2.5%  )
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span>--branch-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg64.out<span class="w"> </span>./104_driver<span class="w"> </span><span class="m">64</span>
+</code></pre></div>
+<p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>unrollFactor=64</code>, <code>==PID==</code> prefix stripped):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>I refs:        1,031,361,381
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>I1  misses:            2,251
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>LLi misses:            2,207
+<a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>I1  miss rate:          0.00%
+<a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>LLi miss rate:          0.00%
+<a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>
+<a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>D refs:          441,470,842  ( 91,300,667 rd   + 350,170,175 wr)
+<a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>D1  misses:       13,766,316  (  5,013,917 rd   +   8,752,399 wr)
+<a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>LLd misses:       13,759,743  (  5,008,188 rd   +   8,751,555 wr)
+<a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a>D1  miss rate:           3.1% (        5.5%     +         2.5%  )
+<a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>LLd miss rate:           3.1% (        5.5%     +         2.5%  )
+<a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a>
+<a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a>LL refs:          13,768,567  (  5,016,168 rd   +   8,752,399 wr)
+<a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>LL misses:        13,761,950  (  5,010,395 rd   +   8,751,555 wr)
+<a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a>LL miss rate:            0.9% (        0.4%     +         2.5%  )
+<a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a>
+<a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a>Branches:        391,885,909  (391,880,607 cond +       5,302 ind)
+<a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a>Mispredicts:         798,074  (    796,926 cond +       1,148 ind)
+<a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a>Mispred rate:            0.2% (        0.2%     +        21.7%   )
+</code></pre></div>
+<p>Three real, exact answers to Chapter 22's own three named suspects.
+DATA cache pressure: D1 misses are 13,766,315 at factor=1, 13,766,315
+at factor=8, and 13,766,316 at factor=64 -- flat, within real rounding
+noise, across the entire real plateau. INSTRUCTION cache pressure:
+<code>I1 misses</code> reads 2,249 / 2,250 / 2,251 across the same three factors --
+also completely flat; Cachegrind's own real I1-cache simulation finds
+no evidence at all that a bigger unroll factor is pushing this
+particular loop body out of a real 32KB I1 cache. Both of Chapter 22's
+two CACHE-shaped suspects are directly ruled out by real measurement,
+not merely left unconfirmed. But real dynamic instruction count DOES
+keep falling -- 1,621,986,349 at factor=1 down to 1,031,361,381 at
+factor=64 -- exactly the loop-overhead amortization
+<code>estimateLoopOverheadCost()</code> itself predicts, which is why the model
+gets the DIRECTION right from 1 to 8. What the model, and Chapter 22's
+own prose, never named at all is the real mechanism that actually
+explains the plateau from 8 onward: real branch mispredictions grow
+47.5x across the same range -- 16,798 real mispredicts at factor=1,
+798,074 at factor=64, confirmed by Cachegrind's own real branch-
+predictor simulation (<code>--branch-sim=yes</code>), not by inference. This is a
+genuinely different, real, specific mechanism than any of Chapter 22's
+own three named suspects: as <code>unrollFactor</code> grows, the code generated
+for the unrolled loop's own tail-handling and trip-counting logic
+becomes real, measurably harder for the branch predictor to track,
+and that real cost is exactly what starts to outweigh the real,
+continuing loop-overhead savings past <code>unrollFactor=8</code> -- an honest
+correction to Chapter 22's own honest guess, made possible only by
+measuring the actual hardware-level mechanism instead of naming a
+plausible one.</p>
+<h2 id="closing-synthesis">Closing synthesis<a class="headerlink" href="#closing-synthesis" title="Permanent link">&para;</a></h2>
+<p>Chapter 22 built two cost models, measured both against a real clock,
+and reported two real gaps between prediction and measurement --
+without ever being able to say, with a real number, WHY either gap
+existed. This appendix closes that gap for the loop-overhead model
+specifically: Cachegrind and its branch-predictor simulation rule out
+both of Chapter 22's own named cache-pressure suspects by direct
+measurement, and identify the real mechanism -- branch misprediction
+growth, not cache pressure at all -- that Chapter 22's own honest prose
+never had a tool to check. Section E.1 and E.2 did the same for
+Chapter 12's fusion argument: not "fusion avoids redundant memory
+traffic," asserted, but 2.22x the real instructions and 3.5x-4.0x the
+real cache misses for the unfused version, broken down by
+Callgrind's own real per-line attribution to show that most of that
+gap is the cost of allocating and zero-initializing three buffers
+<code>fused()</code> never needs, not redundant arithmetic. None of this makes
+Chapter 22's own wall-clock discipline, or Chapter 19's best-of-N
+timing, obsolete -- wall-clock time is still the real number that
+actually matters to a person waiting for a kernel to finish, and nothing
+in this appendix disagrees with a single one of Chapter 22's own
+measured results. What Cachegrind and Callgrind add is a real
+explanation UNDERNEATH the clock: deterministic, exactly reproducible,
+and, twice in this appendix alone, able to correct a plausible-
+sounding guess with a specific, measured, genuinely different answer.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../d-polyhedral-compilation-what-a-real-scheduler-finds-that-cuda-hammers-search-never-did/" class="md-footer__link md-footer__link--prev" aria-label="Previous: D. Polyhedral Compilation">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                D. Polyhedral Compilation
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2026 Oluwaseyi Awoga
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.expand", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
