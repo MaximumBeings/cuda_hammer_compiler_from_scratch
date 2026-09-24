@@ -100,6 +100,7 @@ nav:
       - "30. Quantization-Aware Codegen": part6/30-quantization-aware-codegen.md
   - "Part 7 -- CUDA Hammer in Practice: Real-World Domain Applications":
       - "31. Computer Vision: A Real Fixed-Kernel Preprocessing Pipeline": part7/31-computer-vision-a-real-fixed-kernel-preprocessing-pipeline.md
+      - "32. NLP / Transformers: A Real Bag-of-Embeddings Classifier": part7/32-nlp-transformers-a-real-bag-of-embeddings-classifier.md
 
 extra:
   social: []
