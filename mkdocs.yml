@@ -106,6 +106,7 @@ nav:
   - "Appendices":
       - "A. Installation and Setup -- Building CUDA Hammer's Toolchain": appendix/a-installation-and-setup-building-cuda-hammers-toolchain.md
       - "B. Practice Quiz": appendix/b-practice-quiz.md
+      - "C. LLVM and MLIR -- The Compiler Infrastructure You Get for Free": appendix/c-llvm-and-mlir-the-compiler-infrastructure-you-get-for-free.md
 
 extra:
   social: []
