@@ -103,6 +103,8 @@ nav:
       - "32. NLP / Transformers: A Real Bag-of-Embeddings Classifier": part7/32-nlp-transformers-a-real-bag-of-embeddings-classifier.md
       - "33. Scientific Computing: A Real Finite-Difference Heat Stencil": part7/33-scientific-computing-a-real-finite-difference-heat-stencil.md
       - "34. Quantitative Finance: A Real Binomial Option Pricer": part7/34-quantitative-finance-a-real-binomial-option-pricer.md
+  - "Appendices":
+      - "A. Installation and Setup -- Building CUDA Hammer's Toolchain": appendix/a-installation-and-setup-building-cuda-hammers-toolchain.md
 
 extra:
   social: []
