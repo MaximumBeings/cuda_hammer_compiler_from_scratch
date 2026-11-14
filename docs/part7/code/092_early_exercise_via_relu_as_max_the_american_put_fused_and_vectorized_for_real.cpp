@@ -823,9 +823,12 @@ int main() {
         else if (node->op == OpKind::FusedReduction) fusedReductionCount++;
         else if (node->op != OpKind::Input && node->op != OpKind::Const) plainCount++;
     }
+    int origComputeCount = 0;
+    for (const auto& node : g.nodes())
+        if (node->op != OpKind::Input && node->op != OpKind::Const) origComputeCount++;
     printf("fused graph: %zu nodes total -- %d FusedElementwise group(s), %d FusedReduction group(s),\n",
            fused.size(), fusedElementwiseCount, fusedReductionCount);
-    printf("%d plain (unfused) compute node(s), down from %zu compute nodes in the original graph.\n", plainCount, g.size());
+    printf("%d plain (unfused) compute node(s), down from %d compute nodes in the original graph.\n", plainCount, origComputeCount);
     bool zeroReductionGroups = (fusedReductionCount == 0);
     printf("self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum\n");
     printf("node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR\n");

@@ -1858,9 +1858,12 @@ int main() {
         else if (node->op == OpKind::FusedReduction) fusedReductionCount++;
         else if (node->op != OpKind::Input && node->op != OpKind::Const) plainCount++;
     }
+    int origComputeCount = 0;
+    for (const auto& node : g.nodes())
+        if (node->op != OpKind::Input && node->op != OpKind::Const) origComputeCount++;
     printf("fused graph: %zu nodes total -- %d FusedElementwise group(s), %d FusedReduction group(s),\n",
            fused.size(), fusedElementwiseCount, fusedReductionCount);
-    printf("%d plain (unfused) compute node(s), down from %zu compute nodes in the original graph.\n", plainCount, g.size());
+    printf("%d plain (unfused) compute node(s), down from %d compute nodes in the original graph.\n", plainCount, origComputeCount);
     bool zeroReductionGroups = (fusedReductionCount == 0);
     printf("self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum\n");
     printf("node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR\n");
@@ -1930,7 +1933,7 @@ int main() {
 ```
 
 ```bash
-g++ -std=c++17 -Wall -Wextra -O2 [-mavx2 -mfma added automatically on x86_64] 092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp -o 092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
+g++ -std=c++17 -Wall -Wextra -O2 -mavx2 -mfma 092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp -o 092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
 ./092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
 ```
 
@@ -1966,7 +1969,7 @@ it can only add value (confirmed)
 --- Stage 1: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
 
 fused graph: 55 nodes total -- 35 FusedElementwise group(s), 0 FusedReduction group(s),
-0 plain (unfused) compute node(s), down from 145 compute nodes in the original graph.
+0 plain (unfused) compute node(s), down from 125 compute nodes in the original graph.
 self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum
 node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR
 tree topology (multiple nodes converging back into shared Const parameters), not a flat
@@ -2059,7 +2062,7 @@ it can only add value (confirmed)
 --- Stage 1: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
 
 fused graph: 55 nodes total -- 35 FusedElementwise group(s), 0 FusedReduction group(s),
-0 plain (unfused) compute node(s), down from 145 compute nodes in the original graph.
+0 plain (unfused) compute node(s), down from 125 compute nodes in the original graph.
 self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum
 node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR
 tree topology (multiple nodes converging back into shared Const parameters), not a flat
@@ -2120,7 +2123,9 @@ preserve the original TREE graph's own answer exactly (confirmed)
 === Section 34.3 complete, Chapter 34 complete, Part 7 complete: all self-checks confirmed ===
 ```
 
-*Identical apart from the ISA name itself (AVX2/FMA on the cloud sandbox, NEON on the device, each machine's own real vector hardware) -- the real American put price agrees exactly across all three computations (interpreted-original, interpreted-fused, real-vectorized-compiled) on both machines.*
+*Identical apart from the ISA name itself (AVX2/FMA on the cloud sandbox, NEON on the device, each machine's own real vector hardware) -- the real American put price agrees across all three computations (interpreted-original, interpreted-fused, real-vectorized-compiled) on both machines, within the self-check's own real `1e-2` tolerance.*
+
+*Two honest corrections to the printed output and self-checks above, neither of which changes the real numbers shown: (1) the printed values themselves (`5.882800` for both interpreted paths, `5.882792` for the real-vectorized path) do differ in the sixth decimal place -- "agree exactly" overstates it; the actual guarantee demonstrated is agreement to within the stated tolerance, consistent with ordinary FMA/fusion rounding, not bit-for-bit identity. (2) `max(a,b) = b + ReLU(a-b)` is an exact identity over the real numbers, but not bit-for-bit in float32 in general -- it holds here (and matches the independent reference exactly in Stage 0's interpreted path) because this chapter's own CRR tree values have enough headroom that no rounding difference actually surfaces, not because the identity is exact in floating point generally. (The original graph's own node count, "down from 125 compute nodes in the original graph," was itself fixed in the code above after a spot-check review found it had been mislabeling the 145-node TOTAL -- including every `Input`/`Const` leaf -- as a compute-node count; the output above reflects a real recompile and rerun with the corrected count, confirmed byte-for-byte reproducible in this sandbox.)*
 
 
 ## What Chapter 34 actually shows, and what Part 7 has now shown four times over
@@ -2163,6 +2168,6 @@ own honestly-named limit.
 This closes Part 7's own planned domain sequence (computer vision,
 NLP/transformers, scientific computing, quantitative finance) and,
 with it, the book's own numbered chapter sequence, Chapters 1 through
-34. The appendices (A through H) remain planned, not yet built, and
-are the only work this book's own Table of Contents still lists as
-outstanding.
+34. Appendices A through F are already built; Appendices G and H
+remain planned, and are the only work this book's own Table of
+Contents still lists as outstanding.
