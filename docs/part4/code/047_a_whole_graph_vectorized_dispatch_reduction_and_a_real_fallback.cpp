@@ -598,10 +598,13 @@ static std::string generateVectorElementwiseFunctionFma(const std::string& funcN
 // The horizontal sum below uses the simplest technique that is genuinely
 // portable across BOTH of this book's own real ISAs: store the
 // accumulator's own lanes out to a small array and add them up in plain
-// scalar code. NEON offers a real single-instruction alternative here --
-// vaddvq_f32(acc) sums all four lanes in one instruction -- but AVX2 has no
-// equivalent single instruction that reduces all eight lanes without
-// reaching for AVX-512, so this section deliberately uses the
+// scalar code. NEON offers a real single-INTRINSIC alternative here --
+// vaddvq_f32(acc) sums all four lanes via one intrinsic call (which itself
+// compiles to a couple of pairwise-add instructions on real hardware, not
+// literally a single instruction) -- but AVX2 has no equivalent intrinsic
+// that reduces all eight lanes without reaching for AVX-512, whose own
+// _mm512_reduce_add_ps is itself a multi-instruction sequence too, not a
+// single instruction either. So this section deliberately uses the
 // slower-but-uniform array-extraction approach on BOTH backends rather than
 // special-casing NEON's own faster path. A production compiler would
 // dispatch to vaddvq_f32 on NEON and keep the array-extraction fallback
