@@ -238,14 +238,12 @@ same idea as Chapter 15's own hand-written `tileLoop()`, chosen
 automatically here rather than requested by a human. Second, and more
 interesting: the tile's own schedule functions are `floor((i0)/32)` and
 `floor((i0 + i1)/32)` -- the SECOND dimension is scheduled on `i0 + i1`,
-not `i1` alone. That `+i0` term is a real loop SKEW: isl's scheduler
-found that iterating diagonally across the `(t, i)` iteration space,
-not row-by-row, is what its own cost heuristic prefers for this
-dependence pattern -- the classic real wavefront transformation
-polyhedral-compilation literature uses for stencils, discovered here
-automatically rather than looked up. The generated AST shows exactly
-this, plainly, over the real numbers this book's own stencil actually
-uses (3 timesteps, 8 interior points):
+not `i1` alone. That `+i0` term is isl's SKEW coefficient, the same
+schedule shape the polyhedral-compilation literature uses for a real
+wavefront transformation over a stencil, at a problem size large
+enough for it to bite. The generated AST shows exactly what that
+schedule actually does, plainly, over the real numbers this book's
+own stencil actually uses (3 timesteps, 8 interior points):
 
 ```bash
 opt -polly-process-unprofitable -polly-only-func=stencil -polly-opt-isl -polly-ast -polly-print-ast -disable-output stencil_canon.ll
@@ -276,13 +274,24 @@ else
     {  /* original code */ }
 ```
 
-`Stmt1(c2, -c2 + c3)` is the real skewed access -- the loop now walks
-`c3` from `c2` to `c2+7`, and `-c2+c3` recovers the original `i` index
-inside the transformed iteration space, exactly the classic loop-skew
-identity. A transformation is only worth trusting if it still computes
-the same real answer, so the whole pipeline is compiled and run two
-real ways: once with Polly entirely disabled (an ordinary `-O2` build),
-and once with Polly enabled and explicitly told to tile:
+`Stmt1(c2, -c2 + c3)` is the real skewed access, written in the exact
+loop-skew identity the polyhedral literature uses -- but look at what
+`c3` actually walks for a fixed `c2`: `c2` to `c2+7`, so `i = -c2+c3`
+walks `0` to `7` in increasing order every time, for every `t` in
+increasing order too. That is because this stencil's own real extents
+(`i0` up to 2, `i1` up to 7, so `i0+i1` never exceeds 9) never reach
+isl's default tile size of 32: `floor((i0+i1)/32)` is 0 for every point
+in this domain, and `(i0+i1) mod 32` equals `i0+i1` exactly, so both
+the tiling and the skew are numerically inert here. The schedule isl
+calculated is the real template a wavefront transformation would use
+to walk a stencil diagonally at a problem size where the tile actually
+bites; at this book's own tiny size (3 timesteps, 8 interior points) it
+degenerates to the same row-by-row `(t,i)` order the untransformed loop
+already used. A transformation is only worth trusting if it still
+computes the same real answer, so the whole pipeline is compiled and
+run two real ways regardless: once with Polly entirely disabled (an
+ordinary `-O2` build), and once with Polly enabled and explicitly told
+to tile:
 
 ```bash
 clang -O2 101_the_real_loop_form_of_chapter_33s_stencil_a_genuine_scop.c -o baseline_exe
@@ -309,12 +318,18 @@ clang -O2 -mllvm -polly -mllvm -polly-process-unprofitable \
 ```
 
 Byte-identical, and independently cross-checked against a direct
-Python re-implementation of the same update rule this session. Polly's
-own real skewed, tiled schedule is a genuine reordering of when each
-`(t,i)` update runs -- and the real isl dependence analysis from D.1 is
-exactly what guarantees that reordering cannot change the answer:
-every dependence it found is still satisfied by the new schedule, or
-isl would never have proposed it.
+Python re-implementation of the same update rule this session. That
+match is real, but at this problem size it is not evidence of a
+reordering surviving a dependence check -- the degenerate tiling above
+means no `(t,i)` update actually ran in a different order than the
+untransformed loop, so there was nothing for the dependence analysis to
+risk here. What D.1's real isl dependence analysis actually buys is the
+guarantee for the general case this schedule template targets: at a
+problem size where the tile size is smaller than the iteration space
+(or the iteration space larger than the tile), the same `+i0` skew
+would genuinely walk `(t,i)` diagonally, and it is the dependence
+analysis -- not this byte-identical output -- that would be the reason
+such a reordering is still safe.
 
 ## D.3 -- Capstone: What's Actually Safe to Parallelize
 
