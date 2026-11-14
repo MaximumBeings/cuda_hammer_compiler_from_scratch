@@ -12,8 +12,8 @@ Every tensor framework a reader has used runs a chain of operations by executing
 EAGER (op-at-a-time, chain length 3):
 
   input --> +------+ --> tmp1 --> +------+ --> tmp2 --> +------+ --> output
-            | op 1 |                      | op 2 |                      | op 3 |
-            +------+                      +------+                      +------+
+            | op 1 |              | op 2 |              | op 3 |
+            +------+              +------+              +------+
 
   every --> touching tmp1 or tmp2 above is a full array read or a full
   array write, in real memory: 2 memory round trips per operation, and a
@@ -239,16 +239,23 @@ A tollbooth charges the same fixed toll no matter how much cargo is in the vehic
 ```text
 EAGER: 3 kernel launches, each pays the fixed per-launch toll
   [launch] --> [launch] --> [launch]
-   9.6us         9.6us         9.6us     =  28.8us of overhead, paid 3 times
+   9.6us         9.6us         9.6us     =  28.8us total, paid 3 times
 
 FUSED: 1 kernel launch, the toll is paid once
   [launch]
-   9.6us                                 =   9.6us of overhead, paid once
+   9.6us                                 =   9.6us total, paid once
 ```
+
+(9.6us is NVIDIA's measured per-kernel *wall-clock* time, not pure overhead --
+of that, NVIDIA's own post reports roughly 2.9us is real kernel execution, so
+the fixed launch-and-sync cost this chapter is arguing about is closer to the
+remaining ~6.7us. The chapter uses the full 9.6us figure throughout because
+that is the real, cited, end-to-end cost actually paid per launch -- overhead
+included, not subtracted out.)
 
 ### Background
 
-The one number in the code below that this book did not itself measure is NVIDIA's own real, cited figure for CUDA kernel launch overhead: **9.6 microseconds per kernel, "including overheads,"** measured with a CPU wallclock timer around per-kernel-synchronized launches, from NVIDIA's own "Getting Started with CUDA Graphs" developer blog post. That figure is used here exactly the way this book's own sibling volume already used a real cited hardware bandwidth figure in its Appendix D: as an input to a real, stated formula, never as a re-measurement this program performs itself. Every other number below is genuine arithmetic on that cited constant.
+The one number in the code below that this book did not itself measure is NVIDIA's own real, cited figure for total per-kernel wall-clock time when a kernel is individually host-synchronized: **9.6 microseconds per kernel, "including overheads,"** measured with a CPU wallclock timer around per-kernel-synchronized launches, from NVIDIA's own "Getting Started with CUDA Graphs" developer blog post. That 9.6us is not pure launch overhead -- NVIDIA's own post reports the real kernel execution itself takes about 2.9us, so the fixed per-launch overhead this chapter cares about is closer to the remaining ~6.7us -- but the full 9.6us figure is what is used throughout this chapter, since it is the real, end-to-end cost actually paid once per launch. That figure is used here exactly the way this book's own sibling volume already used a real cited hardware bandwidth figure in its Appendix D: as an input to a real, stated formula, never as a re-measurement this program performs itself. Every other number below is genuine arithmetic on that cited constant.
 
 ```cpp
 // Chapter 1: The Cost of Eager Execution
@@ -425,7 +432,7 @@ Section 1.1's own File 1 already contains this section's real code and real, loc
 
 ## Chapter Summary
 
-Eager execution -- running a chain of tensor operations one at a time, materializing every intermediate result in full -- pays two real, independently-caused costs. The first is a fixed per-kernel-launch overhead, genuinely measured by NVIDIA at 9.6 microseconds per kernel including synchronization overhead, paid once per operation in the chain rather than once for the whole chain. The second is memory traffic: every intermediate array is a real full-array write followed by a real full-array read by the next operation, so a chain of N operations moves N times as many bytes as the same computation would need if intermediates never left registers. Both costs were shown here as genuinely counted or genuinely cited quantities, growing linearly with chain length N, while a fused version of the same chain pays each cost exactly once regardless of N. Neither cost was combined into a single fabricated wall-clock speedup number -- that would require assuming a memory bandwidth and a relationship between the two mechanisms that this book's own discipline does not invent. What a compiler that fuses operations together actually buys is a real reduction in both of these countable, independent quantities -- which is precisely what CUDA Hammer, starting in Part 1, is going to build.
+Eager execution -- running a chain of tensor operations one at a time, materializing every intermediate result in full -- pays two real, independently-caused costs. The first is a fixed per-kernel cost, genuinely measured by NVIDIA at 9.6 microseconds of total wall-clock time per kernel when synchronized after every launch -- of which NVIDIA's own figures show roughly 2.9 microseconds is real kernel execution and the rest is overhead -- paid once per operation in the chain rather than once for the whole chain. The second is memory traffic: every intermediate array is a real full-array write followed by a real full-array read by the next operation, so a chain of N operations moves N times as many bytes as the same computation would need if intermediates never left registers. Both costs were shown here as genuinely counted or genuinely cited quantities, growing linearly with chain length N, while a fused version of the same chain pays each cost exactly once regardless of N. Neither cost was combined into a single fabricated wall-clock speedup number -- that would require assuming a memory bandwidth and a relationship between the two mechanisms that this book's own discipline does not invent. What a compiler that fuses operations together actually buys is a real reduction in both of these countable, independent quantities -- which is precisely what CUDA Hammer, starting in Part 1, is going to build.
 
 ## Self-Check Questions
 
@@ -433,7 +440,7 @@ Eager execution -- running a chain of tensor operations one at a time, materiali
 2. File 1 checks that EAGER and FUSED produce bit-identical output, not merely close output. Why is bit-identical the right expectation here, when the sibling multi-GPU book found real 1-bit mismatches between differently-ordered reductions?
 3. What does `fused(N) = 2 * array_bytes` (constant, independent of N) mean physically about where an intermediate value between fused operations actually lives while the program runs?
 4. File 2 uses NVIDIA's cited 9.6us figure rather than a number this book measured itself. What specifically about this book's own authoring environment makes measuring that number directly impossible?
-5. NVIDIA's blog post also reports a lower, 3.8us-per-kernel figure once per-kernel host synchronization is removed. Why does File 2 use the 9.6us (synchronized) figure instead, given that a lower number was also available?
+5. NVIDIA's blog post also reports a lower, 3.8us-per-kernel figure once synchronization is moved from after every single kernel to after every batch of kernels. Why does File 2 use the stricter, per-kernel-synchronized 9.6us figure instead, given that a lower number was also available?
 6. Section 1.2's closing text refuses to combine the launch-overhead reduction and the memory-traffic reduction into one predicted speedup number. What additional, unverified assumption would that combination require?
 7. Why does the [COMMON TRAP] in Section 1.3 say a chain of operations with heavier per-element compute "does not automatically escape" this chapter's memory-traffic argument, rather than saying it never applies to such a chain?
 8. If a chain had 20 operations instead of 8, what would File 1's closed-form formula predict for the memory-traffic reduction ratio, without running the program again?
@@ -448,7 +455,7 @@ Chapter 1 established two real, countable costs that eager execution pays and a 
 2. The multi-GPU book's 1-bit mismatches came from *reordering a reduction* -- summing the same values in a different grouping, which floating-point addition is not associative under. File 1 never reduces or reorders anything: both EAGER and FUSED apply the exact same sequence of elementary operations (add, multiply, max) to each element, in the exact same order, one element at a time. There is no different grouping to create a mismatch, so bit-identical output is not just expected, it is the only correct outcome -- a mismatch would indicate a real bug in one of the two implementations.
 3. It means the value lives in a CPU register (or, in the compiled binary, possibly briefly on the stack, but never in a separately heap-allocated array with its own address that the next operation has to look up and read). The `value` variable inside `runFused`'s inner loop is reused in place across all `numOps` iterations of the inner `for` loop -- it is one scalar, not N arrays.
 4. This book's own authoring environment (stated in Getting Started) has a real, complete `nvcc` toolchain on the cloud sandbox but no physical NVIDIA GPU on either of its two authoring machines. Measuring a real kernel-launch overhead number requires actually launching a kernel on real hardware and timing it; `nvcc`-compiled code can be built here, but there is no device to run it on and produce a real timing measurement.
-5. The 9.6us figure is the overhead NVIDIA measured with per-kernel host synchronization -- meaning the host CPU waits for each kernel to finish before issuing the next one. That is exactly the dependency shape of File 1's EAGER mode: op 2 cannot start until op 1's full output exists, because op 2 reads it. The 3.8us figure describes independent, overlapped kernels that don't wait on each other, which is not the chain-of-dependent-operations scenario this chapter is modeling.
+5. The 9.6us figure is what NVIDIA measured with the host synchronizing after every individual kernel launch -- the CPU waits for each kernel to finish before issuing the next one. That is the worst-case stall shape File 1's EAGER mode assumes: op 2 cannot even be issued until op 1's full output exists. The 3.8us figure comes from the exact same sequence of kernels, launched in the exact same order, but synchronized only once per batch rather than after each one -- with the per-kernel sync removed, the CPU can queue the next launch while the GPU is still finishing the previous kernel, so launch latency overlaps with execution instead of stalling on it. It is not that the kernels become independent of each other; synchronizing less often just lets overhead hide behind work already in flight. File 2 uses the stricter 9.6us figure because synchronizing after every single operation -- the case where overhead can never hide behind anything -- is the real worst case this chapter's EAGER model is arguing about; the friendlier 3.8us number would understate that.
 6. It would require an assumed memory bandwidth (to convert "MB of traffic" into a time) and an assumed relationship between how launch-overhead time and memory-traffic time actually combine on real hardware (do they overlap, or add serially, and by how much) -- neither of which this book has a real measurement for, since it has no physical GPU to measure either on.
 7. Because the memory-traffic argument's applicability depends on a ratio (arithmetic intensity: how much compute happens per byte moved), not on the mere presence of "heavier" compute. A chain could add meaningfully more compute per element and still be far below the ratio needed to become compute-bound rather than memory-bound -- "heavier" alone doesn't say where a specific chain actually lands on that ratio, which is exactly why Chapter 12 builds a real, quantitative test (the roofline model) instead of relying on a qualitative impression.
 8. `eager(20) = 20 * 2 * array_bytes` and `fused = 2 * array_bytes` regardless of N, so the reduction ratio is `eager(20) / fused = 20`. The formula (already checked against genuinely counted bytes for N = 1 through 8 in File 1's own output) predicts a 20x reduction at N = 20, with no need to rerun the program to know that.
