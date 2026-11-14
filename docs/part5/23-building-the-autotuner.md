@@ -103,7 +103,7 @@ cost Chapter 22's own interpreter never had to pay at all.
 // emits REAL C++ text -- a tiled, unrolled loop, honoring a schedule's own
 // tile size and unroll factor exactly the way Section 21.1/21.3 defined
 // them -- compiled with the real g++ this book has shelled out to since
-// Chapter 18, and loaded in-process with Chapter 20's own JitModule. Every
+// Chapter 17, and loaded in-process with Chapter 20's own JitModule. Every
 // schedule this section tests is now a REAL compiled function, not an
 // interpreted one, and this section's own honest finding is a new one Part
 // 5 has not yet had to face: compiling a schedule has a real, nonzero cost
@@ -382,6 +382,8 @@ a short list, not the whole space.
 
 !!! note "Compiling every candidate does not scale the way interpreting one does"
     Chapter 22's own combined cost model was cheap enough to score all 128 real schedules in a fraction of a millisecond -- no compilation, no process launch, just arithmetic on a `Schedule`'s own fields. This section's own real measurement shows real codegen is a different kind of cost entirely: tens of milliseconds per candidate, dominated by an actual g++ invocation, not by the size of the computation being compiled (Section 23.1's own generated functions are short, and still cost tens of milliseconds to build). Multiply that by 128 candidates, and compiling the ENTIRE search space starts to cost seconds, not milliseconds -- a real number Section 23.3's own autotuner will have to budget against directly, which is exactly why that section checks a short list against the full space rather than assuming either extreme is obviously right.
+
+    One honest caveat about the "same order of magnitude" self-check above: compile time does not scale with `extent` at all (a g++ invocation on a short generated function costs about the same tens of milliseconds whether the loop will run once or thirty million times), while execution time scales with `extent` directly. Part 2's own 30,000,000-element extent was chosen specifically because it is large enough to pull execution time up into the same tens-of-milliseconds range compile time already sits in -- at a much smaller extent the two would NOT land anywhere near each other. Section 23.3's own real autotuning workload is a striking example: at 48 elements, one real execution of the generated function costs on the order of 0.02 microseconds, against roughly 110-150 milliseconds to compile it -- a ratio of many millions to one, not "the same order of magnitude" at all. Both numbers are real; which one dominates depends entirely on how large the actual workload is, which is exactly why an autotuner has to budget compilation cost separately rather than assume it is always comparable to runtime.
 
 ## 23.2 Real Codegen for a Full Schedule: Tile Size, Loop Order, and Unroll Factor Together
 
@@ -914,7 +916,7 @@ genuinely separate function per schedule, measurably helped.
 *Correctness (the bit-for-bit self-checks above) matches on both machines, as it has every chapter since 17. The millisecond figures, and in places even which candidate ranks fastest, are expected to differ between the two -- that is real data about two different machines, not a discrepancy to reconcile.*
 
 !!! warning "[COMMON TRAP] removing one confound does not mean removing every confound"
-    It would be easy to read Section 23.2's own honest finding as a clean verdict either way -- "compiling fixed it" or "compiling didn't help." The real, machine-specific result this section actually measured is more useful than either clean story: whatever changed on one real machine did not change the same way on the other, which is itself evidence about WHAT was actually going on. Chapter 22.3 diagnosed interpreter overhead as a likely confound on a 48-element toy problem; this section's own real test of that diagnosis, on two different machines, is exactly the kind of check a cost model -- or a diagnosis about a cost model -- has to survive before an autotuner should lean on it.
+    It would be easy to read Section 23.2's own honest finding as a clean verdict either way -- "compiling fixed it" or "compiling didn't help." The real, machine-specific result this section actually measured is more useful than either clean story: whatever changed on one real machine did not change the same way on the other, which is itself evidence about WHAT was actually going on. Chapter 22.3 diagnosed interpreter overhead as a likely confound on a 48-element toy problem; this section's own real test of that diagnosis, on two different machines, is exactly the kind of check a cost model -- or a diagnosis about a cost model -- has to survive before an autotuner should lean on it. One more honest limit: "67%" and "10 of 15" are both the same small sample of only 15 pairwise comparisons, so a few comparisons landing differently on a re-run (ordinary timing jitter, nothing structural) can move that percentage by a wide margin. The genuinely reliable finding here is the qualitative direction -- real compiled measurement did not make ranking agreement WORSE on either machine -- not the exact percentage, which this section does not claim is reproducible to the point.
 
 ## 23.3 The Autotuner: Pruning With a Cost Model, Then Measuring for Real
 
@@ -926,7 +928,7 @@ Every piece this chapter and the two before it built now exists at once: Chapter
 
 The design this section builds is the HYBRID Chapter 22's own closing paragraph already pointed toward: rank all 128 real schedules with `estimateScheduleCost()`, keep only the cheapest `topK = 8`, and pay for real compilation and careful measurement (best-of-9 trials, 2,000,000 repeat calls each, to get a reliably measurable duration on this book's own toy-scale 48-element computation) on ONLY that short list. That hybrid autotuner's own winner is whichever of the 8 short-listed candidates measures fastest for real -- a genuine, compiled, dlopen-loaded answer, not a cost-model guess.
 
-The honest question a hybrid design like this one has to answer is whether pruning down to 8 ever throws away the schedule that was actually best. This section answers it directly, not by argument but by also doing the expensive thing the hybrid exists to avoid: compiling and measuring all 128 real schedules, with a deliberately LIGHTER measurement pass (best-of-3, 200,000 repeat calls -- noisier, but fast enough to make measuring all 128 affordable at all) to serve as real, not simulated, ground truth. Comparing the hybrid's own 8-candidate answer against this exhaustive 128-candidate answer needs one piece of care Section 23.1 already set up: the two passes use different repeat counts, so the code compares PER-CALL time (`MeasuredCandidate::perCallUs()`), never raw totals from two differently-scaled measurement runs, which would never be a fair comparison. The result, reported honestly in the code's own closing verdict below, is a genuine test of whether an imperfect, honestly-flawed cost model is still useful as a pruning filter -- and a real, directly measured wall-clock accounting of what pruning actually saves, whichever way the short list turns out.
+The honest question a hybrid design like this one has to answer is whether pruning down to 8 ever throws away the schedule that was actually best. This section answers it directly, not by argument but by also doing the expensive thing the hybrid exists to avoid: compiling and measuring all 128 real schedules, with a deliberately LIGHTER measurement pass (best-of-3, 200,000 repeat calls -- noisier, but fast enough to make measuring all 128 affordable at all) to serve as real, not simulated, ground truth. Comparing the hybrid's own 8-candidate answer against this exhaustive 128-candidate answer needs one piece of care Section 23.1 already set up: the two passes use different repeat counts, so the code compares PER-CALL time (`MeasuredCandidate::perCallUs()`), never raw totals from two differently-scaled measurement runs, which would never be a fair comparison. The result, reported honestly in the code's own closing verdict below, is a genuine test of whether an imperfect, honestly-flawed cost model is still useful as a pruning filter -- and a real, directly measured wall-clock accounting of what pruning actually saves, whichever way the short list turns out. One honest limit on how much weight that verdict can bear: this book's own toy-scale 48-element computation runs in roughly tens of nanoseconds per call, and the lighter best-of-3 pass used to make measuring all 128 candidates affordable is itself noisy at that scale -- a re-run of this exact program can report a different candidate as the "true best" than the one printed below, and a different agreement count against the cost model's own top-8, simply from ordinary measurement jitter. The printed numbers below are real, not fabricated, but they are one noisy sample of that exhaustive pass, not a guaranteed-stable oracle.
 
 ```text
 autotuneSchedule, the hybrid design (this section's own capstone):
@@ -943,10 +945,12 @@ autotuneSchedule, the hybrid design (this section's own capstone):
   |
   +-- hybrid's own winner: fastest of the 8, for real
   |
-  Part 3 -- EXHAUSTIVE (ground truth): compile + measure ALL 128
-            (lighter pass: best-of-3, 200,000 reps each -- noisier,
-            but affordable across all 128) -- real ground truth,
-            not simulated
+  Part 3 -- EXHAUSTIVE (the best affordable proxy for ground truth):
+            compile + measure ALL 128 (lighter pass: best-of-3,
+            200,000 reps each -- noisier, but affordable across all
+            128) -- a real, not simulated, measurement; NOT a
+            noise-free oracle, since the lighter pass is itself
+            susceptible to measurement jitter at this toy scale
   |
   +-- true best: fastest of all 128, for real
   |
