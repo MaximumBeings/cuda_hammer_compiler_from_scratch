@@ -321,9 +321,63 @@ realistic scale (`N=M=1024`, `d=64`, `block_size_kv=128`) shows an 8x
 reduction in peak score-tile memory at that one block size alone, purely
 from never holding the full row.
 
-```bash
-python3 "075_naive_vs_online_softmax_flash_attention_pure_numpy.py"
+## 29.2 The Same Algorithm as One Real Triton Kernel
+
+Chapter 27 found that fusion in Triton is a PROGRAMMER'S language-level
+choice: whatever one `@triton.jit` function body contains becomes one
+kernel, with no separate compiler pass deciding boundaries. File 076
+writes File 075's own online-softmax algorithm directly as one such
+function -- the three running accumulators (`running_max`, `running_sum`,
+`running_out`) as real Triton block-level values, and the KV-block loop
+as a plain Python `for` over a `tl.constexpr` range -- and compiles it
+with the same explicit `target=GPUTarget(...)` technique Chapter 27
+established (no physical GPU needed, real AOT compilation only, the same
+honest scope every Triton file in this book has carried since).
+
+```text
+  flash_attention_kernel (one @triton.jit function, BLOCK_M x D output):
+
+  load Q block                      (tt.load, once)
+  running_max, running_sum, running_out -- real Triton register values
+
+  for start_n in range(0, SEQ_LEN_KV, BLOCK_N):    -- a real MLIR
+      load K_block, V_block          (tt.load)          scf.for loop,
+      scores = Q @ K_block^T         (tt.dot #1)         NOT unrolled,
+      new_max = max(running_max, rowmax(scores))         with running_max/
+      correction = exp(running_max - new_max)            running_sum/
+      running_sum = running_sum*correction + rowsum(exp(scores-new_max))
+      running_out = running_out*correction + exp(scores-new_max) @ V_block
+                                       (tt.dot #2)         running_out as
+      running_max = new_max                               real loop-carried
+                                                            iter_args
+  store running_out / running_sum
 ```
+
+This is the chapter's own genuinely new real finding, not available from
+reading Triton's own source the way Chapter 27's `inspect.getsource()`
+findings were: File 076's own real, printed TTIR shows the compiled KV
+loop as one literal `scf.for` MLIR construct --
+`scf.for %start_n = %c0_i32 to %c48_i32 step %c16_i32 iter_args(...)`
+-- with THREE real loop-carried values threaded through
+`iter_args`, exactly `running_max`, `running_sum`, and `running_out`. And
+`tt.dot` appears exactly TWICE in the compiled text (once for
+`Q @ K_block^T`, once for `P_block @ V_block`), confirming the loop was
+genuinely compiled as a real MLIR loop and not silently unrolled at the
+TTIR level, even though `SEQ_LEN_KV=48` and `BLOCK_N=16` make the trip
+count (3) a compile-time-known constant. The online-softmax algorithm's
+own STREAMING structure -- an accumulator that gets corrected, not just
+summed into, as new data arrives -- survives all the way from File 075's
+own hand-written Python loop into a real, structurally faithful MLIR
+loop construct, with nothing about that structure lost or rewritten by
+Triton's own compiler.
+
+Real, verified structural finding (the same comparison Chapter 27's own
+File 069 and File 071 made): the compiled TTIR agrees on every real
+operation between the cloud sandbox and the device -- the `scf.for`
+header line and every other excerpt printed below are byte-identical --
+and only the raw character COUNTS differ, from the same embedded
+absolute-path-length artifact Chapter 27 already traced to Triton's own
+`#locN = loc(...)` debug table.
 
 ```python
 # Chapter 29, File 076: File 075's own online-softmax algorithm, written as
@@ -519,67 +573,26 @@ Real scf.for count in TTIR: 1 (the KV loop, lowered to one genuine MLIR loop con
 *Every real IR excerpt, op count, and loop structure agrees between the two machines -- only the raw ttir/ttgir/llir/ptx character COUNTS differ, from the same embedded absolute-path-length artifact Chapter 27 already traced and explained, not from any real difference in what was compiled.*
 
 
-## 29.2 The Same Algorithm as One Real Triton Kernel
+## 29.3 Real PyTorch Flash Attention, and Why Inductor Never Regenerates It
 
-Chapter 27 found that fusion in Triton is a PROGRAMMER'S language-level
-choice: whatever one `@triton.jit` function body contains becomes one
-kernel, with no separate compiler pass deciding boundaries. File 076
-writes File 075's own online-softmax algorithm directly as one such
-function -- the three running accumulators (`running_max`, `running_sum`,
-`running_out`) as real Triton block-level values, and the KV-block loop
-as a plain Python `for` over a `tl.constexpr` range -- and compiles it
-with the same explicit `target=GPUTarget(...)` technique Chapter 27
-established (no physical GPU needed, real AOT compilation only, the same
-honest scope every Triton file in this book has carried since).
-
-```text
-  flash_attention_kernel (one @triton.jit function, BLOCK_M x D output):
-
-  load Q block                      (tt.load, once)
-  running_max, running_sum, running_out -- real Triton register values
-
-  for start_n in range(0, SEQ_LEN_KV, BLOCK_N):    -- a real MLIR
-      load K_block, V_block          (tt.load)          scf.for loop,
-      scores = Q @ K_block^T         (tt.dot #1)         NOT unrolled,
-      new_max = max(running_max, rowmax(scores))         with running_max/
-      correction = exp(running_max - new_max)            running_sum/
-      running_sum = running_sum*correction + rowsum(exp(scores-new_max))
-      running_out = running_out*correction + exp(scores-new_max) @ V_block
-                                       (tt.dot #2)         running_out as
-      running_max = new_max                               real loop-carried
-                                                            iter_args
-  store running_out / running_sum
-```
-
-This is the chapter's own genuinely new real finding, not available from
-reading Triton's own source the way Chapter 27's `inspect.getsource()`
-findings were: File 076's own real, printed TTIR shows the compiled KV
-loop as one literal `scf.for` MLIR construct --
-`scf.for %start_n = %c0_i32 to %c48_i32 step %c16_i32 iter_args(...)`
--- with THREE real loop-carried values threaded through
-`iter_args`, exactly `running_max`, `running_sum`, and `running_out`. And
-`tt.dot` appears exactly TWICE in the compiled text (once for
-`Q @ K_block^T`, once for `P_block @ V_block`), confirming the loop was
-genuinely compiled as a real MLIR loop and not silently unrolled at the
-TTIR level, even though `SEQ_LEN_KV=48` and `BLOCK_N=16` make the trip
-count (3) a compile-time-known constant. The online-softmax algorithm's
-own STREAMING structure -- an accumulator that gets corrected, not just
-summed into, as new data arrives -- survives all the way from File 075's
-own hand-written Python loop into a real, structurally faithful MLIR
-loop construct, with nothing about that structure lost or rewritten by
-Triton's own compiler.
-
-Real, verified structural finding (the same comparison Chapter 27's own
-File 069 and File 071 made): the compiled TTIR agrees on every real
-operation between the cloud sandbox and the device -- the `scf.for`
-header line and every other excerpt printed below are byte-identical --
-and only the raw character COUNTS differ, from the same embedded
-absolute-path-length artifact Chapter 27 already traced to Triton's own
-`#locN = loc(...)` debug table.
-
-```bash
-python3 "076_a_real_triton_flash_attention_kernel_compiled_with_no_gpu.py"
-```
+Files 075 and 076 built and compiled the online-softmax algorithm by
+hand, in NumPy and then as a Triton kernel. This closing section asks
+what a real, independent, production implementation of the same
+algorithm looks like, and whether Chapter 28's own TorchInductor
+fuses it the way it fuses an ordinary graph. Real PyTorch exposes
+`torch.ops.aten._scaled_dot_product_flash_attention_for_cpu`, a genuine
+CPU-native flash-attention kernel -- not a GPU-only op with a CPU
+fallback bolted on. Its own real schema is `(Tensor query, Tensor key,
+Tensor value, ...) -> (Tensor output, Tensor logsumexp)`: that SECOND
+return value, a real `logsumexp` per query row, is direct evidence this
+is a genuine online log-sum-exp streaming softmax implementation -- the
+same real quantity Files 075 and 076 both tracked by hand as
+`running_max`/`running_sum` (a running log-sum-exp is mathematically
+`log(running_sum) + running_max`) -- not a naive full-materialization
+softmax wearing a "flash" name. Same disk-safety scope as Chapter 28:
+this file is verified on the cloud sandbox only; the device still
+receives and md5-verifies it, but does not run it (no torch installed
+there).
 
 ```python
 # Chapter 29, File 077 (capstone): real PyTorch's own CPU Flash Attention
@@ -778,3 +791,7 @@ This is the chapter's own closing, cross-system finding: TorchInductor's real au
 ```
 
 *Three independent real implementations (NumPy, compiled Triton, and now two real PyTorch backends) agree numerically, and Inductor's own real captured output confirms it dispatches straight through to the real flash-attention op rather than regenerating it.*
+
+*One correction to Part 1's own printed parenthetical: `is_flash_attention_available()` and `flash_sdp_enabled()` report this torch build's own CUDA-related configuration and a global enablement toggle, not, by themselves, evidence of a CPU-executed code path -- it is specifically Part 3's own schema, `_scaled_dot_product_flash_attention_for_cpu`, together with Part 2's own real executed MATH-vs-FLASH_ATTENTION comparison with `torch.cuda.is_available()` False, that is the actual evidence a genuine CPU flash-attention kernel ran here, not a GPU-gated feature merely reporting itself as present.*
+
+*One scope caveat on this file's own closing print statement: only Inductor's real dispatch behavior for `scaled_dot_product_attention` was directly tested here (this file's whole point). XLA (Ch25) and Relax (Ch26) were never run against this specific op in this book, and neither one ships a built-in flash-attention kernel for a fusion pass to dispatch to the way Inductor's own `aten` op library does -- so "every real system this Part studied treats that as a hand-written kernel" is this chapter's reasoned expectation, extended from how XLA and Relax are known to handle ordinary graphs, not a directly observed finding for all three systems the way it is for Inductor.*
