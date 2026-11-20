@@ -33,6 +33,8 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 021_algebraic_simplification_the_additive_identity.cpp -o 021_algebraic_simplification_the_additive_identity
 // Run:     ./021_algebraic_simplification_the_additive_identity
 #include <cstdio>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -176,7 +178,9 @@ static const Node* findNodeByName(const Graph& g, const std::string& name) {
 // every earlier chapter in Part 2 has followed.
 using TransformPass = std::function<Graph(const Graph&)>;
 
-static Graph algebraicSimplificationPass(const Graph& g) {
+static Graph algebraicSimplificationPass(const Graph& g, bool relaxedMath = false) {
+    // relaxedMath permits ignoring NaN/infinity and the sign of zero.
+    // Strict mode retains Add-by-zero and Mul-by-zero operations.
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("algebraicSimplificationPass: input graph is not acyclic");
 
@@ -212,12 +216,12 @@ static Graph algebraicSimplificationPass(const Graph& g) {
             bool rhsIsOne  = (rhsNode->op == OpKind::Const && rhsNode->constValue == 1.0f);
 
             if (n->op == OpKind::Add) {
-                if (lhsIsZero) newValue = rhs;          // 0 + x -> x
-                else if (rhsIsZero) newValue = lhs;     // x + 0 -> x
+                if (relaxedMath && lhsIsZero) newValue = rhs;          // 0 + x -> x
+                else if (relaxedMath && rhsIsZero) newValue = lhs;     // x + 0 -> x
                 else newValue = result.addBinary(OpKind::Add, lhs, rhs, n->debugName);
             } else { // Mul
-                if (lhsIsZero) newValue = lhs;          // 0 * x -> 0 (the zero itself)
-                else if (rhsIsZero) newValue = rhs;     // x * 0 -> 0
+                if (relaxedMath && lhsIsZero) newValue = lhs;          // 0 * x -> 0 (the zero itself)
+                else if (relaxedMath && rhsIsZero) newValue = rhs;     // x * 0 -> 0
                 else if (lhsIsOne) newValue = rhs;      // 1 * x -> x
                 else if (rhsIsOne) newValue = lhs;      // x * 1 -> x
                 else newValue = result.addBinary(OpKind::Mul, lhs, rhs, n->debugName);
@@ -259,7 +263,7 @@ int main() {
     printf("Graph with two additive-identity Adds ('t1', 't2') and one real Add ('t3'):\n");
     printGraph(g);
 
-    Graph simplified = algebraicSimplificationPass(g);
+    Graph simplified = algebraicSimplificationPass(g, true);
     printf("\nAfter algebraicSimplificationPass():\n");
     printGraph(simplified);
 

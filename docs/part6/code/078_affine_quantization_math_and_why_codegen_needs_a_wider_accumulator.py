@@ -23,6 +23,12 @@ def quantize(x, scale, zero_point, qmin=-128, qmax=127):
     """Real affine (linear) quantization: map a real-valued array to
     narrow integers, given a real scale (float, quantization step size)
     and zero_point (integer, which quantized value represents 0.0)."""
+    if not np.isfinite(scale) or scale <= 0:
+        raise ValueError("scale must be finite and positive")
+    if not (-128 <= qmin < qmax <= 127) or not (qmin <= zero_point <= qmax):
+        raise ValueError("signed-int8 range and in-range zero point required")
+    if not np.isfinite(x).all():
+        raise ValueError("quantization requires finite data")
     q = np.round(x / scale) + zero_point
     q = np.clip(q, qmin, qmax)
     return q.astype(np.int8)
@@ -32,20 +38,26 @@ def dequantize(q, scale, zero_point):
     """The inverse: recover an approximate real value from a quantized
     integer. Exact only when the original real value landed exactly on
     a representable quantization step -- otherwise this is where the
-    real, bounded rounding error (at most scale/2) comes from."""
+    rounding error (at most scale/2 for values that are not clipped) comes from."""
     return (q.astype(np.float64) - zero_point) * scale
 
 
 def choose_scale_zero_point(x, qmin=-128, qmax=127):
-    """A real, minimal calibration routine: pick scale/zero_point so the
-    real observed [min(x), max(x)] range maps exactly onto
-    [qmin, qmax] -- the same affine-mapping idea every real quantization
-    library (including PyTorch's own, inspected in File 080) calibrates
-    from real observed activation/weight ranges."""
-    x_min, x_max = float(x.min()), float(x.max())
+    """Minimal signed-int8 calibration, including zero in the observed range.
+
+    Rounded integer zero points need not map both extrema exactly. The
+    scale/2 round-trip bound applies only without saturation/clipping.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    if x.size == 0 or not np.isfinite(x).all():
+        raise ValueError("calibration requires nonempty finite data")
+    if not (-128 <= qmin < qmax <= 127):
+        raise ValueError("this example emits signed int8 only")
+    x_min, x_max = min(float(x.min()), 0.0), max(float(x.max()), 0.0)
+    if x_min == x_max:  # all zeros: avoid division by zero
+        return 1.0, 0
     scale = (x_max - x_min) / (qmax - qmin)
-    zero_point = qmin - round(x_min / scale)
-    zero_point = int(np.clip(zero_point, qmin, qmax))
+    zero_point = int(np.clip(qmin - round(x_min / scale), qmin, qmax))
     return scale, zero_point
 
 
@@ -66,6 +78,22 @@ if __name__ == "__main__":
     print(f"Real mean abs round-trip error: {abs_error.mean():.6f}")
     print(f"Quantized int8 range actually used: "
           f"[{q.min()}, {q.max()}] out of the legal [-128, 127]")
+
+    # Regression coverage: one-sided and constant ranges must not clip
+    # simply because zero cannot be represented by the selected offset.
+    for samples in ([1., 2.], [-2., -1.], [0., 0.], [3., 3.], [-3., -3.]):
+        a_test = np.asarray(samples)
+        s_test, z_test = choose_scale_zero_point(a_test)
+        recovered = dequantize(quantize(a_test, s_test, z_test), s_test, z_test)
+        assert np.max(np.abs(recovered - a_test)) <= s_test / 2 + 1e-12
+    for samples in ([], [np.nan], [np.inf]):
+        try:
+            choose_scale_zero_point(np.asarray(samples))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid calibration input accepted")
+    print("Calibration regressions: one-sided, constant, zero, empty and non-finite inputs PASS")
 
     print()
     print("=== Part 2: the real reason quantization-aware codegen is a "
@@ -93,7 +121,8 @@ if __name__ == "__main__":
     # real systems make: widen the accumulator's own TYPE, not just its
     # value.
     correct_products = a.astype(np.int32) * b.astype(np.int32)
-    correct_sum = correct_products.sum()
+    correct_sum = correct_products.sum(dtype=np.int32)
+    assert int(correct_sum) == int(np.sum(a.astype(np.int64) * b.astype(np.int64)))
 
     overflowed_terms = int(np.sum(
         wrong_products.astype(np.int32) != correct_products))

@@ -1,14 +1,27 @@
 # 19. Generating Vectorized CPU Code
 
+<!-- hammer:figure:opener-19:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Generating Vectorized CPU Code](../images/openers/19.svg?v=fa57c7e17863)](../images/openers/19.svg?v=fa57c7e17863)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-19:end -->
+
 **What you will understand:** the `Isa` abstraction (`Avx2`/`Neon`) and its five small primitives -- `vecLoadOrBroadcast()`, `vecAdd()`, `vecMul()`, `vecMax()`, `vecStore()` -- that hide two real architectures' own different intrinsic names behind one generator; `canVectorizeElementwise()`, the scope check that decides whether a node's own external inputs are safe to load as a contiguous vector or a broadcast scalar, and what it deliberately does NOT handle; `vecFma()`, which hides a genuine hardware difference (AVX2's `_mm256_fmadd_ps(a,b,c)` computes `a*b+c`; NEON's `vfmaq_f32(acc,a,b)` computes `acc+a*b` -- the same three operands, a different argument order) behind a peephole optimization that folds a `Mul` step into the `Add` step immediately after it; a genuinely new vectorized-reduction technique (a running vector accumulator, collapsed to one scalar by a horizontal sum only once, after the main loop); and a full per-node dispatcher that chooses, for every node in a real fused graph, between this chapter's vector path and Chapter 18's own scalar fallback -- generated, compiled, and RUN for real, on two different real architectures this book actually has access to.
 
 **What you need to know first:** Chapter 18's own `emitSteps()` and `Target` enum (reused unchanged for every scalar tail loop and fallback body in this chapter), Chapter 16's own `boundedReductionFusionPass()` (reused verbatim in Section 19.3), and Chapter 13's own single-consumer inlining invariant (`consumers.at(oldId) != 1` forces externalization -- the exact fact Section 19.2 leans on to prove its own FMA fold is always safe).
+
+ > **Numerical contract:** This backend permits FMA contraction and reassociated vector reductions. FMA rounds the product-plus-sum once, whereas separate multiply/add rounds twice; results can differ even for finite inputs. Single-consumer checks establish data-flow legality, not bitwise floating-point equivalence. The exact-valued fixtures below pass, but strict reproducibility requires disabling contraction/reassociation or a separate strict backend. The new rounding regression demonstrates the difference. See [NVIDIA floating-point guidance](https://docs.nvidia.com/cuda/floating-point/index.html).
+
+ > **Target requirement:** The x86 generator selects AVX2/FMA from architecture macros, not runtime CPU detection. A scalar fallback for unsupported *broadcast shapes* does not protect an older CPU from the globally enabled AVX2/FMA build. Run Appendix A's feature check first; use the scalar backend when those features are unavailable. Native macOS has no `/proc/cpuinfo`; an unavailable Linux feature file is not evidence that the CPU lacks SIMD.
 
 ---
 
 Chapter 18 targeted a platform neither machine this book runs on can actually execute -- every CUDA kernel compiled cleanly with a real `nvcc`, and every one of them honestly reported "no CUDA-capable device" the moment it actually ran. This chapter targets something narrower in scope but, for the first time in Part 4, genuinely executable end to end: real SIMD vector instructions, on the real CPU hardware both of this book's own machines actually have. The cloud sandbox this book verifies against is x86-64 and supports AVX2 with FMA; the device this book delivers to is aarch64 (Apple Silicon) and supports NEON. Both are real, physical vector instruction sets -- eight 32-bit lanes per register on AVX2, four on NEON -- and, unlike Chapter 18's own CUDA target, this chapter's own generated code does not just compile. It runs, on both machines, and its numeric result is compared against `evaluateArrays()` on both.
 
-Before writing a single line of this chapter's own vector codegen, the same honest-toolchain-investigation discipline Chapter 18 opened with applied here too: two tiny, throwaway test programs (written, compiled, run, and deleted before this chapter's own real files were started) settled the facts this whole chapter's own primitives rest on. On the cloud sandbox, `g++ -mavx2 -mfma -dM -E` confirmed that `__AVX2__`, `__FMA__`, and `__x86_64__` are all predefined with those two flags, and a throwaway program calling `_mm256_fmadd_ps(a, b, c)` -- which computes `a*b + c` in one instruction -- compiled and ran correctly (`2*3+1 = 7.0`). On the device, `g++ -dM -E` with NO special flags at all confirmed `__ARM_NEON` and `__aarch64__` are both predefined unconditionally -- NEON is not an optional extension on aarch64 the way AVX2 is on x86-64, it is part of the mandatory baseline instruction set -- and a throwaway program calling `vfmaq_f32(c, a, b)` compiled and ran correctly too, but computing `c + a*b` (`1 + 2*3 = 7.0`): the SAME three operands as `_mm256_fmadd_ps`, but with the accumulator argument FIRST instead of last. That argument-order difference is not a curiosity -- it is the exact fact `vecFma()` in Section 19.2 exists to hide. The same throwaway investigation also surfaced `vaddvq_f32`, a NEON intrinsic that sums all four lanes of a vector in a single instruction; AVX2 has no equivalent single instruction that reduces all eight of its own lanes without reaching for AVX-512, so Section 19.3's own vectorized reduction deliberately does not use it, a stated scope limitation explained where it comes up.
+Before writing a single line of this chapter's own vector codegen, the same honest-toolchain-investigation discipline Chapter 18 opened with applied here too: two tiny, throwaway test programs (written, compiled, run, and deleted before this chapter's own real files were started) settled the facts this whole chapter's own primitives rest on. On the cloud sandbox, `g++ -mavx2 -mfma -dM -E` confirmed that `__AVX2__`, `__FMA__`, and `__x86_64__` are all predefined with those two flags, and a throwaway program calling `_mm256_fmadd_ps(a, b, c)` -- which computes `a*b + c` in one instruction -- compiled and ran correctly (`2*3+1 = 7.0`). On the device, `g++ -dM -E` with NO special flags at all confirmed `__ARM_NEON` and `__aarch64__` are both predefined unconditionally -- NEON is not an optional extension on aarch64 the way AVX2 is on x86-64, it is part of the mandatory baseline instruction set -- and a throwaway program calling `vfmaq_f32(c, a, b)` compiled and ran correctly too, but computing `c + a*b` (`1 + 2*3 = 7.0`): the SAME three operands as `_mm256_fmadd_ps`, but with the accumulator argument FIRST instead of last. That argument-order difference is not a curiosity -- it is the exact fact `vecFma()` in Section 19.2 exists to hide. The same throwaway investigation also surfaced `vaddvq_f32`, a NEON intrinsic that sums all four lanes (the compiler may lower it to multiple instructions); AVX2 has no equivalent single instruction that reduces all eight of its own lanes without reaching for AVX-512, so Section 19.3's own vectorized reduction deliberately does not use it, a stated scope limitation explained where it comes up.
 
 ```text
 TWO REAL ARCHITECTURES, TWO REAL INTRINSIC SETS, ONE GENERATOR:
@@ -56,6 +69,15 @@ TWO REAL ARCHITECTURES, TWO REAL INTRINSIC SETS, ONE GENERATOR:
 ```
 
 ## 19.1 From Threads to Lanes: A Portable SIMD Elementwise Kernel Generator
+
+<!-- hammer:figure:19.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![SIMD processes multiple elements per instruction](../images/concepts/19-01.svg?v=5dd1d060a2a0)](../images/concepts/19-01.svg?v=5dd1d060a2a0)
+
+<figcaption>ISA-specific code requires compatible hardware or dispatch.</figcaption>
+</figure>
+<!-- hammer:figure:19.1:end -->
 
 ### Intuition
 
@@ -760,7 +782,7 @@ int main() {
     while (iss >> v) vecVals.push_back(v);
     const std::vector<float>& expected = fusedArrays.at("out");
     bool matches = (vecVals.size() == expected.size());
-    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (std::fabs(vecVals[i] - expected[i]) > 1e-3f) matches = false;
+    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (!(std::fabs(vecVals[i] - expected[i]) <= 1e-3f)) matches = false;
     printf("evaluateArrays(fused).out = ");
     for (float ev : expected) printf("%.6f ", ev);
     printf("\n");
@@ -940,6 +962,15 @@ NEON hardware, matches evaluateArrays() exactly, element for element (confirmed)
 
 ## 19.2 Fusing Multiply and Add: A Real Peephole Optimization, Vectorized
 
+<!-- hammer:figure:19.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![FMA changes the rounding contract](../images/concepts/19-02.svg?v=5df8cd9b2322)](../images/concepts/19-02.svg?v=5df8cd9b2322)
+
+<figcaption>Fused and unfused arithmetic need not be bit-identical.</figcaption>
+</figure>
+<!-- hammer:figure:19.2:end -->
+
 ### Intuition
 
 Section 19.1's own generator emits one vector instruction per `FusedStep`, unconditionally -- structurally correct, but real hardware offers something genuinely cheaper for one very common pattern: a multiply immediately followed by an add that consumes it. Both of this book's own real architectures have a single instruction for exactly that -- AVX2/FMA's `_mm256_fmadd_ps` and NEON's `vfmaq_f32` each compute `a*b + c` in ONE instruction instead of two -- and this section adds a genuine peephole optimization that recognizes a `Mul` step directly followed by an `Add` step consuming it, and emits one fused instruction instead of two. This is not a cosmetic rewrite: the generated code for a folded pattern is measurably shorter, one vector instruction where there were two, and it is a real, checkable instance of the same "recognize a pattern, emit less code" idea Chapter 11's own algebraic simplification pass and Chapter 13's own elementwise fusion already both practiced, now applied at the instruction-selection level instead of the graph level.
@@ -1011,6 +1042,8 @@ Why the fold is ALWAYS safe here (not just in this example):
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized.cpp -o 046_driver
 // Run:     ./046_driver
+// Numerical policy: FMA contraction and vector reductions may change rounding.
+// These teaching backends permit contraction; they are not strict bitwise FP rewrites.
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -1691,14 +1724,25 @@ int main() {
     while (iss >> v) vecVals.push_back(v);
     const std::vector<float>& expected = fusedArrays.at("out");
     bool matches = (vecVals.size() == expected.size());
-    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (std::fabs(vecVals[i] - expected[i]) > 1e-3f) matches = false;
+    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (!(std::fabs(vecVals[i] - expected[i]) <= 1e-3f)) matches = false;
     printf("evaluateArrays(fused).out = ");
     for (float ev : expected) printf("%.6f ", ev);
     printf("\n");
-    printf("self-check: a single fmadd/vfma instruction computes the identical result an unfused\n");
+    printf("self-check: folded FMA matches the unfused interpreter for this exact-valued fixture\n");
     printf("mul+add pair would -- confirmed against evaluateArrays() (%s)\n", matches ? "confirmed" : "MISMATCH");
 
-    bool allOk = compileClean && matches && (foldCount == 1) && (foldCount2 == 0);
+    // FMA rounds once, so contraction is a numerical-policy decision, not
+    // a generally bit-preserving rewrite. Force two distinct roundings here.
+    volatile float fa = 1.0f + std::ldexp(1.0f, -23);
+    volatile float fb = 1.0f - std::ldexp(1.0f, -23);
+    volatile float product = fa * fb;
+    float separate = product - 1.0f;
+    float contracted = std::fma(static_cast<float>(fa), static_cast<float>(fb), -1.0f);
+    bool roundingDiffers = separate == 0.0f && contracted != separate;
+    printf("rounding regression: separate=%a FMA=%a; different as expected: %s\n",
+           separate, contracted, roundingDiffers ? "yes" : "NO");
+
+    bool allOk = roundingDiffers && compileClean && matches && (foldCount == 1) && (foldCount2 == 0);
     return allOk ? 0 : 1;
 }
 ```
@@ -1748,8 +1792,8 @@ ReLU-then-Add pattern alone (confirmed)
 12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000 
 
 evaluateArrays(fused).out = 12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000 
-self-check: a single fmadd/vfma instruction computes the identical result an unfused
-mul+add pair would -- confirmed against evaluateArrays() (confirmed)
+self-check: folded FMA matches the unfused interpreter for this exact-valued fixture
+mul+add pair would -- confirmed against evaluateArrays() on these fixtures (confirmed)
 ```
 
 **Output (device, aarch64 Apple Silicon, NEON):**
@@ -1792,8 +1836,8 @@ ReLU-then-Add pattern alone (confirmed)
 12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000
 
 evaluateArrays(fused).out = 12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000
-self-check: a single fmadd/vfma instruction computes the identical result an unfused
-mul+add pair would -- confirmed against evaluateArrays() (confirmed)
+self-check: folded FMA matches the unfused interpreter for this exact-valued fixture
+mul+add pair would -- confirmed against evaluateArrays() on these fixtures (confirmed)
 ```
 
 
@@ -1804,6 +1848,15 @@ mul+add pair would -- confirmed against evaluateArrays() (confirmed)
     A fused multiply-add rounds ONCE, after computing the full-precision `a*b + c`; an unfused multiply followed by a separate add rounds TWICE, once after the multiply and again after the add. For most real inputs those two roundings can land on a different final bit than FMA's single rounding -- a genuine, if usually tiny, numerical difference, not just a performance one. This chapter's own self-check reports the folded and unfused results as bit-identical because the test values used throughout (small integers like `2.0`, `3.0`, `5.0`) are exactly representable in float32, so neither the fused nor the unfused path has any rounding error to disagree about. That is a property of this chapter's own test data, not a general guarantee -- a production compiler applying this same fold to arbitrary floating-point data is trading a small, usually-harmless rounding difference for real speed, and should not assume the two paths always agree to the last bit.
 
 ## 19.3 A Whole Graph, Vectorized: Dispatch, Reduction, and a Real Fallback
+
+<!-- hammer:figure:19.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Choose a supported execution path](../images/concepts/19-03.svg?v=7a81243894b4)](../images/concepts/19-03.svg?v=7a81243894b4)
+
+<figcaption>Global ISA flags can undermine a baseline fallback.</figcaption>
+</figure>
+<!-- hammer:figure:19.3:end -->
 
 ### Intuition
 
@@ -1885,6 +1938,8 @@ Chapter 16's own 10-node graph, fused (maxChainLength=3), dispatched:
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 047_a_whole_graph_vectorized_dispatch_reduction_and_a_real_fallback.cpp -o 047_driver
 // Run:     ./047_driver
+// Numerical policy: FMA contraction and vector reductions may change rounding.
+// These teaching backends permit contraction; they are not strict bitwise FP rewrites.
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -2663,7 +2718,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
 }
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-2f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!(std::fabs(a[i] - b[i]) <= tol)) return false;
     return true;
 }
 
@@ -3023,3 +3078,12 @@ Chapter 20, "A JIT Backend: Compiling and Loading Generated Code at Runtime," re
 **Sources cited in this chapter:**
 
 None new. This chapter's own `Isa` abstraction, vector primitives, FMA-fold peephole optimization, and vectorized-reduction technique are all original to this book, verified against this book's own directly observed AVX2/FMA and NEON toolchain behavior (documented in this chapter's own opening section) rather than any external source.
+### Fresh numerical-policy check
+
+Apple Clang, arm64, C++17: the generated NEON fixture passed, and the deliberate two-rounding versus one-rounding case produced:
+
+```text
+rounding regression: separate=0x0p+0 FMA=-0x1p-46; different as expected: yes
+```
+
+This is evidence that data-flow legality alone does not make FMA a bit-preserving rewrite. The comparison regression also rejects NaNs instead of accepting them when `fabs(NaN) > tolerance` is false.

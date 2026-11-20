@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-20",
+  "reviewed_source": "839638b",
+  "findings": [
+    {
+      "id": "HF-01",
+      "finding": "Floating-point algebra requires an explicit contract \u2014 fixed.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HF-02",
+      "finding": "Finite FP32 text serialization was not a reliable round trip \u2014 fixed.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HF-03",
+      "finding": "Invalid static shapes and signed product overflow \u2014 fixed within declared scope.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HF-04",
+      "finding": "Tiling ceiling division overflow and invalid extents/indices \u2014 fixed.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HF-05",
+      "finding": "9.6 microseconds mislabeled as pure launch overhead \u2014 corrected throughout Chapter 1.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HF-06",
+      "finding": "Logical byte counts and roofline classifications described too strongly \u2014 scope corrected.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HF-07",
+      "finding": "Equal loop extents treated as sufficient legality evidence \u2014 scope corrected.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HF-08",
+      "finding": "Public Value aggregate described as impossible to forge \u2014 scope corrected.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/foundations.md"
+    },
+    {
+      "id": "HS-01",
+      "finding": "FMA/data-flow legality is not bitwise numerical equivalence.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-02",
+      "finding": "NaNs passed approximate comparisons.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-03",
+      "finding": "CUDA drivers were designed to pass only without a GPU.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-04",
+      "finding": "Hardcoded runtime compilation architecture.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-05",
+      "finding": "Language linkage/JIT claims.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-06",
+      "finding": "Architecture-only tuning-cache key was overstated.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-07",
+      "finding": "Linux feature file absent was called hardware mismatch.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-08",
+      "finding": "Memory/cache and profiling overclaims.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HS-09",
+      "finding": "LLVM IR description.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/systems.md"
+    },
+    {
+      "id": "HC-01",
+      "finding": "Triton attention KV tails and arithmetic precision.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    },
+    {
+      "id": "HC-02",
+      "finding": "Quantization calibration and accumulation.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    },
+    {
+      "id": "HC-03",
+      "finding": "No invented numerical GPU validation.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    },
+    {
+      "id": "HC-04",
+      "finding": "Overgeneralized compiler limits.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    },
+    {
+      "id": "HC-05",
+      "finding": "Scalar graph capture.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    },
+    {
+      "id": "HC-06",
+      "finding": "Quantization migration/API stability.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    },
+    {
+      "id": "HC-07",
+      "finding": "Host numerical validation rejects nonfinite output.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    },
+    {
+      "id": "HC-08",
+      "finding": "Attention comparison tolerances and chapter structure.",
+      "disposition": "addressed; see implementation-versus-scope details in resolution record",
+      "resolution_record": "validation/accuracy-fixes/case-studies.md"
+    }
+  ],
+  "note": "Grouped review items may cover multiple source copies. Scope corrections do not implement omitted production capabilities."
+}

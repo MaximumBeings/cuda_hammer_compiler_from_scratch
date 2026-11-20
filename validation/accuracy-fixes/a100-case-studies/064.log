@@ -1,0 +1,67 @@
+jax version: 0.6.0
+real backend device: TFRT_CPU_0
+
+==============================================================================
+PART 1: optimized HLO for Add -> ReLU -> Sum (Ch14's own shape)
+==============================================================================
+HloModule jit_reduce_chain, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0})->f32[]}, allow_spmd_sharding_propagation_to_parameters={true,true}, allow_spmd_sharding_propagation_to_output={true}
+
+%region_0.11 (Arg_0.12: f32[], Arg_1.13: f32[]) -> f32[] {
+  %Arg_0.12 = f32[] parameter(0), metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum"}
+  %Arg_1.13 = f32[] parameter(1), metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum"}
+  ROOT %add.14 = f32[] add(%Arg_0.12, %Arg_1.13), metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=36}
+}
+
+%fused_computation (param_0.3: f32[6,8], param_1.2: f32[6,8]) -> f32[] {
+  %param_0.3 = f32[6,8]{1,0} parameter(0)
+  %param_1.2 = f32[6,8]{1,0} parameter(1)
+  %add.0 = f32[6,8]{1,0} add(%param_0.3, %param_1.2), metadata={op_name="jit(reduce_chain)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=34}
+  %constant.1 = f32[] constant(0)
+  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name="jit(reduce_chain)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+  %maximum.1 = f32[6,8]{1,0} maximum(%add.0, %broadcast.1), metadata={op_name="jit(reduce_chain)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+  ROOT %reduce.0 = f32[] reduce(%maximum.1, %constant.1), dimensions={0,1}, to_apply=%region_0.11, metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=36}
+}
+
+ENTRY %main.16 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8]) -> f32[] {
+  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+  ROOT %maximum_reduce_fusion = f32[] fusion(%Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=36}
+}
+
+
+-- fusion(...) instructions in ENTRY: 1
+-- the reduce(...) op is inside the SAME fused_computation body as the add/relu (not its own materialized buffer): True
+
+==============================================================================
+PART 2: Sum's result now feeds a real downstream consumer (*2.0)
+==============================================================================
+HloModule jit_reduce_then_use, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0})->f32[]}, allow_spmd_sharding_propagation_to_parameters={true,true}, allow_spmd_sharding_propagation_to_output={true}
+
+%region_0.12 (Arg_0.13: f32[], Arg_1.14: f32[]) -> f32[] {
+  %Arg_0.13 = f32[] parameter(0), metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum"}
+  %Arg_1.14 = f32[] parameter(1), metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum"}
+  ROOT %add.15 = f32[] add(%Arg_0.13, %Arg_1.14), metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=43}
+}
+
+%fused_computation (param_0.5: f32[6,8], param_1.4: f32[6,8]) -> f32[] {
+  %param_0.5 = f32[6,8]{1,0} parameter(0)
+  %param_1.4 = f32[6,8]{1,0} parameter(1)
+  %add.0 = f32[6,8]{1,0} add(%param_0.5, %param_1.4), metadata={op_name="jit(reduce_then_use)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=41}
+  %constant.2 = f32[] constant(0)
+  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name="jit(reduce_then_use)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+  %maximum.1 = f32[6,8]{1,0} maximum(%add.0, %broadcast.1), metadata={op_name="jit(reduce_then_use)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+  %reduce.0 = f32[] reduce(%maximum.1, %constant.2), dimensions={0,1}, to_apply=%region_0.12, metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=43}
+  %constant.1 = f32[] constant(2)
+  ROOT %multiply.0 = f32[] multiply(%reduce.0, %constant.1), metadata={op_name="jit(reduce_then_use)/jit(main)/mul" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=44}
+}
+
+ENTRY %main.18 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8]) -> f32[] {
+  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+  ROOT %reduce_multiply_fusion = f32[] fusion(%Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(reduce_then_use)/jit(main)/mul" source_file="/tmp/cuda-hammer-audit/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=44}
+}
+
+
+-- fusion(...) instructions in ENTRY: 1
+-- the downstream multiply is fused into the SAME single kernel as the reduce, not split into a second one: True
+EXIT=0

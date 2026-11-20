@@ -1,5 +1,14 @@
 # 9. Constant Folding and Dead Code Elimination
 
+<!-- hammer:figure:opener-9:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Constant Folding and Dead Code Elimination](../images/openers/09.svg?v=a63a80602fa8)](../images/openers/09.svg?v=a63a80602fa8)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-9:end -->
+
 **What you will understand:** the book's first two genuinely *optimizing* transform passes -- constant folding (replacing a computation with its already-known answer) and dead code elimination (dropping a node nothing actually depends on) -- and why running them in the wrong order leaves real, findable waste on the table.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph` and `topologicalSort()`, Chapter 7's `printGraphAsSource()`, and Chapter 8's `TransformPass` and `runPasses()` -- this chapter plugs two brand-new passes directly into that last piece of infrastructure, completely unchanged.
@@ -28,6 +37,15 @@ WHAT THIS CHAPTER ADDS TO CHAPTER 8's OWN INFRASTRUCTURE:
 ```
 
 ## 9.1 Constant Folding: Replacing Computation with Its Answer
+
+<!-- hammer:figure:9.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Fold known values before execution](../images/concepts/09-01.svg?v=6bf0732cc7cb)](../images/concepts/09-01.svg?v=6bf0732cc7cb)
+
+<figcaption>The folding arithmetic must match the declared numerical contract.</figcaption>
+</figure>
+<!-- hammer:figure:9.1:end -->
 
 ### Intuition
 
@@ -450,6 +468,15 @@ self-check: relu(const(-2.5)) folds to Const(0) (confirmed)
 
 ## 9.2 Dead Code Elimination: Dropping What Nothing Needs
 
+<!-- hammer:figure:9.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Keep only values needed by outputs](../images/concepts/09-02.svg?v=8dd99f44f97a)](../images/concepts/09-02.svg?v=8dd99f44f97a)
+
+<figcaption>Side effects would require additional liveness rules.</figcaption>
+</figure>
+<!-- hammer:figure:9.2:end -->
+
 ### Intuition
 
 A shipping warehouse that never checks which crates anyone actually ordered will happily keep building and storing crates nobody will ever pick up -- the resources spent building, labeling, and storing those crates are real, and completely wasted, the moment nothing downstream ever asks for them. A graph can accumulate the exact same kind of waste: a node computed correctly, from real inputs, that nothing else in the graph -- and nothing outside it -- ever actually consumes. Dead code elimination is the pass that finds nodes like this and drops them, finally putting Chapter 8's own "rebuild rather than mutate" design to the purpose it was built for: `Graph` still has no way to remove a node from an existing graph, so "drop a dead node" has only ever meant "don't add it to the new graph being built."
@@ -823,6 +850,15 @@ self-check: a graph with NO dead nodes comes back the same size, 6 -> 6
 
 ## 9.3 Combining Both Passes Through Chapter 8's Pass Manager
 
+<!-- hammer:figure:9.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Pass order can expose more work](../images/concepts/09-03.svg?v=87325e37f67a)](../images/concepts/09-03.svg?v=87325e37f67a)
+
+<figcaption>Measure graph changes and compare outputs independently.</figcaption>
+</figure>
+<!-- hammer:figure:9.3:end -->
+
 ### Intuition
 
 Paying off a mortgage early does not just eliminate the payment itself -- it can also free up money that was going toward mortgage-related insurance, which in turn might free up something else, in a chain that was never visible while the mortgage was still active. Constant folding has exactly this same second-order effect on a graph: folding `(c1 + c2) * c3` down to a single `Const(20)` does not just simplify that one computation -- it also *severs* every edge that used to point back to `c1`, `c2`, `c3`, and the intermediate `t1`, since the new `Const(20)` node has no inputs at all. Those four nodes were genuinely needed before the fold; after it, nothing in the graph depends on any of them anymore. Folding does not know or care about this side effect -- it rebuilds every single node in the graph, whether or not anything downstream still needs it. Noticing and cleaning up the wreckage is dead code elimination's job, and it can only do that job if it runs *after* folding has created the mess for it to find.
@@ -1015,7 +1051,7 @@ static std::string printGraphAsSource(const Graph& g) {
         out += n->debugName + " = " + opKindToSourceKeyword(n->op) + "(";
         if (n->op == OpKind::Const) {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {

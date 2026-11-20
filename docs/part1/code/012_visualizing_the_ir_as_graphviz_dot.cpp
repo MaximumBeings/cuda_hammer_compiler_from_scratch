@@ -184,6 +184,8 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
             auto it = declaredShapes.find(id);
             if (it == declaredShapes.end()) throw std::runtime_error(context + ": no declared shape");
+            for (int d : it->second.dims)
+                if (d <= 0) throw std::runtime_error(context + ": dimensions must be positive");
             shapes[id] = it->second;
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);

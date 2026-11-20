@@ -1,0 +1,77 @@
+jax version: 0.6.0
+real backend device: TFRT_CPU_0
+
+==============================================================================
+PART 1: unoptimized HLO (StableHLO) for the diamond graph
+==============================================================================
+module @jit_diamond attributes {mhlo.num_partitions = 1 : i32, mhlo.num_replicas = 1 : i32} {
+  func.func public @main(%arg0: tensor<6x8xf32>, %arg1: tensor<6x8xf32>, %arg2: tensor<6x8xf32>) -> (tensor<6x8xf32> {jax.result_info = "result"}) {
+    %0 = stablehlo.add %arg0, %arg1 : tensor<6x8xf32>
+    %1 = stablehlo.multiply %0, %arg2 : tensor<6x8xf32>
+    %2 = call @relu(%0) : (tensor<6x8xf32>) -> tensor<6x8xf32>
+    %3 = stablehlo.add %1, %2 : tensor<6x8xf32>
+    return %3 : tensor<6x8xf32>
+  }
+  func.func private @relu(%arg0: tensor<6x8xf32>) -> tensor<6x8xf32> {
+    %cst = stablehlo.constant dense<0.000000e+00> : tensor<f32>
+    %0 = stablehlo.broadcast_in_dim %cst, dims = [] : (tensor<f32>) -> tensor<6x8xf32>
+    %1 = stablehlo.maximum %arg0, %0 : tensor<6x8xf32>
+    return %1 : tensor<6x8xf32>
+  }
+}
+
+==============================================================================
+PART 2: optimized HLO for the diamond graph (real XLA fusion pass)
+==============================================================================
+HloModule jit_diamond, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0}, f32[6,8]{1,0})->f32[6,8]{1,0}}, allow_spmd_sharding_propagation_to_parameters={true,true,true}, allow_spmd_sharding_propagation_to_output={true}
+
+%fused_computation (param_0.2: f32[6,8], param_1.3: f32[6,8], param_2.2: f32[6,8]) -> f32[6,8] {
+  %param_1.3 = f32[6,8]{1,0} parameter(1)
+  %param_2.2 = f32[6,8]{1,0} parameter(2)
+  %add.1 = f32[6,8]{1,0} add(%param_1.3, %param_2.2), metadata={op_name="jit(diamond)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=44}
+  %param_0.2 = f32[6,8]{1,0} parameter(0)
+  %multiply.0 = f32[6,8]{1,0} multiply(%add.1, %param_0.2), metadata={op_name="jit(diamond)/jit(main)/mul" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=45}
+  %constant.1 = f32[] constant(0)
+  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name="jit(diamond)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+  %maximum.1 = f32[6,8]{1,0} maximum(%add.1, %broadcast.1), metadata={op_name="jit(diamond)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+  ROOT %add.0 = f32[6,8]{1,0} add(%multiply.0, %maximum.1), metadata={op_name="jit(diamond)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=47}
+}
+
+ENTRY %main.13 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8], Arg_2.3: f32[6,8]) -> f32[6,8] {
+  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+  %Arg_2.3 = f32[6,8]{1,0} parameter(2), metadata={op_name="c"}
+  ROOT %maximum_add_fusion = f32[6,8]{1,0} fusion(%Arg_2.3, %Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(diamond)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=47}
+}
+
+
+-- number of `fusion(...)` instructions in the ENTRY computation: 1
+-- t1 (the shared add) appears INSIDE the single fused_computation body, not as its own materialized buffer: True
+
+==============================================================================
+PART 3: same graph, but t1 is ALSO returned as a live output
+==============================================================================
+HloModule jit_diamond_multi_output, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0}, f32[6,8]{1,0})->(f32[6,8]{1,0}, f32[6,8]{1,0})}, allow_spmd_sharding_propagation_to_parameters={true,true,true}, allow_spmd_sharding_propagation_to_output={true,true}
+
+%fused_computation (param_0.1: f32[6,8], param_1.2: f32[6,8]) -> f32[6,8] {
+  %param_0.1 = f32[6,8]{1,0} parameter(0)
+  %param_1.2 = f32[6,8]{1,0} parameter(1)
+  %multiply.0 = f32[6,8]{1,0} multiply(%param_0.1, %param_1.2), metadata={op_name="jit(diamond_multi_output)/jit(main)/mul" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=53}
+  %constant.1 = f32[] constant(0)
+  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name="jit(diamond_multi_output)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+  %maximum.1 = f32[6,8]{1,0} maximum(%param_0.1, %broadcast.1), metadata={op_name="jit(diamond_multi_output)/jit(main)/jit(relu)/max" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+  ROOT %add.0 = f32[6,8]{1,0} add(%multiply.0, %maximum.1), metadata={op_name="jit(diamond_multi_output)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=55}
+}
+
+ENTRY %main.14 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8], Arg_2.3: f32[6,8]) -> (f32[6,8], f32[6,8]) {
+  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+  %Arg_2.3 = f32[6,8]{1,0} parameter(2), metadata={op_name="c"}
+  %add.4 = f32[6,8]{1,0} add(%Arg_0.1, %Arg_1.2), metadata={op_name="jit(diamond_multi_output)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=52}
+  %maximum_add_fusion = f32[6,8]{1,0} fusion(%add.4, %Arg_2.3), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(diamond_multi_output)/jit(main)/add" source_file="/tmp/cuda-hammer-audit/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=55}
+  ROOT %tuple.13 = (f32[6,8]{1,0}, f32[6,8]{1,0}) tuple(%maximum_add_fusion, %add.4)
+}
+
+
+-- number of `fusion(...)` instructions in the ENTRY computation once t1 escapes as an output: 1
+EXIT=0

@@ -1,0 +1,43 @@
+$ clang++ -std=c++17 -Wall -Wextra -O2 /Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/088_five_steps_unrolled_a_fixed_depth_chain_no_loop_construct.cpp -o /tmp/cuda-hammer-case-runs/088_five_steps_unrolled_a_fixed_depth_chain_no_loop_construct/driver
+
+$ /tmp/cuda-hammer-case-runs/088_five_steps_unrolled_a_fixed_depth_chain_no_loop_construct/driver
+=== Chapter 33 (Part 7): Section 33.2 -- 5 steps unrolled, a fixed-depth chain (no loop construct) ===
+
+real gap named directly: a real PDE solver repeats the update until some stopping point,
+which every real implementation expresses as a LOOP in the host driver. CUDA Hammer's IR
+has never had a loop or any other control-flow construct (Chapters 4-32 never added one) --
+every graph so far has been a fixed, finite DAG known completely at build time. This
+section's own workaround: a FIXED, compile-time-known step count (5) unrolled directly
+into the HOST driver -- 5 small, independent CUDA Hammer graphs run in sequence, not one
+big graph, where step t's own real INPUT is step (t-1)'s own real OUTPUT.
+
+step 0 (initial):    0.0000   0.0000   0.0000 100.0000 100.0000   0.0000   0.0000   0.0000   sum=200.0000
+step 1 (Hammer):    0.0000   0.0000  25.0000  75.0000  75.0000  25.0000   0.0000   0.0000   sum=200.0000  (matches independent reference: yes)
+step 2 (Hammer):    0.0000   6.2500  31.2500  62.5000  62.5000  31.2500   6.2500   0.0000   sum=200.0000  (matches independent reference: yes)
+step 3 (Hammer):    1.5625  10.9375  32.8125  54.6875  54.6875  32.8125  10.9375   1.5625   sum=200.0000  (matches independent reference: yes)
+step 4 (Hammer):    3.5156  14.0625  32.8125  49.2188  49.2188  32.8125  14.0625   3.5156   sum=199.2188  (matches independent reference: yes)
+step 5 (Hammer):    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734   sum=197.4609  (matches independent reference: yes)
+
+self-check: all 5 steps, run through 5 fresh CUDA Hammer graphs, match the independent
+host-side reference exactly at every step (confirmed)
+
+--- a real, hand-checkable consequence of this section's own boundary treatment ---
+
+total heat stays EXACTLY conserved (sum=200.0000, matching step 0's sum=200.0000) through step 3,
+while the disturbance is still confined to the domain's interior (confirmed). By step 4 it has
+reached the boundary cells and real heat genuinely leaks into the zero-padded ghost region
+(sum=199.2188, a real loss of 0.7812, not a bug) -- the same zero-padded boundary APPROXIMATION
+Section 31.2 used for its image border, here producing a real, physically-sensible
+consequence (confirmed) rather than an artifact to explain away.
+
+--- the honest scope boundary this section stops at ---
+
+this section can only run a FIXED, predetermined number of steps decided at build time. It
+cannot express a real adaptive "iterate until converged" solver loop, since deciding to
+stop early based on a runtime condition needs control flow this IR has never had. Section
+33.3 continues with this SAME fixed-depth chain, now run through Chapter 14/16's real
+fusion pass and Chapter 19's real vectorized-CPU codegen at every step.
+
+=== Section 33.2 complete: all self-checks confirmed ===
+
+EXIT=0

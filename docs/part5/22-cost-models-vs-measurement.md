@@ -1,5 +1,14 @@
 # 22. Cost Models vs. Measurement-Based Autotuning
 
+<!-- hammer:figure:opener-22:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Cost Models vs. Measurement-Based Autotuning](../images/openers/22.svg?v=6132e41109b8)](../images/openers/22.svg?v=6132e41109b8)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-22:end -->
+
 **What you will understand:** `estimateLoopOverheadCost()`, a simple linear cost model -- trips through a loop times a fixed per-trip overhead -- that applies to BOTH tile size and unroll factor (Chapter 21 already proved they are the same underlying question), tested against a real 50-million-element computation and found, honestly, to be wrong past a machine-specific turnover point; `estimateLoopOrderCost()`, a cost model built on memory-access stride and cache-line counting, tested against a real 4096x4096 array traversal and found to get the DIRECTION right by a dramatic real margin while getting the exact MAGNITUDE wrong; `estimateScheduleCost()`, which sums both models into one score per `Schedule`, applied to 6 real schedules drawn from Chapter 21's own 128-schedule list and executed for real through a generic, runtime-parameterized schedule INTERPRETER; and a concrete, diagnosed explanation for why that combined model's own ranking agreement lands close to chance on this chapter's own toy-scale example -- not a verdict that cost models don't work, but a specific, honestly identified confound.
 
 **What you need to know first:** Chapter 15's own `Loop`/`LoopNest`/`TiledLoop`/`tileLoop()`/`actualInnerExtent()` and Chapter 21's own `LoopOrder`/`enumerateLoopOrders()`, `unrollFactorCandidates()`/`computeUnrolled()`/`arraysExactlyEqual()`, and `Schedule`/`enumerateSchedules()`/`scheduleStr()` (all reused unchanged throughout this chapter); Chapter 19's own real-clock, best-of-N timing discipline; and Chapter 21's own closing number -- 128 legal schedules for one tiny `LoopNest` -- which this chapter picks up exactly where it was left.
@@ -58,6 +67,15 @@ measuring.
 ```
 
 ## 22.1 A Loop-Overhead Cost Model for Tile Size and Unroll Factor
+
+<!-- hammer:figure:22.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![An analytical model estimates a cost](../images/concepts/22-01.svg?v=65993f5ce709)](../images/concepts/22-01.svg?v=65993f5ce709)
+
+<figcaption>A score is not a measured elapsed time.</figcaption>
+</figure>
+<!-- hammer:figure:22.1:end -->
 
 ### Intuition
 
@@ -422,6 +440,15 @@ one to narrow 128 candidates down to a short list, then MEASURE the short list f
 
 ## 22.2 A Memory-Stride Cost Model for Loop Order
 
+<!-- hammer:figure:22.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Stride models approximate locality](../images/concepts/22-02.svg?v=209f4035d453)](../images/concepts/22-02.svg?v=209f4035d453)
+
+<figcaption>Caches and hardware prefetching complicate the prediction.</figcaption>
+</figure>
+<!-- hammer:figure:22.2:end -->
+
 ### Intuition
 
 Section 21.2 already proved that loop order cannot change an elementwise computation's own ANSWER -- every permutation of a `LoopNest`'s loops visits the identical set of index tuples. This section is entirely about whether loop order changes the TIME, and the mechanism is different from Section 22.1's in kind, not just in degree: this book's own tensors are stored row-major (Chapter 4), so for a `LoopNest` of `[dim0, dim1]`, element `(i, j)` sits at flat offset `i*dim1.extent + j` -- meaning `dim1`, the LAST loop in the nest, is the CONTIGUOUS dimension in memory. Whichever loop ends up INNERMOST in a given order determines what "the next trip" means in real memory: a jump of one element, or a jump of an entire row.
@@ -430,7 +457,7 @@ Section 21.2 already proved that loop order cannot change an elementwise computa
 
 `estimateLoopOrderCost()` counts CACHE-LINE LOADS, not raw element accesses. When the innermost loop matches the contiguous dimension, consecutive trips touch consecutive addresses, so one loaded cache line (modeled at a realistic 64 bytes, `cacheLineElements = 16` for float32) serves 16 trips before the next line is needed. When the innermost loop does NOT match the contiguous dimension, consecutive trips jump by an entire row -- far larger than one cache line in any real case this section considers -- so, worst case, every single trip pays for a fresh line it will use exactly once. That is an 16-to-1 difference in line loads alone; folded into the model's own overall cost (which also charges a constant per-element compute term, identical either way, diluting the memory-only effect once real work is added to the same total), the model's own predicted GAP comes out smaller than that raw 16-to-1 ratio.
 
-The real test, on a `LoopNest` of `[dim0:4096, dim1:4096]` -- 64 MB per array, deliberately larger than any real cache -- is dramatic in a way Section 22.1's own test was not: real measurement finds row-major traversal tens of times faster than column-major, a far WIDER gap than the model's own prediction, on both machines this book measures it on. The model's own DIRECTION is right, and by a wide, unambiguous margin; its own predicted MAGNITUDE is not, because real memory hierarchies do things -- hardware prefetching that helps the contiguous case even more than a flat line-count model assumes, and TLB misses under a stride this large -- that a model built purely on counting cache-line loads was never told about.
+The real test, on a `LoopNest` of `[dim0:4096, dim1:4096]` -- 64 MB per array, deliberately large relative to many cache levels, but not guaranteed to exceed modern last-level caches -- is dramatic in a way Section 22.1's own test was not: real measurement finds row-major traversal tens of times faster than column-major, a far WIDER gap than the model's own prediction, on both machines this book measures it on. The model's own DIRECTION is right, and by a wide, unambiguous margin; its own predicted MAGNITUDE is not, because real memory hierarchies do things -- hardware prefetching that helps the contiguous case even more than a flat line-count model assumes, and TLB misses under a stride this large -- that a model built purely on counting cache-line loads was never told about.
 
 ```text
 Row-major memory layout (Chapter 4): for LoopNest [dim0, dim1], element
@@ -536,9 +563,9 @@ static double estimateLoopOrderCost(const LoopNest& nest, const LoopOrder& order
 // row-major (a[i*N + j]), walked either row-major (dim0 outer, dim1
 // inner -- order {0,1}) or column-major (dim1 outer, dim0 inner -- order
 // {1,0}). N is chosen deliberately large enough (4096 x 4096 floats =
-// 64 MB per array) that the whole array cannot fit in any real cache, so
-// the effect measured is genuinely about memory traffic, not an artifact
-// of a dataset small enough to sit in cache either way.
+// 64 MB per array). This may exceed some caches, but modern LLCs can be larger;
+// inspect the actual target hierarchy before attributing timings to DRAM.
+// The measured order effect can involve caches, TLBs and prefetching too.
 static void computeOrdered(const std::vector<float>& a, std::vector<float>& out, long long N, const LoopOrder& order) {
     if (order == LoopOrder{0, 1}) {          // row-major: i outer, j inner (contiguous)
         for (long long i = 0; i < N; ++i)
@@ -741,6 +768,15 @@ Section 22.3 has to decide when it combines both models into one score for a rea
     Section 22.2's own model correctly says "row-major is cheaper" -- and it would be a real mistake to read that success as license to trust its own predicted RATIO too. An autotuner that used this model's own 11-to-12x prediction to decide, say, how much extra tiling complexity is worth trading for a better loop order would be reasoning from a number that real hardware, on both machines this book measured, blew past by a wide margin. Getting a ranking right and getting a magnitude right are different claims, and a cost model can genuinely earn one without the other -- which is exactly why Chapter 23's own autotuner will use a cost model to choose WHICH few candidates to measure, never to decide BY HOW MUCH one candidate is expected to win.
 
 ## 22.3 Combining Both Cost Models: Prediction vs. Measurement for Real Schedules
+
+<!-- hammer:figure:22.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Compare predictions with actual measurements](../images/concepts/22-03.svg?v=201b873f281c)](../images/concepts/22-03.svg?v=201b873f281c)
+
+<figcaption>Control inputs, warm-up and noise before drawing conclusions.</figcaption>
+</figure>
+<!-- hammer:figure:22.3:end -->
 
 ### Intuition
 

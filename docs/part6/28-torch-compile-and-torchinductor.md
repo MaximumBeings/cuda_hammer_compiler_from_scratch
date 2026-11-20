@@ -1,5 +1,14 @@
 # Chapter 28: torch.compile and TorchInductor
 
+<!-- hammer:figure:opener-28:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![torch.compile and TorchInductor](../images/openers/28.svg?v=75b99a753cd2)](../images/openers/28.svg?v=75b99a753cd2)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-28:end -->
+
 Chapters 25-27 each studied a real, independent system reached through a
 clean `pip install` with no CUDA runtime required at import time: `jax`,
 `apache-tvm`, and `triton` all import successfully on this sandbox with
@@ -63,6 +72,15 @@ not execute them.
 ```
 
 ## 28.1 torch.compile's Real Two-Stage Pipeline
+
+<!-- hammer:figure:28.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Capture and code generation are distinct stages](../images/concepts/28-01.svg?v=7f014eff76a5)](../images/concepts/28-01.svg?v=7f014eff76a5)
+
+<figcaption>Backend behavior depends on graph, target and version.</figcaption>
+</figure>
+<!-- hammer:figure:28.1:end -->
 
 Every case study so far in Part 6 reads a real intermediate
 representation directly off some object the library hands back: an HLO
@@ -333,8 +351,8 @@ python3 "072_torch_compiles_real_two_stage_pipeline_dynamo_capture_then_inductor
 # capability boundary, genuinely different from the fusion boundary File 072
 # already confirmed Inductor draws automatically. Run on the same
 # Ch4/13/25/26/27/72 diamond graph, split by inserting exactly one real
-# Python construct Dynamo cannot trace through: converting a tensor to a
-# plain Python float with `.item()`.
+# Python operation that breaks the graph with scalar capture disabled:
+# converting a tensor to a Python scalar with `.item()`.
 #
 # Compiled with:   python3 "073_graph_breaks_a_real_tracing_boundary_distinct_from_inductors_own_fusion_decision.py"
 
@@ -390,8 +408,8 @@ def diamond_no_break(a, b, c):
 def diamond_with_break(a, b, c):
     t1 = a + b
     # Tensor.item() forces a real value out of the traced graph and into a
-    # plain Python float -- Dynamo's own bytecode tracer cannot represent
-    # that inside one FX graph, so it stops tracing here and resumes with a
+    # plain Python float. With capture_scalar_outputs=False, Dynamo stops
+    # tracing here and resumes with a
     # SECOND graph for what follows. Nothing about FUSION changed; this is
     # a tracing-capability boundary, not a cost or correctness decision.
     _t1_sum_as_python_float = t1.sum().item()
@@ -401,6 +419,7 @@ def diamond_with_break(a, b, c):
 
 
 if __name__ == "__main__":
+    torch._dynamo.config.capture_scalar_outputs = False
     a = torch.randn(8)
     b = torch.randn(8)
     c = torch.randn(8)
@@ -479,6 +498,15 @@ Real generated kernel count with the break: 2 (cpp_fused_add_sum_0, cpp_fused_ad
 
 ## 28.2 Graph Breaks: A Tracing Boundary, Not a Fusion Decision
 
+<!-- hammer:figure:28.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A graph break splits the captured region](../images/concepts/28-02.svg?v=0c470aebf03c)](../images/concepts/28-02.svg?v=0c470aebf03c)
+
+<figcaption>A capture boundary is different from a kernel fusion choice.</figcaption>
+</figure>
+<!-- hammer:figure:28.2:end -->
+
 Section 28.1's own fusion boundary is a codegen decision Inductor makes
 once it already has a complete graph. A graph BREAK is a different kind
 of boundary entirely, imposed one level earlier by Dynamo's own tracer,
@@ -488,11 +516,12 @@ function) and `diamond_with_break`, identical except for one inserted
 line -- `t1.sum().item()` -- immediately after `t1 = a + b`.
 
 `Tensor.item()` pulls a real value out of the traced computation and
-converts it to a plain Python float. Dynamo's own bytecode-level tracer
-has no way to represent that inside a single FX graph (a Python float,
-unlike a tensor, cannot carry a symbolic trace forward), so it stops
-tracing at that point and resumes with a SECOND, separate graph for
-whatever comes after. `torch._dynamo.explain()` reports this directly, as
+converts it to a plain Python float. With `torch._dynamo.config.capture_scalar_outputs=False`, this operation
+breaks the graph in the recorded configuration. This is not a universal
+tracing limitation: enabling scalar capture can retain supported scalar
+operations in a graph, though data-dependent Python control flow can
+still cause breaks. The demonstration explicitly disables scalar capture
+to make its intended boundary reproducible. `torch._dynamo.explain()` reports this directly, as
 a real `ExplainOutput` dataclass with clean fields rather than a wall of
 printed guard objects:
 
@@ -644,8 +673,8 @@ if __name__ == "__main__":
 
     print()
     print("Real end-to-end execution: torch.compile(f, mode='max-autotune') "
-          "on CPU with no GPU present (the mode still runs; it just narrows "
-          "to backends that make sense without a GPU):")
+          "on CPU tensors (the mode still runs; it considers "
+          "CPU-capable candidates for these inputs):")
 
     def matmul(x, y):
         return x @ y
@@ -670,9 +699,8 @@ if __name__ == "__main__":
 
     print()
     print("Real torch.cuda.is_available():", torch.cuda.is_available())
-    print("(max-autotune ran and produced a correct result with zero "
-          "physical GPU present -- Inductor's own backend search degrades "
-          "to CPU-capable candidates automatically rather than failing)")
+    print("(max-autotune produced a CPU-tensor result; GPU availability "
+          "above is a separate host property, not the execution device)")
 ```
 
 ```bash
@@ -708,6 +736,15 @@ Real torch.cuda.is_available(): False
 
 
 ## 28.3 Real torch._inductor.config Autotuning, Next to CUDA Hammer's Own Schedule and TuningCache
+
+<!-- hammer:figure:28.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Inspect tuning policy and generated code](../images/concepts/28-03.svg?v=07aa984ab096)](../images/concepts/28-03.svg?v=07aa984ab096)
+
+<figcaption>An enabled option alone does not prove which path executed.</figcaption>
+</figure>
+<!-- hammer:figure:28.3:end -->
 
 `torch._inductor.config` is a real, plain Python module whose own
 attributes ARE the configuration -- there is no separate dataclass to

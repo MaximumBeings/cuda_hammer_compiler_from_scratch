@@ -1,5 +1,18 @@
 # 11. Algebraic Simplification
 
+<!-- hammer:figure:opener-11:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Algebraic Simplification](../images/openers/11.svg?v=033d34812618)](../images/openers/11.svg?v=033d34812618)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-11:end -->
+
+!!! note "Floating-point contract"
+    The zero-elimination examples explicitly opt in to relaxedMath=true, allowing NaN/infinity and signed-zero distinctions to be ignored. The pass defaults to strict mode, which preserves Add-by-zero and Mul-by-zero. In IEEE floating point, infinity times zero is NaN and removing addition of positive zero can change a negative-zero result; real-number identities are not unconditional floating-point rewrites. See [LLVM fast-math flags](https://llvm.org/docs/LangRef.html#fast-math-flags).
+
+
 **What you will understand:** the book's fourth genuinely *optimizing* transform pass -- algebraic simplification, which uses basic identities from ordinary arithmetic (adding zero, multiplying by one, multiplying by zero, applying `ReLU` twice) to rewrite a computation into something cheaper without computing a new answer at all -- and how, combined with Chapters 9 and 10's own passes through Chapter 8's unmodified `PassManager`, Part 2 closes with four independent optimizations working together on one graph.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph` and `topologicalSort()`, Chapter 7's `printGraphAsSource()`, Chapter 8's `TransformPass` and `runPasses()`, and Chapter 9's `constantFoldPass()`, `deadCodeEliminationPass()`, and `evaluate()`, and Chapter 10's `commonSubexpressionEliminationPass()` -- this chapter adds a fourth pass to that same pipeline, and reuses all three of Chapter 9 and 10's passes directly in Section 11.3.
@@ -26,6 +39,15 @@ WHAT THIS CHAPTER ADDS TO CHAPTERS 8, 9, AND 10's OWN INFRASTRUCTURE:
 ```
 
 ## 11.1 Algebraic Simplification: The Additive Identity
+
+<!-- hammer:figure:11.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Identity rewrites need numerical assumptions](../images/concepts/11-01.svg?v=aa574f14d03e)](../images/concepts/11-01.svg?v=aa574f14d03e)
+
+<figcaption>Signed zero and exceptional values can distinguish rewrites.</figcaption>
+</figure>
+<!-- hammer:figure:11.1:end -->
 
 ### Intuition
 
@@ -98,6 +120,8 @@ Because the check reads `oldIdToNewValue` -- the map from old ids to the *new* g
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 021_algebraic_simplification_the_additive_identity.cpp -o 021_algebraic_simplification_the_additive_identity
 // Run:     ./021_algebraic_simplification_the_additive_identity
 #include <cstdio>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -241,7 +265,9 @@ static const Node* findNodeByName(const Graph& g, const std::string& name) {
 // every earlier chapter in Part 2 has followed.
 using TransformPass = std::function<Graph(const Graph&)>;
 
-static Graph algebraicSimplificationPass(const Graph& g) {
+static Graph algebraicSimplificationPass(const Graph& g, bool relaxedMath = false) {
+    // relaxedMath permits ignoring NaN/infinity and the sign of zero.
+    // Strict mode retains Add-by-zero and Mul-by-zero operations.
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("algebraicSimplificationPass: input graph is not acyclic");
 
@@ -277,12 +303,12 @@ static Graph algebraicSimplificationPass(const Graph& g) {
             bool rhsIsOne  = (rhsNode->op == OpKind::Const && rhsNode->constValue == 1.0f);
 
             if (n->op == OpKind::Add) {
-                if (lhsIsZero) newValue = rhs;          // 0 + x -> x
-                else if (rhsIsZero) newValue = lhs;     // x + 0 -> x
+                if (relaxedMath && lhsIsZero) newValue = rhs;          // 0 + x -> x
+                else if (relaxedMath && rhsIsZero) newValue = lhs;     // x + 0 -> x
                 else newValue = result.addBinary(OpKind::Add, lhs, rhs, n->debugName);
             } else { // Mul
-                if (lhsIsZero) newValue = lhs;          // 0 * x -> 0 (the zero itself)
-                else if (rhsIsZero) newValue = rhs;     // x * 0 -> 0
+                if (relaxedMath && lhsIsZero) newValue = lhs;          // 0 * x -> 0 (the zero itself)
+                else if (relaxedMath && rhsIsZero) newValue = rhs;     // x * 0 -> 0
                 else if (lhsIsOne) newValue = rhs;      // 1 * x -> x
                 else if (rhsIsOne) newValue = lhs;      // x * 1 -> x
                 else newValue = result.addBinary(OpKind::Mul, lhs, rhs, n->debugName);
@@ -324,7 +350,7 @@ int main() {
     printf("Graph with two additive-identity Adds ('t1', 't2') and one real Add ('t3'):\n");
     printGraph(g);
 
-    Graph simplified = algebraicSimplificationPass(g);
+    Graph simplified = algebraicSimplificationPass(g, true);
     printf("\nAfter algebraicSimplificationPass():\n");
     printGraph(simplified);
 
@@ -402,6 +428,15 @@ self-check: evaluate(original, x=4,y=9).out = 21, evaluate(simplified, ...).out 
     Look at the simplified graph's own output: `zero` is still sitting there as node `%2`, even though neither `t1` nor `t2` -- the only two nodes that ever read it -- exist anymore. `algebraicSimplificationPass()` rebuilds every leaf in topological order unconditionally, exactly the way `constantFoldPass()` (Section 9.1) always kept `c1` and `c2` around even after a fold made them irrelevant. Neither pass retroactively goes back and removes a node just because something ELSE it built later stopped needing it -- that is specifically `deadCodeEliminationPass()`'s job (Section 9.2), and Section 11.3 puts the two back to back on purpose.
 
 ## 11.2 The Absorbing Identity and an Idempotent Unary Op
+
+<!-- hammer:figure:11.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Algebra is not all floating-point semantics](../images/concepts/11-02.svg?v=671649cd8b59)](../images/concepts/11-02.svg?v=671649cd8b59)
+
+<figcaption>Real-number identities may fail under IEEE floating point.</figcaption>
+</figure>
+<!-- hammer:figure:11.2:end -->
 
 ### Intuition
 
@@ -482,6 +517,8 @@ A THREE-LEVEL CASCADE, DISCOVERED IN ONE PASS:
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 022_multiplicative_identity_absorbing_zero_and_relu_idempotence.cpp -o 022_multiplicative_identity_absorbing_zero_and_relu_idempotence
 // Run:     ./022_multiplicative_identity_absorbing_zero_and_relu_idempotence
 #include <cstdio>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -619,7 +656,9 @@ static const Node* findNodeByName(const Graph& g, const std::string& name) {
 
 using TransformPass = std::function<Graph(const Graph&)>;
 
-static Graph algebraicSimplificationPass(const Graph& g) {
+static Graph algebraicSimplificationPass(const Graph& g, bool relaxedMath = false) {
+    // relaxedMath permits ignoring NaN/infinity and the sign of zero.
+    // Strict mode retains Add-by-zero and Mul-by-zero operations.
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("algebraicSimplificationPass: input graph is not acyclic");
 
@@ -653,12 +692,12 @@ static Graph algebraicSimplificationPass(const Graph& g) {
             bool rhsIsOne  = (rhsNode->op == OpKind::Const && rhsNode->constValue == 1.0f);
 
             if (n->op == OpKind::Add) {
-                if (lhsIsZero) newValue = rhs;
-                else if (rhsIsZero) newValue = lhs;
+                if (relaxedMath && lhsIsZero) newValue = rhs;
+                else if (relaxedMath && rhsIsZero) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Add, lhs, rhs, n->debugName);
             } else { // Mul
-                if (lhsIsZero) newValue = lhs;
-                else if (rhsIsZero) newValue = rhs;
+                if (relaxedMath && lhsIsZero) newValue = lhs;
+                else if (relaxedMath && rhsIsZero) newValue = rhs;
                 else if (lhsIsOne) newValue = rhs;
                 else if (rhsIsOne) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Mul, lhs, rhs, n->debugName);
@@ -702,7 +741,7 @@ int main() {
     printf("Graph exercising every identity this pass knows, with three cascade levels:\n");
     printGraph(g);
 
-    Graph simplified = algebraicSimplificationPass(g);
+    Graph simplified = algebraicSimplificationPass(g, true);
     printf("\nAfter algebraicSimplificationPass():\n");
     printGraph(simplified);
 
@@ -803,6 +842,15 @@ self-check: evaluate(original, x=4,y=5).out = 32, evaluate(simplified, ...).out 
 
 ## 11.3 Folding, CSE, Simplification, and Dead Code Elimination Together: Closing Part 2's Pipeline
 
+<!-- hammer:figure:11.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A complete pass pipeline retains a contract](../images/concepts/11-03.svg?v=e8634707f3ac)](../images/concepts/11-03.svg?v=e8634707f3ac)
+
+<figcaption>Tests must include boundary values as well as ordinary inputs.</figcaption>
+</figure>
+<!-- hammer:figure:11.3:end -->
+
 ### Intuition
 
 Section 9.3 asked whether constant folding could expose new dead code, and proved it could. Section 10.3 asked a different-angle version of the same question -- whether folding could expose a common-subexpression opportunity CSE could never find on its own -- and proved that too. This section asks the question from a third angle: can folding expose an algebraic-simplification opportunity that simplification could never find on its own? The graph below is built so the answer, once again, is yes -- and once again, this chapter does not just assert it: it measures it, running `algebraicSimplificationPass()` completely alone on the unfolded graph first, and confirming directly that it finds nothing.
@@ -880,6 +928,8 @@ BEFORE FOLDING:  z is an Add -- mul(y, z) has no Const operand at all.
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp -o 023_folding_cse_simplification_and_dce_closing_part_2s_pipeline
 // Run:     ./023_folding_cse_simplification_and_dce_closing_part_2s_pipeline
 #include <cstdio>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -987,7 +1037,7 @@ static std::string printGraphAsSource(const Graph& g) {
         out += n->debugName + " = " + opKindToSourceKeyword(n->op) + "(";
         if (n->op == OpKind::Const) {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {
@@ -1136,7 +1186,9 @@ static Graph commonSubexpressionEliminationPass(const Graph& g) {
 
 // ==================== algebraicSimplificationPass() (from Section 11.1/11.2, unchanged) ====================
 
-static Graph algebraicSimplificationPass(const Graph& g) {
+static Graph algebraicSimplificationPass(const Graph& g, bool relaxedMath = false) {
+    // relaxedMath permits ignoring NaN/infinity and the sign of zero.
+    // Strict mode retains Add-by-zero and Mul-by-zero operations.
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("algebraicSimplificationPass: input graph is not acyclic");
 
@@ -1170,12 +1222,12 @@ static Graph algebraicSimplificationPass(const Graph& g) {
             bool rhsIsOne  = (rhsNode->op == OpKind::Const && rhsNode->constValue == 1.0f);
 
             if (n->op == OpKind::Add) {
-                if (lhsIsZero) newValue = rhs;
-                else if (rhsIsZero) newValue = lhs;
+                if (relaxedMath && lhsIsZero) newValue = rhs;
+                else if (relaxedMath && rhsIsZero) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Add, lhs, rhs, n->debugName);
             } else { // Mul
-                if (lhsIsZero) newValue = lhs;
-                else if (rhsIsZero) newValue = rhs;
+                if (relaxedMath && lhsIsZero) newValue = lhs;
+                else if (relaxedMath && rhsIsZero) newValue = rhs;
                 else if (lhsIsOne) newValue = rhs;
                 else if (rhsIsOne) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Mul, lhs, rhs, n->debugName);
@@ -1295,7 +1347,7 @@ int main() {
     Value combined = original.addBinary(OpKind::Add, waste, sum1, "combined");
     original.addBinary(OpKind::Mul, combined, sum2, "out");
 
-    Graph simplifyAloneOnOriginal = algebraicSimplificationPass(original);
+    Graph simplifyAloneOnOriginal = algebraicSimplificationPass(original, true);
     bool simplifyAloneFindsNothing = (simplifyAloneOnOriginal.size() == original.size());
     printf("size: %zu -> %zu\n", original.size(), simplifyAloneOnOriginal.size());
     printf("self-check: simplification alone finds NOTHING before folding runs (%s)\n\n",
@@ -1307,7 +1359,7 @@ int main() {
     Graph finalResult = runPasses(original, {
         {"constantFoldPass", constantFoldPass},
         {"commonSubexpressionEliminationPass", commonSubexpressionEliminationPass},
-        {"algebraicSimplificationPass", algebraicSimplificationPass},
+        {"algebraicSimplificationPass", [](const Graph& in) { return algebraicSimplificationPass(in, true); }},
         {"deadCodeEliminationPass", deadCodeEliminationPass},
     });
 
@@ -1332,7 +1384,7 @@ int main() {
     Value tzero = tiny.addConst(0.0f, "zero");
     tiny.addBinary(OpKind::Add, tx, tzero, "out");  // x + 0 -- IS the last node, and WILL be elided
 
-    Graph tinySimplified = algebraicSimplificationPass(tiny);
+    Graph tinySimplified = algebraicSimplificationPass(tiny, true);
     printf("Before: %zu nodes, last node is 'out'\n", tiny.size());
     printf("After:  %zu nodes\n", tinySimplified.size());
     printf("%s\n", printGraphAsSource(tinySimplified).c_str());

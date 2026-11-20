@@ -13,7 +13,7 @@
 // tile size.
 //
 // The one genuine subtlety, and the one this section spends most of its
-// own code proving rather than asserting: tiling is only a clean, even
+// own code checking on explicit cases: tiling is only a clean, even
 // split when the tile size happens to divide the original extent evenly.
 // It usually doesn't. The LAST tile is then partial -- shorter than every
 // tile before it -- and a tiling scheme that doesn't account for that
@@ -76,7 +76,8 @@ static TiledLoop tileLoop(const Loop& loop, long long tileSize) {
     // Ceiling division -- the number of tiles needed to cover originalExtent
     // elements at tileSize elements per tile, rounding UP: a partial final
     // tile still needs a full extra outer iteration to reach it at all.
-    long long outerExtent = (loop.extent + tileSize - 1) / tileSize;
+    if (loop.extent < 0) throw std::runtime_error("tileLoop: extent must be nonnegative");
+    long long outerExtent = loop.extent / tileSize + (loop.extent % tileSize != 0);
     return TiledLoop{loop.dimName, loop.extent, tileSize, outerExtent};
 }
 
@@ -87,6 +88,8 @@ static TiledLoop tileLoop(const Loop& loop, long long tileSize) {
 // tiles before it already covered -- which is tileSize only when
 // tileSize evenly divides originalExtent, and strictly less otherwise.
 static long long actualInnerExtent(const TiledLoop& tl, long long outerIndex) {
+    if (outerIndex < 0 || outerIndex >= tl.outerExtent)
+        throw std::out_of_range("tile index outside loop");
     long long alreadyCovered = outerIndex * tl.tileSize;
     long long remaining = tl.originalExtent - alreadyCovered;
     return std::min(tl.tileSize, remaining);
@@ -144,7 +147,7 @@ int main() {
     // Three full tiles (4, 4, 4) cover indices 0..11 -- 12 elements -- and
     // the FOURTH tile covers only what's left: 13 - 12 = 1 element. A
     // tiling scheme that used a fixed inner extent of 4 for every outer
-    // index would read index 12, 13, 14 -- three indices past the real
+    // index would visit 12, 13, 14, 15 -- with 13, 14, 15 past the real
     // data. actualInnerExtent() is exactly the function that prevents that.
     {
         Loop loop{"i", 13};

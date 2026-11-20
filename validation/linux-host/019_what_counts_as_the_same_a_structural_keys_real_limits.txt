@@ -1,0 +1,40 @@
+SOURCE: docs/part2/code/019_what_counts_as_the_same_a_structural_keys_real_limits.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part2/code/019_what_counts_as_the_same_a_structural_keys_real_limits.cpp', '-o', '/tmp/hammer-host-ro6s2iow/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 10.2: what commonSubexpressionEliminationPass() does and does NOT recognize as duplicate ===
+
+Part 1 -- add(a,b) and add(b,a), operand order swapped:
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1)
+  %3 = Add(t2)
+  %4 = Add(out)
+
+After commonSubexpressionEliminationPass():
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1)
+  %3 = Add(t2)
+  %4 = Add(out)
+
+self-check: add(a,b) and add(b,a) are NOT merged -- size stays 5 -> 5 (confirmed)
+self-check: the un-merged result is still numerically correct, 24 == 24 == 24 (confirmed)
+
+Part 2 -- two separate Input nodes both named 'x':
+  %0 = Input(x)
+  %1 = Input(y)
+  %2 = Add(r1)
+  %3 = Input(x)
+  %4 = Add(r2)
+  %5 = Add(out)
+
+After commonSubexpressionEliminationPass():
+  %0 = Input(x)
+  %1 = Input(y)
+  %2 = Add(r1)
+  %3 = Add(out)
+
+self-check: the two same-named Input nodes merged, cascading into their consumers, 6 -> 4 (confirmed)
+self-check: evaluate(original, x=2,y=10).out = 24, evaluate(deduped, ...).out = 24 (confirmed)

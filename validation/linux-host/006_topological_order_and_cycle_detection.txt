@@ -1,0 +1,27 @@
+SOURCE: docs/part1/code/006_topological_order_and_cycle_detection.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part1/code/006_topological_order_and_cycle_detection.cpp', '-o', '/tmp/hammer-host-833av6qq/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 4.3: topological order, and detecting a graph that has no valid one ===
+
+Part A -- valid DAG (6 nodes, built only through the graph API):
+    %0 = Input(a)
+    %1 = Input(b)
+    %2 = Add(t1) <- %0, %1
+    %3 = Mul(t2) <- %2, %0
+    %4 = ReLU(t3) <- %2
+    %5 = Add(out) <- %3, %4
+  Kahn's algorithm order: %0 %1 %2 %3 %4 %5 
+  Kahn's algorithm reports valid: yes
+  independent positional cross-check agrees: confirmed
+
+Part B -- deliberately hand-broken graph (2 nodes, x -> y -> x cycle
+           forced by mutating node 0's inputs directly, bypassing the graph API):
+    %0 = Input(x) <- %1
+    %1 = ReLU(y) <- %0
+  Kahn's algorithm processed 0 of 2 nodes before getting stuck
+  Kahn's algorithm reports valid: no
+
+self-check: the normal DAG is confirmed valid AND cross-checked (confirmed);
+the hand-broken cyclic graph is correctly REJECTED, not silently misordered (confirmed)

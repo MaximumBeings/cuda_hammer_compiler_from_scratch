@@ -4,22 +4,25 @@ This book builds CUDA Hammer entirely in C++17, with three real, distinct backen
 
 ## Installing a toolchain
 
-A working `g++` (or `clang++`) supporting C++17 is all Part 0 through Part 3 need. Part 4 onward needs two more pieces, and this book is explicit about which of its own two authoring machines has which:
+A working `g++` (or `clang++`) supporting C++17 is all Part 0 through Part 3 need. The CUDA examples require a toolkit; the CPU and JIT examples do not require an NVIDIA GPU. The historical authoring environments below are distinct from the current audit instance:
 
 ```bash
 g++ --version      # C++17 host compiler, needed for everything
-nvcc --version      # CUDA C++ compiler, needed from Chapter 18 onward
+nvcc --version      # CUDA compiler, needed for the CUDA examples
 ```
 
 A CPU that actually supports AVX2 and FMA (check with `grep avx2 /proc/cpuinfo` on Linux, or `sysctl -a | grep -i avx` on Intel Mac) is what Chapter 19's x86 path needs to genuinely compile *and run*; a NEON-capable ARM CPU (essentially every Apple Silicon Mac and modern ARM server, confirmed by compiling and running a real `<arm_neon.h>` program against `asimd` in `/proc/cpuinfo`) is what its ARM path needs for the same. `nvcc` needs a CUDA toolkit install (`apt-get install nvidia-cuda-toolkit` on Debian/Ubuntu, or the installer from developer.nvidia.com) -- compiling for a target architecture with `nvcc -arch=sm_XX` never requires a matching physical GPU to be present, only to *run* the result.
+
+!!! note "Historical authoring context and current validation"
+    The two-machine description below records the original edition. The November 20 audit also uses a physical A100 instance. Current host, GPU and framework results are listed on [Validation Status](validation-status.md); old no-device transcripts remain historical diagnostics.
 
 ## The honesty discipline this book follows
 
 This book's own two authoring machines are, between them, real and different: a cloud sandbox (x86_64, real AVX2/AVX512F/FMA, real `g++`, real `clang++`, and a real, complete `nvcc` toolchain) and a connected device (aarch64, real NEON, real `g++`, **no** `nvcc`, **no** physical GPU on either machine). That split is treated as a feature, not a limitation to route around -- it means CUDA Hammer's CPU backend gets to be genuinely, fully honest in a way its GPU backend structurally cannot:
 
 - **CUDA Hammer's IR, its pass manager, and its host-side interpreter** (no vector intrinsics, no CUDA) are plain C++. They are genuinely compiled and genuinely run wherever they're touched, with exact output locked into the page and re-verified by a fresh recompile-and-rerun before publication.
-- **CUDA Hammer's vectorized CPU backend** (Chapter 19 onward) is genuinely compiled *and genuinely run*, for real, on two real, different architectures: AVX2/FMA intrinsics on the cloud sandbox, NEON intrinsics on the connected device. A claim about what fused, vectorized code actually computes is never simulated in this book -- it is measured directly, cross-checked bit-for-bit against a plain scalar reference, on real hardware, on two real instruction sets.
-- **CUDA Hammer's CUDA backend** (Chapter 18 onward) is genuinely compiled with `nvcc` for a real architecture (`-arch=sm_80` unless a chapter says otherwise) and checked instead by a **host-side reference implementation**: ordinary C++ that computes the exact same result the generated kernel's own loop nest would, checked independently. This is the one honest limitation this book carries, stated once here rather than repeated on every page: neither authoring machine has a physical NVIDIA GPU, so a generated CUDA kernel's compiled correctness (does it build, does its PTX look right) is verified for real, but its *runtime* result is verified by the same reference implementation that was used to design it, not by executing the kernel itself.
+- **CUDA Hammer's vectorized CPU backend** (Chapter 19 onward) is genuinely compiled *and genuinely run*, for real, on two real, different architectures: AVX2/FMA intrinsics on the cloud sandbox, NEON intrinsics on the connected device. A claim about what fused, vectorized code actually computes is never simulated in this book -- it is measured directly, compared with a scalar reference under the stated numerical tolerance, on real hardware, on two real instruction sets.
+- **CUDA Hammer's CUDA backend** (Chapter 18 onward) is genuinely compiled with `nvcc` for a real architecture (`-arch=sm_80` unless a chapter says otherwise) and checked instead by a **host-side reference implementation**: ordinary C++ that computes the exact same result the generated kernel's own loop nest would, checked independently. This is the one honest limitation this book carries, stated once here rather than repeated on every page: neither authoring machine has a physical NVIDIA GPU, so the historical checks establish compiler acceptance and host-reference behavior, not device execution. A CPU reference is an expected-result oracle; actual GPU output, memory safety and race behavior require device tests. Current validation results are recorded separately on the Validation Status page.
 - **Autotuning search and cost models** (Part 5) are run for real against whichever backend a chapter is tuning -- the CPU backend's genuine on-hardware measurements are real, measured numbers; a CUDA-kernel cost model is a real, stated formula rather than a fabricated measured number, exactly like the sibling books' own standing rule against inventing timing data.
 - **Real facts this book states about other compilers** -- an XLA fusion rule, a TVM scheduling primitive, a Triton language feature -- are cited to that project's own real, current documentation or source, not asserted from memory.
 

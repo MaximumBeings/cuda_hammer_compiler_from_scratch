@@ -18,7 +18,7 @@
 // same math," now proven on the target this whole book has been building
 // toward. Each generated .cu program is compiled with real nvcc (a genuine
 // toolchain check on a nontrivial, multi-kernel program) and run, honestly
-// reporting this toolchain's real constraint -- no physical GPU exists on
+// historically reporting the original environment's constraint -- no GPU existed on
 // either side of it, checked via CUDA_CHECK exactly as Sections 18.1 and
 // 18.2 already checked it, not glossed over. The actual numeric proof comes
 // from the SAME emitSteps() step sequences, generated instead as CPU
@@ -32,7 +32,13 @@
 //
 // Compile: g++ -x c++ -std=c++17 -Wall -Wextra -O2 044_a_full_cuda_program_from_ir_to_gpu_end_to_end.cu -o 044_driver
 // Run:     ./044_driver
+// Override for the test GPU, including kernels compiled by this generator.
+#ifndef HAMMER_CUDA_ARCH
+#define HAMMER_CUDA_ARCH "sm_70"
+#endif
+
 #include <cstdio>
+#include <sys/wait.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -550,8 +556,8 @@ static std::string generateFullCudaProgram(const Graph& g, const std::map<int, S
                                             const std::map<std::string, std::vector<float>>& inputArrays) {
     TopoResult topo = topologicalSort(g);
     std::string prog = "#include <cstdio>\n#include <cuda_runtime.h>\n\n";
-    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) "
-            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); } while (0)\n\n";
+    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) { "
+            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); return 77; } } while (0)\n\n";
 
     std::map<int, std::string> kernelNameById;
     std::map<int, LoweredNode> loweredById;
@@ -608,7 +614,7 @@ static std::string generateFullCudaProgram(const Graph& g, const std::map<int, S
     }
     prog += "    float h_y;\n";
     prog += "    CUDA_CHECK(cudaMemcpy(&h_y, d_y, sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result y (0/garbage without a real GPU): %f\\n\", h_y);\n";
+    prog += "    printf(\"kernel result y: %f\\n\", h_y);\n";
     for (int id : topo.order) prog += "    CUDA_CHECK(cudaFree(d_" + g.node(id)->debugName + "));\n";
     prog += "    return 0;\n}\n";
     return prog;
@@ -677,7 +683,12 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    // A generated program uses 77 for fail-fast CUDA diagnostics. The
+    // caller distinguishes a no-device skip from other CUDA failures.
+    if (status == -1 || !WIFEXITED(status) ||
+        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
@@ -765,15 +776,21 @@ int main() {
         std::string cudaProg = generateFullCudaProgram(fusedGraph, fusedShapes, fusedElementCounts, inputArrays);
         std::string cudaStem = std::string("/tmp/hammer_ch18_044_") + (variant == 0 ? "uncapped" : "capped");
         writeFile(cudaStem + ".cu", cudaProg);
-        std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=sm_70 -o " + cudaStem + " " + cudaStem + ".cu 2>&1");
+        std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o " + cudaStem + " " + cudaStem + ".cu 2>&1");
         bool compileClean = compileLog.find("error") == std::string::npos;
         if (compileClean) printf("nvcc compile (%zu kernels): clean\n", kernelCount);
         else printf("nvcc compile (%zu kernels): FAILED:\n%s\n", kernelCount, compileLog.c_str());
 
         std::string runOutput = runShellCaptureAll(cudaStem + " 2>&1");
-        bool honestlyReportsNoDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
-        printf("running the compiled binary: honestly reports no CUDA-capable device at every\n");
-        printf("CUDA_CHECK'd call, same as Sections 18.1 and 18.2 (%s)\n\n", honestlyReportsNoDevice ? "confirmed" : "MISMATCH");
+        bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
+        if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
+        bool gpuMatches = runOutput.find("CUDA error") == std::string::npos;
+        try {
+            size_t pos = runOutput.find("kernel result y:");
+            if (pos == std::string::npos) gpuMatches = false;
+            else gpuMatches = gpuMatches && std::fabs(std::stof(runOutput.substr(pos + std::string("kernel result y:").size())) - fusedArrays.at("y")[0]) <= 1e-2f;
+        } catch (const std::exception&) { gpuMatches = false; }
+        printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
         // ---- CPU: generate, compile, run for real -- the actual numeric oracle ----
         std::string cpuProg = generateFullCpuProgram(fusedGraph, fusedShapes, fusedElementCounts, inputArrays);
@@ -800,7 +817,7 @@ int main() {
                generatedY, origArrays.at("y")[0], matchesOriginal ? "confirmed" : "MISMATCH");
 
         if (variant == 0) finalYUncapped = generatedY; else finalYCapped = generatedY;
-        allOk = allOk && compileClean && honestlyReportsNoDevice && everyBufferMatches && matchesOriginal;
+        allOk = allOk && compileClean && gpuMatches && everyBufferMatches && matchesOriginal;
     }
 
     printf("=== Two structurally different generated CUDA programs (3 kernels vs. 4 kernels,\n");

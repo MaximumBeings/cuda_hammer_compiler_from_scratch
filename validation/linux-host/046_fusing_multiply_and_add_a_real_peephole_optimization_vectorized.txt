@@ -1,0 +1,45 @@
+SOURCE: docs/part4/code/046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part4/code/046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized.cpp', '-o', '/tmp/hammer-host-_rhow4ir/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 19.2: fusing multiply and add -- a real peephole optimization, vectorized ===
+
+Fused "out" node: 2 raw steps (Mul, then Add) -- a fold candidate
+
+--- Generated vector body WITH the FMA fold (AVX2/FMA) ---
+
+void compute_out(const std::vector<const float*>& ext, const std::vector<long long>& extCounts, float* out, long long n) {
+    long long i = 0;
+    for (; i + 8 <= n; i += 8) {
+        __m256 v1 = _mm256_fmadd_ps(_mm256_loadu_ps(ext[0] + i), _mm256_set1_ps(ext[1][0]), _mm256_set1_ps(ext[2][0]));  // fused: v0 folded in
+        _mm256_storeu_ps(out + i, v1);
+    }
+    for (; i < n; ++i) {
+        float step0 = ext[0][(i) % extCounts[0]] * ext[1][(i) % extCounts[1]];
+        float step1 = step0 + ext[2][(i) % extCounts[2]];
+        out[i] = step1;
+    }
+}
+
+self-check: 2 raw step(s) (Mul, Add) generate exactly 1 vector instruction inside the
+main loop -- 1 fold(s) applied, the Mul's own line never separately emitted (confirmed)
+
+--- A pattern that correctly does NOT fold: ReLU(a) then Add(that, b) -- no Mul at all ---
+
+self-check: 2 raw step(s) (ReLU, Add), 0 fold(s) applied -- the fold rule only ever
+fires on an Add whose immediately preceding step is a Mul, and correctly leaves this
+ReLU-then-Add pattern alone (confirmed)
+
+--- g++ compile (real AVX2/FMA flags, folded FMA body) ---
+
+(no output -- clean compile)
+
+--- Running the folded FMA program FOR REAL on this machine's own AVX2/FMA hardware ---
+
+12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000 
+
+evaluateArrays(fused).out = 12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000 
+self-check: folded FMA matches the unfused interpreter for this exact-valued fixture
+mul+add pair would -- confirmed against evaluateArrays() (confirmed)
+rounding regression: separate=0x0p+0 FMA=-0x1p-46; different as expected: yes

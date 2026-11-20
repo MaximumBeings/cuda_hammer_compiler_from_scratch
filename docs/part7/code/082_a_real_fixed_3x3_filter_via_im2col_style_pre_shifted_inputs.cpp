@@ -32,6 +32,7 @@
 // Run:     ./082_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -248,13 +249,16 @@ static Value buildConvGraph(Graph& g, const std::array<Value, 9>& shiftedInputs,
 
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-3f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!std::isfinite(a[i]) || !std::isfinite(b[i]) || std::fabs(a[i] - b[i]) > tol) return false;
     return true;
 }
 
 int main() {
     printf("=== Chapter 31 (Part 7): Section 31.2 -- a real fixed 3x3 filter via im2col-style pre-shifted inputs ===\n\n");
     bool allOk = true;
+    // A non-finite result must fail validation, never compare equal via NaN.
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::quiet_NaN()}, {0.0f});
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::infinity()}, {std::numeric_limits<float>::infinity()});
 
     std::vector<float> img = buildStepImage();
 

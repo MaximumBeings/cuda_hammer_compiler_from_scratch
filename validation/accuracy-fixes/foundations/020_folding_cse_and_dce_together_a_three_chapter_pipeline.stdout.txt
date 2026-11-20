@@ -1,0 +1,45 @@
+=== Section 10.3: folding creates a CSE opportunity; CSE creates new dead code ===
+
+>>> Control: commonSubexpressionEliminationPass() ALONE, before any folding
+
+size: 8 -> 8
+self-check: CSE alone finds NOTHING to merge in the unfolded graph (confirmed)
+
+>>> Pipeline: [constantFoldPass, commonSubexpressionEliminationPass, deadCodeEliminationPass]
+
+--- before any pass (8 nodes) ---
+c1 = const(2)
+c2 = const(3)
+p = add(c1, c2)
+c3 = const(5)
+x = input()
+r1 = add(p, x)
+r2 = add(c3, x)
+out = add(r1, r2)
+
+--- after pass 'constantFoldPass' (8 nodes) ---
+c1 = const(2)
+c2 = const(3)
+c3 = const(5)
+x = input()
+p = const(5)
+r2 = add(c3, x)
+r1 = add(p, x)
+out = add(r1, r2)
+
+--- after pass 'commonSubexpressionEliminationPass' (6 nodes) ---
+c1 = const(2)
+c2 = const(3)
+c3 = const(5)
+x = input()
+r2 = add(c3, x)
+out = add(r2, r2)
+
+--- after pass 'deadCodeEliminationPass' (4 nodes) ---
+c3 = const(5)
+x = input()
+r2 = add(c3, x)
+out = add(r2, r2)
+
+self-check: the full pipeline reduced the graph from 8 nodes to 4 nodes (confirmed)
+self-check: evaluate(original, x=6.5).out = 23, evaluate(final, x=6.5).out = 23 (confirmed)

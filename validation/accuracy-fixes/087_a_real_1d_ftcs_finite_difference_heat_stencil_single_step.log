@@ -1,0 +1,45 @@
+$ clang++ -std=c++17 -Wall -Wextra -O2 /Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/087_a_real_1d_ftcs_finite_difference_heat_stencil_single_step.cpp -o /tmp/cuda-hammer-case-runs/087_a_real_1d_ftcs_finite_difference_heat_stencil_single_step/driver
+
+$ /tmp/cuda-hammer-case-runs/087_a_real_1d_ftcs_finite_difference_heat_stencil_single_step/driver
+=== Chapter 33 (Part 7): Section 33.1 -- a real 1D FTCS finite-difference heat stencil, one step ===
+
+real update formula and stability condition (John S. Butler, DIT, "The Explicit Forward
+Time Centered Space (FTCS) Difference Equation for the Heat Equation," Numerical Analysis
+book, quoted verbatim):
+
+  "w_{i,j+1} = r*w_{i-1,j} + (1-2r)*w_{i,j} + r*w_{i+1,j}"   where   "r = k/h^2"
+  stability condition: "r <= 1/2"
+
+this section's own r = 0.2500, which satisfies r <= 0.5 with margin (confirmed)
+
+initial condition w0 (a symmetric 2-cell hot spot, N=8):    0.0    0.0    0.0  100.0  100.0    0.0    0.0    0.0
+
+--- the real im2col-style neighbor shift (Chapter 31.2's own shiftImage(), now in 1D) ---
+
+wLeft  (each point's LEFT  neighbor, zero-padded at the boundary):    0.0    0.0    0.0    0.0  100.0  100.0    0.0    0.0
+wRight (each point's RIGHT neighbor, zero-padded at the boundary):    0.0    0.0  100.0  100.0    0.0    0.0    0.0    0.0
+
+--- the real CUDA Hammer graph's own w_new, vs. an independent direct FTCS reference ---
+
+CUDA Hammer graph :    0.000   0.000  25.000  75.000  75.000  25.000   0.000   0.000
+independent ref   :    0.000   0.000  25.000  75.000  75.000  25.000   0.000   0.000
+
+self-check: the graph's own w_new matches the independent direct reference exactly (confirmed)
+self-check: total heat is exactly conserved this step (sum before=200.0000, sum after=200.0000) (confirmed)
+            -- the disturbance has not yet reached the domain's own boundary cells, so no
+            heat has flowed into the zero-padded ghost region on either side yet.
+
+self-check: w_new is symmetric (w[i] == w[N-1-i]), matching the symmetric initial condition
+and the symmetric stencil and boundary treatment (confirmed)
+
+--- the real gap this section works around, named directly ---
+
+this stencil needs each output point to read its own left and right neighbor -- CUDA
+Hammer's IR has never had a shift/gather op, and Part 7's own promise rules out adding
+one now. This section needs no new technique at all: it reuses Section 31.2's own
+im2col-style pre-shifted-input pattern unchanged, in 1D instead of 2D. Section 33.2
+continues with the real gap THIS chapter is actually about: running more than one step.
+
+=== Section 33.1 complete: all self-checks confirmed ===
+
+EXIT=0

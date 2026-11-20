@@ -1,5 +1,14 @@
 # Chapter 27: Triton's Block-Level Programming Model
 
+<!-- hammer:figure:opener-27:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Triton's Block-Level Programming Model](../images/openers/27.svg?v=b83d964402da)](../images/openers/27.svg?v=b83d964402da)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-27:end -->
+
 Chapters 25 and 26 each studied a real, independent compiler that takes a
 whole TENSOR GRAPH as input and decides, as a separate pass, how to group
 it into kernels -- XLA's own `kind=kLoop` fusion, Relax's own
@@ -59,6 +68,15 @@ piped through a heredoc.
 ```
 
 ## 27.1 The Block-Level Model, and Triton's Own Real Compiler Pipeline
+
+<!-- hammer:figure:27.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Triton lowers a block-level program](../images/concepts/27-01.svg?v=a4c2fc7b885f)](../images/concepts/27-01.svg?v=a4c2fc7b885f)
+
+<figcaption>Offline compilation is distinct from running on the device.</figcaption>
+</figure>
+<!-- hammer:figure:27.1:end -->
 
 Every CUDA kernel this book has generated since Chapter 18
 (`generateCudaElementwiseKernel()`) assigns one GPU thread to one output
@@ -739,6 +757,15 @@ Real bytes moved per 1024-element block (Chapter 12's own accounting):
 
 ## 27.2 Fusion Is a Language-Level Choice, Not a Compiler Pass
 
+<!-- hammer:figure:27.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Language structure affects fusion opportunities](../images/concepts/27-02.svg?v=ec76871ab7fd)](../images/concepts/27-02.svg?v=ec76871ab7fd)
+
+<figcaption>A compiler does not arbitrarily merge independent launches.</figcaption>
+</figure>
+<!-- hammer:figure:27.2:end -->
+
 Chapters 13 and 16 each built a real PASS -- `elementwiseFusionPass()`,
 `boundedReductionFusionPass()` -- that walks a GRAPH and decides, node by
 node, what gets grouped into one kernel. Chapters 25 and 26 found the
@@ -1028,6 +1055,15 @@ Real AOT compilation of every candidate Config (no GPU needed, same technique as
 
 
 ## 27.3 Real triton.autotune, Next to CUDA Hammer's Own Schedule and TuningCache
+
+<!-- hammer:figure:27.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Autotuning selects among declared candidates](../images/concepts/27-03.svg?v=de354d6f3a12)](../images/concepts/27-03.svg?v=de354d6f3a12)
+
+<figcaption>An offline configuration listing is not measured tuning.</figcaption>
+</figure>
+<!-- hammer:figure:27.3:end -->
 
 No physical GPU means no real autotuning RUN here either -- the same
 honest gap Chapter 25.3 hit for XLA's own autotuner and Chapter 26.3 hit

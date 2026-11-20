@@ -1,5 +1,14 @@
 # 23. Building CUDA Hammer's Autotuner
 
+<!-- hammer:figure:opener-23:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Building CUDA Hammer's Autotuner](../images/openers/23.svg?v=7c1669d8baf5)](../images/openers/23.svg?v=7c1669d8baf5)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-23:end -->
+
 **What you will understand:** `generateScheduledElementwiseFunction()`, which emits real C++ TEXT for one loop's own tile size and unroll factor -- the compiled twin of Chapter 21's own `computeUnrolled()` -- compiled with the real g++ this book has shelled out to since Chapter 18 and dlopen-loaded with Chapter 20's own `JitModule`, exposing a real cost this book has never had to budget for before: COMPILE TIME, measured separately from RUN TIME, for the first time landing in the same real order of magnitude; `generateScheduleFunction()`, which extends real codegen to a FULL `Schedule` -- tile size, loop order, AND unroll factor together -- baking the chosen loop order directly into the generated code's own shape instead of branching on it at runtime, then honestly rechecking whether removing Chapter 22's own interpreter changes that chapter's own near-chance ranking agreement; and the autotuner itself, a HYBRID search that uses Chapter 22's own imperfect cost model to prune 128 real schedules down to a short list cheaply, pays for real compiled measurement only on that short list, and is checked -- honestly, in both directions -- against the alternative it exists to avoid: compiling and measuring every one of the 128 candidates for real.
 
 **What you need to know first:** Chapter 20's own `JitModule` (RAII dlopen/dlsym/dlclose) and `compileToSharedLibrary()` (the one remaining g++ shell-out, scoped to compilation only); Chapter 21's own `Loop`/`LoopNest`/`Schedule`/`enumerateSchedules()`/`scheduleStr()`, and its own closing number -- 128 legal schedules for `LoopNest [dim0:6, dim1:8]`; and Chapter 22's own `estimateLoopOverheadCost()`/`estimateLoopOrderCost()`/`estimateScheduleCost()`, plus that chapter's own closing, honestly-diagnosed finding -- a combined cost model, applied to 6 schedules run through a generic INTERPRETER, landing at a near-chance ranking agreement (40% on the cloud sandbox, 53% on the device), traced to interpreter bookkeeping overhead on a 48-element toy problem, not evidence the underlying models are worthless.
@@ -52,6 +61,15 @@ something interpreted or estimated.
 ```
 
 ## 23.1 Real Codegen for a Scheduled Loop: Tile Size and Unroll Factor
+
+<!-- hammer:figure:23.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Scheduled source must remain correct](../images/concepts/23-01.svg?v=9590dcf94dc0)](../images/concepts/23-01.svg?v=9590dcf94dc0)
+
+<figcaption>Reject schedules that change coverage or arithmetic semantics.</figcaption>
+</figure>
+<!-- hammer:figure:23.1:end -->
 
 ### Intuition
 
@@ -386,6 +404,15 @@ a short list, not the whole space.
     One honest caveat about the "same order of magnitude" self-check above: compile time does not scale with `extent` at all (a g++ invocation on a short generated function costs about the same tens of milliseconds whether the loop will run once or thirty million times), while execution time scales with `extent` directly. Part 2's own 30,000,000-element extent was chosen specifically because it is large enough to pull execution time up into the same tens-of-milliseconds range compile time already sits in -- at a much smaller extent the two would NOT land anywhere near each other. Section 23.3's own real autotuning workload is a striking example: at 48 elements, one real execution of the generated function costs on the order of 0.02 microseconds, against roughly 110-150 milliseconds to compile it -- a ratio of many millions to one, not "the same order of magnitude" at all. Both numbers are real; which one dominates depends entirely on how large the actual workload is, which is exactly why an autotuner has to budget compilation cost separately rather than assume it is always comparable to runtime.
 
 ## 23.2 Real Codegen for a Full Schedule: Tile Size, Loop Order, and Unroll Factor Together
+
+<!-- hammer:figure:23.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Search the combined schedule space](../images/concepts/23-02.svg?v=c4d83faac177)](../images/concepts/23-02.svg?v=c4d83faac177)
+
+<figcaption>Only correct candidates should be benchmarked.</figcaption>
+</figure>
+<!-- hammer:figure:23.2:end -->
 
 ### Intuition
 
@@ -919,6 +946,15 @@ genuinely separate function per schedule, measurably helped.
     It would be easy to read Section 23.2's own honest finding as a clean verdict either way -- "compiling fixed it" or "compiling didn't help." The real, machine-specific result this section actually measured is more useful than either clean story: whatever changed on one real machine did not change the same way on the other, which is itself evidence about WHAT was actually going on. Chapter 22.3 diagnosed interpreter overhead as a likely confound on a 48-element toy problem; this section's own real test of that diagnosis, on two different machines, is exactly the kind of check a cost model -- or a diagnosis about a cost model -- has to survive before an autotuner should lean on it. One more honest limit: "67%" and "10 of 15" are both the same small sample of only 15 pairwise comparisons, so a few comparisons landing differently on a re-run (ordinary timing jitter, nothing structural) can move that percentage by a wide margin. The genuinely reliable finding here is the qualitative direction -- real compiled measurement did not make ranking agreement WORSE on either machine -- not the exact percentage, which this section does not claim is reproducible to the point.
 
 ## 23.3 The Autotuner: Pruning With a Cost Model, Then Measuring for Real
+
+<!-- hammer:figure:23.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Hybrid tuning prunes then measures](../images/concepts/23-03.svg?v=2da2d371aff4)](../images/concepts/23-03.svg?v=2da2d371aff4)
+
+<figcaption>Pruning can discard the true fastest candidate.</figcaption>
+</figure>
+<!-- hammer:figure:23.3:end -->
 
 ### Intuition
 

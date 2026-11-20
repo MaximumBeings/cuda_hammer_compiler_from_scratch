@@ -1,0 +1,44 @@
+SOURCE: docs/part4/code/048_extern_c_and_dlopen_a_function_pointer_from_generated_text.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part4/code/048_extern_c_and_dlopen_a_function_pointer_from_generated_text.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-8mc1ch70/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 20.1: extern "C" and dlopen() -- a function pointer from generated text ===
+
+Fused "out" node: 3 steps (Add, ReLU, Mul), 2 external inputs
+
+--- Generated extern "C" function ---
+
+extern "C" void compute_out(const std::vector<const float*>& ext, const std::vector<long long>& extCounts, float* out, long long n) {
+    for (long long flat = 0; flat < n; ++flat) {
+        float step0 = ext[0][(flat) % extCounts[0]] + ext[1][(flat) % extCounts[1]];
+        float step1 = std::max(0.0f, step0);
+        float step2 = step1 * ext[1][(flat) % extCounts[1]];
+        out[flat] = step2;
+    }
+}
+
+--- g++ -shared -fPIC compile (ONE shell-out, for COMPILATION only) ---
+
+(no output -- clean compile)
+
+--- Loading the compiled .so IN-PROCESS: dlopen(), dlsym(), call the function pointer directly ---
+
+dlopen/dlsym succeeded (confirmed). compute_out(...), called as a real function pointer:
+6.000000 0.000000 10.000000 0.000000 14.000000 0.000000 18.000000 0.000000 
+evaluateArrays(fused).out                                                 = 6.000000 0.000000 10.000000 0.000000 14.000000 0.000000 18.000000 0.000000 
+
+self-check: a function pointer obtained from dlsym() on a freshly dlopen()'d
+shared library, called directly with real C++ arguments (a std::vector<const
+float*>&, not a printed string), produces the exact same result evaluateArrays()
+does -- no popen(), no subprocess, no stdout parsed anywhere in this call (confirmed)
+
+--- Why a dangling function pointer is a real risk, not a hypothetical one ---
+
+The JitModule above went out of scope right after its one call -- its destructor
+ran dlclose(), and the operating system was free to unmap compute_out's own code
+from this process's address space at that point. The ElementwiseFn value this
+program held is now a DANGLING pointer: calling it would be undefined behavior,
+so this program deliberately does not keep it around or call it again -- the
+fix is a lifetime rule, not a runtime check: never call a function pointer
+obtained from a JitModule after that JitModule's own destructor has run.

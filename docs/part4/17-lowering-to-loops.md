@@ -1,5 +1,14 @@
 # 17. Lowering CUDA Hammer's IR to Loops
 
+<!-- hammer:figure:opener-17:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Lowering CUDA Hammer's IR to Loops](../images/openers/17.svg?v=a59cd6cd4878)](../images/openers/17.svg?v=a59cd6cd4878)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-17:end -->
+
 **What you will understand:** `evaluateArrays()`, a real per-element interpreter that finally replaces the one-float-per-node simplification every `evaluate()` call since Chapter 9 has relied on; `generateLoopFunction()`, which turns a single node's own `LoopNest` (Chapter 15) and `FusedStep` body (Chapters 13-14) into the TEXT of a real C++ function; and a full lowering pipeline that assembles an entire fused graph into one standalone program, compiles it with `g++`, runs it, and diffs its real output against `evaluateArrays()` -- the first code in this book that is generated, compiled, and executed, rather than counted.
 
 **What you need to know first:** Chapter 13's `FusedStep`/`OperandKind`/`resolveIntoGroup()`, Chapter 14's `OpKind::Sum`/`FusedReduction`/`reductionFusionPass()`, Chapter 15's `Loop`/`LoopNest`/`buildLoopNest()`, and Chapter 16's `boundedReductionFusionPass()` (reused verbatim in Section 17.3).
@@ -31,6 +40,15 @@ FROM COUNTED BYTES (PART 3) TO GENERATED, COMPILED, EXECUTED CODE (THIS CHAPTER)
 ```
 
 ## 17.1 From Scalars to Arrays: A Real Per-Element Interpreter
+
+<!-- hammer:figure:17.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![An array interpreter is the reference path](../images/concepts/17-01.svg?v=d968f176449f)](../images/concepts/17-01.svg?v=d968f176449f)
+
+<figcaption>Compare values, not just an aggregate checksum.</figcaption>
+</figure>
+<!-- hammer:figure:17.1:end -->
 
 ### Intuition
 
@@ -665,6 +683,15 @@ self-check: both agree with the hand-derived sum (confirmed)
 
 ## 17.2 Generating Real Loop Code: A Textual C++ Backend
 
+<!-- hammer:figure:17.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Generate loops from the same IR](../images/concepts/17-02.svg?v=a3a916dca739)](../images/concepts/17-02.svg?v=a3a916dca739)
+
+<figcaption>Generated text still needs compilation and execution.</figcaption>
+</figure>
+<!-- hammer:figure:17.2:end -->
+
 ### Intuition
 
 `evaluateArrays()` computes the right answer, but it computes it by directly *executing* C++ that this book wrote once, ahead of time, for every possible node shape. A real compiler doesn't get to do that: it has to produce NEW code, specific to a given node's own loop nest and step program, that some OTHER process compiles and runs. `generateLoopFunction()` is CUDA Hammer's first attempt at that -- and the honest way to build it is to notice that `evaluateArrays()`'s own per-element loop, for a `FusedElementwise` node, is *already* almost exactly the shape of the C++ this section needs to emit: a loop over a flat index, a straight-line sequence of `stepN = ...` assignments, a final write to `out[flat]`. Section 17.2 doesn't invent a new computational model; it takes the model Section 17.1 already executes directly and emits it as TEXT instead -- a string that, when compiled and run by a real `g++` invocation, computes the exact same numbers.
@@ -1246,7 +1273,7 @@ static std::vector<float> parseFloats(const std::string& text) {
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-3f) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
-        if (std::fabs(a[i] - b[i]) > tol) return false;
+        if (!(std::fabs(a[i] - b[i]) <= tol)) return false;
     }
     return true;
 }
@@ -1417,6 +1444,15 @@ self-check: generated code for the FUSED node matches evaluateArrays() (confirme
     `generateLoopFunction()` only emits the BODY -- a function taking already-populated buffers and writing an output buffer. Section 17.2's own compile-and-run harness still has to wrap that function in a complete `.cpp` file (includes, a `main()`, concrete input arrays, a print statement) before `g++` has anything it can build. Forgetting this and trying to compile the bare function text alone fails immediately with "no `main` function" -- an easy mistake to make when the generated FUNCTION is the part that feels like the interesting output, but the surrounding PROGRAM is just as necessary for anything to actually run.
 
 ## 17.3 Lowering a Whole Fused Graph
+
+<!-- hammer:figure:17.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Lower every reachable graph group](../images/concepts/17-03.svg?v=a5fc1470ea3c)](../images/concepts/17-03.svg?v=a5fc1470ea3c)
+
+<figcaption>Intermediate allocation and lifetime remain explicit.</figcaption>
+</figure>
+<!-- hammer:figure:17.3:end -->
 
 ### Intuition
 

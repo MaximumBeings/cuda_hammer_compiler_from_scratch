@@ -1,6 +1,15 @@
 # 20. A JIT Backend: Compiling and Loading Generated Code at Runtime
 
-**What you will understand:** `extern "C"` and exactly what it changes about a compiled function (LINKAGE -- the symbol name a linker sees -- never the type system); `dlopen()`, `dlsym()`, and `dlclose()`, the three POSIX calls this chapter uses to load a freshly compiled shared library into this program's own running process and call straight into it; `JitModule`, an RAII owner of one `dlopen()` handle modeled directly on Chapter 4's own non-copyable `Graph`; `compileToSharedLibrary()`, the one remaining shell-out this chapter keeps, honestly scoped to COMPILATION only; `generateJitProgramForGraph()`, which packs an entire fused graph's own non-leaf-node functions into ONE compiled shared library instead of one function -- or one whole generated program -- at a time, leaning on Chapter 8's own `canonicalizeNodeNames()` uniqueness guarantee to prove no two symbol names can ever collide; and a full end-to-end capstone that JIT-compiles Chapter 16's own 10-node graph through BOTH Chapter 18's own scalar backend and Chapter 19's own vectorized backend, every result of both crossing into this program as a real function-pointer call -- zero subprocess launches for EXECUTION, for the first time in this book.
+<!-- hammer:figure:opener-20:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A JIT Backend: Compiling and Loading Generated Code at Runtime](../images/openers/20.svg?v=2b78afba9749)](../images/openers/20.svg?v=2b78afba9749)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-20:end -->
+
+**What you will understand:** `extern "C"` and exactly what it changes about a compiled function (LINKAGE -- the symbol name a linker sees -- also the language linkage of function types); `dlopen()`, `dlsym()`, and `dlclose()`, the three POSIX calls this chapter uses to load a freshly compiled shared library into this program's own running process and call straight into it; `JitModule`, an RAII owner of one `dlopen()` handle modeled directly on Chapter 4's own non-copyable `Graph`; `compileToSharedLibrary()`, the one remaining shell-out this chapter keeps, honestly scoped to COMPILATION only; `generateJitProgramForGraph()`, which packs an entire fused graph's own non-leaf-node functions into ONE compiled shared library instead of one function -- or one whole generated program -- at a time, leaning on Chapter 8's own `canonicalizeNodeNames()` uniqueness guarantee to prove no two symbol names can ever collide; and a full end-to-end capstone that JIT-compiles Chapter 16's own 10-node graph through BOTH Chapter 18's own scalar backend and Chapter 19's own vectorized backend, every result of both crossing into this program as a real function-pointer call -- zero subprocess launches for EXECUTION, for the first time in this book.
 
 **What you need to know first:** Chapter 18's own `emitSteps()` and `Target` enum, and Chapter 19's own `Isa`/`vecXxx()` vector primitives and FMA-fold peephole optimization (all reused with one small, uniform change -- wrapped in `extern "C"`); Chapter 16's own `boundedReductionFusionPass()` (reused verbatim in Section 20.3); Chapter 8's own `canonicalizeNodeNames()` uniqueness invariant (leaned on directly in Section 20.2); and Chapter 4's own non-copyable, move-only `Graph` design, the exact model this chapter's own `JitModule` follows for a real operating-system resource instead of a `std::vector<std::unique_ptr<Node>>`.
 
@@ -73,15 +82,24 @@ Section 20.3 -- the capstone: Chapter 16's own 10-node graph,
 
 ## 20.1 extern "C" and dlopen(): A Function Pointer From Generated Text
 
+<!-- hammer:figure:20.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![JIT crosses a compiler and loader boundary](../images/concepts/20-01.svg?v=4444ce3f3ad4)](../images/concepts/20-01.svg?v=4444ce3f3ad4)
+
+<figcaption>Check compilation, symbol lookup and library lifetime.</figcaption>
+</figure>
+<!-- hammer:figure:20.1:end -->
+
 ### Intuition
 
 Every generated program since Chapter 17 has been a complete, standalone `.cpp` file with its own `main()` -- compiled to an executable, run as a child process, and its printed stdout diffed against `evaluateArrays()`. That harness proved every generated program's own arithmetic correct, but this program's own code never once called a line of it directly. This section replaces that pattern using two POSIX facilities that have existed for decades -- `dlopen()` and `dlsym()` -- plus one C++ keyword, `extern "C"`, that makes calling them predictable: compile generated code to a real shared library instead of a standalone executable, map that library into this process's own address space, look up one function inside it by name, and call it exactly like any other function pointer.
 
 ### Background
 
-The one real obstacle is C++'s own NAME MANGLING: to support function overloading and namespaces, a C++ compiler encodes a function's full parameter-type signature into its own compiled symbol name, and the exact encoding scheme is compiler- and platform-specific -- not something a caller is meant to hand-derive or hardcode. Wrapping a function in `extern "C"` disables that encoding entirely for that one function: its compiled symbol name becomes exactly the plain identifier written in the source, nothing appended or encoded. `generateExternCElementwiseFunction()` is Chapter 18's own `generateCpuElementwiseFunction()`, changed in exactly one place: `void funcName(...)` becomes `extern "C" void funcName(...)`. Nothing about the function's own TYPE SIGNATURE changes -- it still takes a real `const std::vector<const float*>&`, not a C array -- `extern "C"` changes linkage only, and this works cleanly because both this program and the JIT-compiled `.so` are built by the same `g++` installation on each machine, sharing one ABI.
+The one real obstacle is C++'s own NAME MANGLING: to support function overloading and namespaces, a C++ compiler encodes a function's full parameter-type signature into its own compiled symbol name, and the exact encoding scheme is compiler- and platform-specific -- not something a caller is meant to hand-derive or hardcode. Wrapping a function in `extern "C"` disables that encoding entirely for that one function: its compiled symbol name becomes exactly the plain identifier written in the source, nothing appended or encoded. `generateExternCElementwiseFunction()` is Chapter 18's own `generateCpuElementwiseFunction()`, changed in exactly one place: `void funcName(...)` becomes `extern "C" void funcName(...)`. The parameter and return types stay the same -- it still takes a real `const std::vector<const float*>&`, not a C array -- `extern "C"` gives the function name and function type C language linkage; it does not turn C++ parameters into a portable C ABI, and this works cleanly because both this program and the JIT-compiled `.so` are built by the same `g++` installation on each machine, sharing one ABI.
 
-`JitModule` owns exactly one `dlopen()` handle the same way Chapter 4's own `Graph` owns its own `std::vector<std::unique_ptr<Node>>`: non-copyable (duplicating a raw OS handle would let two objects each believe they own it, and either destructor could then double-`dlclose()` it -- undefined behavior), move-only (ownership transfers cleanly; the moved-from `JitModule` is left holding a null handle it will never try to close). Its constructor calls `dlopen(path, RTLD_NOW)`, throwing with the message from `dlerror()` on failure; its destructor calls `dlclose()` if the handle is non-null; and its templated `getFunction()` calls `dlsym()`, checks `dlerror()` a second time to detect failure, and returns the result cast to the caller's own function-pointer type. `compileToSharedLibrary()` is the one remaining `popen()` shell-out in this whole chapter, and it is scoped honestly: it compiles source text into a real, loadable shared library, and this chapter never claims the COMPILER itself runs in-process, only that EXECUTION does. A true self-hosting JIT would embed the compiler as a library -- LLVM's own ORC JIT, or `libclang` -- instead of shelling out to a separate `g++` process even for this one step; named here as a real, stated limitation, not hidden.
+`JitModule` owns exactly one `dlopen()` handle the same way Chapter 4's own `Graph` owns its own `std::vector<std::unique_ptr<Node>>`: non-copyable (duplicating a raw OS handle would let two objects each believe they own it, and either destructor could then double-`dlclose()` it -- undefined behavior), move-only (ownership transfers cleanly; the moved-from `JitModule` is left holding a null handle it will never try to close). Its constructor calls `dlopen(path, RTLD_NOW)`, throwing with the message from `dlerror()` on failure; its destructor calls `dlclose()` if the handle is non-null; and its templated `getFunction()` calls `dlsym()`, checks `dlerror()` a second time to detect failure, and returns the result cast to the caller's own function-pointer type. `compileToSharedLibrary()` is the one remaining `popen()` shell-out in this whole chapter, and it is scoped honestly: it compiles source text into a real, loadable shared library, and this chapter never claims the COMPILER itself runs in-process, only that EXECUTION does. An in-process JIT could use LLVM ORC with appropriate frontend/IR support instead of spawning `g++`. This is distinct from self-hosting, which means a compiler is written in the language it compiles. `libclang` is principally a parsing/analysis API, not an ORC replacement for code generation and execution; named here as a real, stated limitation, not hidden.
 
 The worked example is a small graph -- `a=Input[8]`, `b=Input` scalar, `t1=Add(a,b)`, `t2=ReLU(t1)`, `out=Mul(t2,b)` -- fused via Chapter 14's own plain `reductionFusionPass()` into ONE `FusedElementwise` group with 3 steps (Add, ReLU, Mul) and 2 external inputs. Its generated `extern "C"` function is compiled to `/tmp/hammer_ch20_048.so`, `dlopen()`'d, `dlsym()`'d by the plain name `"compute_out"`, and called directly with real C++ arguments -- a `std::vector<const float*>&`, not a printed string -- producing the exact array `evaluateArrays()` reports, with no `popen()`, no subprocess, and no stdout parsed anywhere in that call. The section closes on a real, concrete risk rather than a hypothetical one: the `JitModule` in this worked example goes out of scope right after its one call, its destructor runs `dlclose()`, and the operating system is free to unmap `compute_out`'s own code from this process's address space at that point. The `ElementwiseFn` value this program still holds afterward is now a DANGLING pointer -- calling it would be undefined behavior, so this program deliberately never keeps it around or calls it again. The fix is a lifetime rule, not a runtime check: never call a function pointer obtained from a `JitModule` after that `JitModule`'s own destructor has run.
 
@@ -101,7 +119,7 @@ Why extern "C" -- name mangling, made concrete:
        no compiler-specific encoding, exactly the string this program
        passes to dlsym()
 
-  extern "C" changes LINKAGE only -- every parameter is still a real
+  extern "C" gives C language linkage -- every parameter is still a real
   C++ type (a vector of const float pointers, not a C array); this
   works because both this program and the JIT-compiled .so are built
   by the SAME g++ installation, sharing one ABI
@@ -685,7 +703,7 @@ int main() {
         // subprocess launch and not a line of printed text to parse back.
         fn(ext, extCounts, out1.data(), n);
         matches = (out1.size() == expected.at("out").size());
-        if (matches) for (size_t i = 0; i < out1.size(); ++i) if (std::fabs(out1[i] - expected.at("out")[i]) > 1e-3f) matches = false;
+        if (matches) for (size_t i = 0; i < out1.size(); ++i) if (!(std::fabs(out1[i] - expected.at("out")[i]) <= 1e-3f)) matches = false;
     }  // module's own destructor runs HERE, dlclose()-ing the shared library
 
     printf("dlopen/dlsym succeeded (%s). compute_out(...), called as a real function pointer:\n", loadedOk ? "confirmed" : "MISMATCH");
@@ -811,6 +829,15 @@ obtained from a JitModule after that JitModule's own destructor has run.
     `dlsym()`'s own return value cannot, by itself, distinguish two different situations: a symbol whose real address happens to be null (rare, but valid for some data symbols) and a symbol that genuinely was not found. POSIX's own `dlsym()` documentation states the correct pattern for telling them apart: call `dlerror()` once to clear any error left over from an unrelated earlier call, then call `dlsym()`, then call `dlerror()` again -- a non-null result the second time means THIS call failed, not some earlier one. `JitModule::getFunction()` follows that exact three-step pattern; skipping the first clear is a real, documented pitfall, not a hypothetical one.
 
 ## 20.2 One Shared Library, Many Functions: A JIT Module for a Whole Graph
+
+<!-- hammer:figure:20.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A module can export several graph functions](../images/concepts/20-02.svg?v=c0462d1d0f5f)](../images/concepts/20-02.svg?v=c0462d1d0f5f)
+
+<figcaption>C linkage controls exported symbol naming; ABI details still matter.</figcaption>
+</figure>
+<!-- hammer:figure:20.2:end -->
 
 ### Intuition
 
@@ -1485,7 +1512,7 @@ int main() {
             }
             bool matches = (buf[name].size() == expected.at(name).size());
             if (matches) for (size_t i = 0; i < buf[name].size(); ++i)
-                if (std::fabs(buf[name][i] - expected.at(name)[i]) > 1e-3f) matches = false;
+                if (!(std::fabs(buf[name][i] - expected.at(name)[i]) <= 1e-3f)) matches = false;
             allMatch = allMatch && matches;
             printf("compute_%-3s (called as a real function pointer): ", name.c_str());
             for (float v : buf[name]) printf("%.6f ", v);
@@ -1577,6 +1604,15 @@ SAME compiled shared library (confirmed)
 
 ## 20.3 The JIT Backend End to End: No Subprocess, No Stdout Parsing
 
+<!-- hammer:figure:20.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Invoke generated code through a checked interface](../images/concepts/20-03.svg?v=af23c6237252)](../images/concepts/20-03.svg?v=af23c6237252)
+
+<figcaption>Only trusted generated source should enter this example toolchain.</figcaption>
+</figure>
+<!-- hammer:figure:20.3:end -->
+
 ### Intuition
 
 Sections 20.1 and 20.2 proved the loading mechanism itself, always with Chapter 18's own plain scalar code as the function body. This section proves the mechanism is BACKEND AGNOSTIC: the loader does not care whether a function's own body came from Chapter 18's scalar `emitSteps()` path or Chapter 19's vectorized AVX2/FMA-or-NEON intrinsics path, only that the function is `extern "C"` and matches an expected signature. Chapter 16's own 10-node capstone graph -- the SAME graph Sections 17.3, 18.3, and 19.3 have all already used -- gets JIT-compiled TWICE from this section: once through a scalar dispatcher and once through Chapter 19's own vector-FMA-and-reduction dispatcher, wrapped in `extern "C"` for the first time. Both compiled libraries are `dlopen()`'d, every one of their own node functions is `dlsym()`'d and called as a real function pointer -- ZERO subprocess launches and ZERO parsed stdout text anywhere in EXECUTION, for the first time in this book -- and both report the same `y[0]=132.0` Chapters 16 through 19 have all already established.
@@ -1658,6 +1694,8 @@ Honest tally -- what actually changed, and what did not:
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp -o 050_driver -ldl
 // Run:     ./050_driver
+// Numerical policy: FMA contraction and vector reductions may change rounding.
+// These teaching backends permit contraction; they are not strict bitwise FP rewrites.
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -2440,7 +2478,7 @@ static std::map<std::string, std::vector<float>> runJitGraph(const JitModule& mo
 
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-2f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!(std::fabs(a[i] - b[i]) <= tol)) return false;
     return true;
 }
 
@@ -2679,3 +2717,4 @@ Chapter 21, "The Search Space: Tile Sizes, Loop Orders, and Unrolling," opens Pa
 **Sources cited in this chapter:**
 
 None new. This chapter's own `JitModule` design, `extern "C"` wrapping discipline, and whole-graph JIT compilation technique are all original to this book, building on Chapter 4's own non-copyable resource-ownership discipline, Chapter 8's own node-name uniqueness guarantee, and this chapter's own directly observed `dlopen()`/`dlsym()`/`dlclose()` toolchain behavior on both real machines.
+**Technical references:** [C++ language linkage](https://eel.is/c++draft/dcl.link), [LLVM ORC](https://llvm.org/docs/ORCv2.html), [libclang scope](https://clang.llvm.org/docs/LibClang.html).

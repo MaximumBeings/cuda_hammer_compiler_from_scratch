@@ -4,3 +4,10 @@ __pycache__/
 _stale_site_to_delete*/
 _to_delete/
 _verify_*_bin
+
+# Generated validation artifacts and macOS archive metadata
+.DS_Store
+._*
+*.bin
+*.so
+*.dylib

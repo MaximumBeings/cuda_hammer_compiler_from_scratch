@@ -1,0 +1,35 @@
+SOURCE: docs/part5/code/057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part5/code/057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-zg0lqsvc/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 23.1: real codegen for a scheduled loop -- tile size and unroll factor ===
+
+--- Part 1: extent=23 (not evenly divisible by most tile/unroll choices), 5 real schedules ---
+
+  tileSize=1  unrollFactor=1   clean compile: yes  bit-for-bit correct: yes
+  tileSize=7  unrollFactor=3   clean compile: yes  bit-for-bit correct: yes
+  tileSize=8  unrollFactor=4   clean compile: yes  bit-for-bit correct: yes
+  tileSize=23 unrollFactor=5   clean compile: yes  bit-for-bit correct: yes
+  tileSize=5  unrollFactor=5   clean compile: yes  bit-for-bit correct: yes
+
+self-check: every one of these 5 real, COMPILED, dlopen-loaded schedules produces the exact
+same bit-for-bit answer (confirmed) -- tile size and unroll factor stay a pure performance knob for
+an elementwise loop whether that loop is interpreted (Chapter 22) or actually compiled (here).
+
+--- Part 2: extent=30,000,000 -- compile time vs. execution time, both real, both separate ---
+
+  tileSize=1     unrollFactor=1    compile:   132.5 ms   run (best-of-5):   9.666 ms  (clean)
+  tileSize=1024  unrollFactor=4    compile:    98.4 ms   run (best-of-5):   5.410 ms  (clean)
+  tileSize=1024  unrollFactor=16   compile:   130.9 ms   run (best-of-5):  11.243 ms  (clean)
+  tileSize=4096  unrollFactor=16   compile:   154.0 ms   run (best-of-5):   8.391 ms  (clean)
+  tileSize=4096  unrollFactor=64   compile:   144.2 ms   run (best-of-5):   7.678 ms  (clean)
+
+self-check: compile time and execution time land in the SAME real order of magnitude here --
+a handful to several tens of milliseconds each, a real g++ process costing about as much as
+the computation it just built. Chapter 22's own interpreter never had to pay the compile side of
+that bill at all -- interpreting a Schedule is free of compilation, which is exactly why Chapter
+22 could afford to try many candidates. Real codegen changes that tradeoff: compiling EVERY one
+of a large schedule space, one g++ process per candidate, adds up to a real, non-negligible cost
+of its own -- which is precisely the budget Section 23.3's own autotuner has to manage: compile
+a short list, not the whole space.

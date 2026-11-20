@@ -1,21 +1,18 @@
-# Chapter 29, File 076: File 075's own online-softmax algorithm, written as
-# a real block-level Triton kernel and compiled through the same
-# explicit-`target=` AOT path Chapter 27 established (no physical GPU
-# needed to reach real TTIR/TTGIR/LLIR/PTX).
+# Chapter 29, File 076: File 075's online-softmax algorithm as a Triton kernel.
+# Historical evidence for this file is offline AOT compilation, not GPU execution.
+# File 075 numerically compares its own NumPy implementations on finite cases;
+# that does not validate this Triton kernel or prove correctness for every input.
 #
-# Real toolchain note, same honest limitation as every Triton file since
-# Chapter 27: no physical GPU here, so this file is scoped to real
-# COMPILATION only, never execution -- File 075's own pure-NumPy version
-# is what actually proves the algorithm correct; this file proves the
-# SAME algorithm is expressible as one real Triton kernel body, at the
-# block level Chapter 27 studied, and inspects what it genuinely compiles
-# to. One deliberate scope reduction from File 075: `SEQ_LEN_KV` is a
-# `tl.constexpr` here (a fixed 48, divisible by `BLOCK_N=16`, so no
-# boundary mask is needed inside the KV loop) rather than a runtime
-# value with a genuine tail block -- Chapter 27's own File 069 already
-# demonstrated real Triton boundary masking (`mask=offsets < n_elements`)
-# for a non-divisible size, so this file does not need to repeat that
-# mechanism to stay honest about what it covers.
+# Current source masks incomplete key/value tiles and excludes their scores
+# from softmax. SEQ_LEN_KV remains a positive compile-time constant, including
+# non-divisible lengths; the example AOT invocation still uses 48 keys / tile 16.
+# One program handles exactly BLOCK_M query rows, with power-of-two D; no
+# query-row tail, causal mask, batching or production model integration is supplied.
+# Both float32 dot operations request IEEE precision explicitly.
+#
+# Changed masked/precision code needs a fresh compile and real-device numerical
+# and memory checks. See validation/accuracy-fixes/gpu_case_validation.py.
+# Historical compiler dumps predate these edits and are not current-run evidence.
 #
 # Compiled with:   python3 "076_a_real_triton_flash_attention_kernel_compiled_with_no_gpu.py"
 
@@ -32,6 +29,8 @@ def flash_attention_kernel(q_ptr, k_ptr, v_ptr, out_ptr,
     # WHOLE sequence -- Chapter 27's own block-level model, applied here to
     # a genuinely two-dimensional block (BLOCK_M, D) rather than the flat
     # 1-D blocks File 069's own vector_add_kernel used.
+    # Contract: one program, exactly BLOCK_M query rows and power-of-two D.
+    # Positive KV lengths need not be multiples of BLOCK_N. No causal mask.
     row_offsets = tl.arange(0, BLOCK_M)
     d_offsets = tl.arange(0, D)
     q = tl.load(q_ptr + row_offsets[:, None] * D + d_offsets[None, :])
@@ -53,17 +52,20 @@ def flash_attention_kernel(q_ptr, k_ptr, v_ptr, out_ptr,
     # printed TTIR below, not merely assumed from the source text.
     for start_n in range(0, SEQ_LEN_KV, BLOCK_N):
         col_offsets = start_n + tl.arange(0, BLOCK_N)
-        k_block = tl.load(k_ptr + col_offsets[:, None] * D + d_offsets[None, :])
-        v_block = tl.load(v_ptr + col_offsets[:, None] * D + d_offsets[None, :])
+        k_block = tl.load(k_ptr + col_offsets[:, None] * D + d_offsets[None, :],
+                          mask=col_offsets[:, None] < SEQ_LEN_KV, other=0.0)
+        v_block = tl.load(v_ptr + col_offsets[:, None] * D + d_offsets[None, :],
+                          mask=col_offsets[:, None] < SEQ_LEN_KV, other=0.0)
 
         # tt.dot #1: Q @ K_block^T -- one real block-level matmul per KV
         # block, exactly File 075's own `q @ k_block.T`.
-        scores = tl.dot(q, tl.trans(k_block)) * scale
+        scores = tl.dot(q, tl.trans(k_block), input_precision="ieee") * scale
+        scores = tl.where(col_offsets[None, :] < SEQ_LEN_KV, scores, float("-inf"))
         block_max = tl.max(scores, axis=1)
         new_max = tl.maximum(running_max, block_max)
 
-        # The same online-softmax rescaling step File 075 already proved
-        # correct against naive full-materialization softmax.
+        # The same recurrence that File 075 numerically checks in NumPy;
+        # this device implementation requires its own GPU validation.
         correction = tl.exp(running_max - new_max)
         p = tl.exp(scores - new_max[:, None])
         block_sum = tl.sum(p, axis=1)
@@ -72,7 +74,7 @@ def flash_attention_kernel(q_ptr, k_ptr, v_ptr, out_ptr,
         # tt.dot #2: P_block @ V_block -- the second real block-level matmul
         # per KV block, exactly File 075's own `p_block @ v_block`.
         running_out = (running_out * correction[:, None]
-                       + tl.dot(p.to(tl.float32), v_block))
+                       + tl.dot(p.to(tl.float32), v_block, input_precision="ieee"))
         running_max = new_max
 
     out = running_out / running_sum[:, None]

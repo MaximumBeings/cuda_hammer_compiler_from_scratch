@@ -1,0 +1,40 @@
+SOURCE: docs/part2/code/017_folding_and_dce_together_through_chapter_8s_pass_manager.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part2/code/017_folding_and_dce_together_through_chapter_8s_pass_manager.cpp', '-o', '/tmp/hammer-host-e543e3cs/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 9.3: constant folding creates dead code; DCE only helps if it runs AFTER ===
+
+>>> Pipeline: [constantFoldPass, deadCodeEliminationPass]
+
+--- before any pass (7 nodes) ---
+c1 = const(2)
+c2 = const(3)
+c3 = const(4)
+t1 = add(c1, c2)
+t2 = mul(t1, c3)
+x = input()
+out = add(t2, x)
+
+--- after pass 'constantFoldPass' (7 nodes) ---
+c1 = const(2)
+c2 = const(3)
+c3 = const(4)
+x = input()
+t1 = const(5)
+t2 = const(20)
+out = add(t2, x)
+
+--- after pass 'deadCodeEliminationPass' (3 nodes) ---
+x = input()
+t2 = const(20)
+out = add(t2, x)
+
+self-check: the graph shrank from 7 nodes to 3 nodes -- folding severed the
+dependency chain back to c1/c2/c3/t1, and DCE then dropped all four (confirmed)
+self-check: exactly {t2, x, out} remain -- c1, c2, c3, and the original t1 are
+all gone (confirmed)
+self-check: evaluate(original, x=6.5).out = 26.5, evaluate(final, x=6.5).out = 26.5 (confirmed)
+
+self-check: running deadCodeEliminationPass() ALONE, before any folding, removes
+NOTHING (7 -> 7 nodes) -- every node is genuinely live in the UNFOLDED graph (confirmed)

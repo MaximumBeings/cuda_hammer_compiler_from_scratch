@@ -1,0 +1,11 @@
+Naive attention: Q(8x4) @ K(13x4).T -> scores(8x13), the full matrix FlashAttention's own algorithm never materializes.
+Naive scores matrix: 104 floats, 832 bytes (float64) held at once.
+
+block_size_kv= 4: 4 real KV block(s) (last block size 1), peak per-block score tile = 256 bytes -- output match = True (max abs diff 1.665e-16), running max matches naive row-max = True, running sum matches naive row-sum = True
+block_size_kv= 5: 3 real KV block(s) (last block size 3), peak per-block score tile = 320 bytes -- output match = True (max abs diff 2.220e-16), running max matches naive row-max = True, running sum matches naive row-sum = True
+block_size_kv=13: 1 real KV block(s) (last block size 13), peak per-block score tile = 832 bytes -- output match = True (max abs diff 2.220e-16), running max matches naive row-max = True, running sum matches naive row-sum = True
+
+Real, concrete memory argument at a realistic scale (N=M=1024 queries/keys, d=64, float32, block_size_kv=128, computed here, not measured -- this file's own real n=8/m=13 arrays are too small to show a meaningful byte comparison):
+  naive materialized score matrix: 4,194,304 bytes (4096 KB)
+  flash peak per-block score tile: 524,288 bytes (512 KB) -- 8.0x smaller, at the SAME real sequence length
+EXIT=0

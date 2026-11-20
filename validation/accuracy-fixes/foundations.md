@@ -1,0 +1,35 @@
+# Chapters 1–16: foundations accuracy audit and fixes
+
+Reviewed graph/IR representation, parser/printer, pass manager, constant folding/DCE/CSE/algebraic simplification, shape inference, fusion accounting, reduction/loop representations, and boundary heuristics. This is an inspection plus host regression pass, not a proof for arbitrary graphs or a GPU performance campaign.
+
+## Confirmed findings and dispositions
+
+1. **Floating-point algebra requires an explicit contract — fixed.** Chapter 11's unconditional `x*0 -> 0` changes infinity/NaN behavior; `x+0 -> x` can change signed zero. All three copies of `algebraicSimplificationPass` now default to strict behavior and preserve those operations. The illustrative finite-value transformations explicitly opt in with `relaxedMath=true`, documented as ignoring NaN/infinity and zero-sign distinctions. ReLU retains this interpreter's own `std::max(0,x)` definition. Source: [LLVM fast-math flags](https://llvm.org/docs/LangRef.html#fast-math-flags). Regression verifies strict infinity-times-zero and signed-zero behavior, and explicit opt-in.
+
+2. **Finite FP32 text serialization was not a reliable round trip — fixed.** Chapter 7 printed constants with `%g` (six significant digits), while the Chapter 5/7 lexer rejected negative and exponent notation. Updated all three frontend lexer copies to consume a complete signed/scientific finite floating token using `strtof`; printers use nine significant digits. The structural comparator now compares constant bits as well as graph topology, so a changed constant cannot masquerade as an equal graph. Regression covers a negative exponent, precision-sensitive constant, negative zero, changed constants, and malformed `1.2.3` input. Format is explicitly restricted to finite constants and valid source identifiers; it is not a general arbitrary-debug-name serialization.
+
+3. **Invalid static shapes and signed product overflow — fixed within declared scope.** Shape inference now rejects nonpositive declared dimensions in all affected copies. `numElements` copies check multiplication against the `long long` limit and throw instead of invoking signed overflow. Positive static dimensions and rank-zero scalar shapes are the teaching scope; dynamic/zero-sized tensors are not implemented. Regressions exercise negative input dimensions and a product exceeding the integer range.
+
+4. **Tiling ceiling division overflow and invalid extents/indices — fixed.** Chapter 15's `(N+T-1)/T` could overflow for valid large N. Replaced with `N/T + (N%T != 0)`, rejected negative extents and out-of-range outer indices, retained zero-extent loops, and corrected the boundary example's index explanation. UBSan regression checks LLONG_MAX, a one-element final tile, zero/negative extents, and an invalid tile index. Existing enumeration demonstrations remain examples, not a general mathematical proof.
+
+5. **9.6 microseconds mislabeled as pure launch overhead — corrected throughout Chapter 1.** NVIDIA's historical V100 value includes kernel execution and per-kernel synchronization; its kernel itself took 2.9 microseconds. Source/printed labels and prose now call this a synchronized-latency illustration, explicitly distinguish it from launch overhead, and do not present a fused latency prediction. The intro, background, warning, summary, worked answer, and reference also clarify that eager CUDA submission need not synchronize the host after every operation. MiB labels were corrected in this example. Source: [NVIDIA CUDA Graphs article](https://developer.nvidia.com/blog/cuda-graphs/).
+
+6. **Logical byte counts and roofline classifications described too strongly — scope corrected.** Chapter 12 now explicitly distinguishes host logical-access accounting and theoretical roofline ceilings from measured HBM traffic, GPU timings, cache effects, occupancy and achieved throughput. Whole-graph aggregation is not a measured bottleneck classifier for serial unfused kernels. No performance values were fabricated.
+
+7. **Equal loop extents treated as sufficient legality evidence — scope corrected.** Chapter 15 identifies `loopNestsCompatibleForFusion` as a candidate shape check, not general dependence analysis. Legal fusion also needs access mappings, RAW/WAR/WAW dependencies, aliasing, synchronization, effects and reduction reasoning. It distinguishes TVM axis fusion from producer/consumer placement. No unimplemented dependence analysis is claimed.
+
+8. **Public Value aggregate described as impossible to forge — scope corrected.** The append-only acyclicity argument now explicitly assumes callers pass Values previously returned by the same Graph. Public aggregate ids can otherwise be forged or mixed; topology checks do not establish a complete IR verifier. Current single-output/trusted-construction constraints remain a teaching limitation.
+
+## Actual verification
+
+- `tools/verify_foundations.py`: all **38** standalone C++17 host examples in Parts 0–3 compile with Apple Clang (`-Wall -Wextra -O2`) and exit successfully. Captures are in `validation/accuracy-fixes/foundations/`; summary is `foundations/summary.txt`. Corresponding full source and output Markdown fences were synchronized from those actual runs.
+- `tests/foundations_regressions.py`: all **five** focused suites pass with `-fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all`. See `foundations-regressions.txt`.
+- The published examples already provide explanatory IR, shapes, counted bytes, and before/after results, rather than only pass counters; their existing meaningful stdout was retained and refreshed. Compiler warnings are retained in per-example stderr logs instead of being hidden.
+- These are macOS/Apple Clang/libc++ runs. No fresh CUDA device execution, NVCC/device-code verification, real tensor workload performance benchmark, cross-framework equivalence test, or GPU speedup measurement was performed by this agent.
+- GPU access is unnecessary for the first 16 host examples. It is useful for the later CUDA/JIT/generated-kernel chapters, whose owners need to validate actual device results and timings separately.
+
+## Independent Linux host confirmation
+
+On the provided Ubuntu 24.04 host, GNU g++ 13.3.0 compiled and ran all **38/38** numbered Part 0–3 C++ sources successfully (root's host runner). Independently ran `CXX=g++ python3 tests/foundations_regressions.py`: **all five sanitizer regression suites pass**. Logs: `foundations-linux-summary.txt` and `foundations-linux-regressions.txt`.
+
+Initial broad host-run output also contained failed attempts to compile macOS `._*.cpp` AppleDouble metadata. Those are not source programs; actual numbered Part 0–3 sources had no compile/run failures. The root runner was informed to exclude metadata files. No code fix was required for these Linux runs, no Linux captures replaced the published macOS stdout, and no diagram or chapter content was changed during this confirmation. These remain CPU/host tests even though the remote machine has an A100 GPU.

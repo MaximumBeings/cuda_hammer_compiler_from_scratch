@@ -1,5 +1,14 @@
 # 4. Representing Tensors and Operations as a Graph
 
+<!-- hammer:figure:opener-4:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Representing Tensors and Operations as a Graph](../images/openers/04.svg?v=f794cbab19bf)](../images/openers/04.svg?v=f794cbab19bf)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-4:end -->
+
 **What you will understand:** why CUDA Hammer's own IR, starting in this chapter, is a graph rather than a tree or a straight-line list -- and the two real building blocks (`Node`, `Value`) every later chapter's passes, fusion, codegen, and autotuner all operate on. This is CUDA Hammer's own first real code: genuinely compiled, genuinely run C++, not a toy arithmetic language anymore.
 
 **What you need to know first:** Chapter 2's vocabulary (IR, pass, codegen) and, specifically, that Chapter 2's own IR was always a tree (as an AST) or a straight-line list (as linear IR) -- this chapter explains exactly why a tensor computation cannot stay that way.
@@ -27,6 +36,15 @@ exact same computed Value can be handed to more than one later call):
 ```
 
 ## 4.1 Why a Graph, Not a Tree or a Linear List
+
+<!-- hammer:figure:4.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A DAG can represent shared work](../images/concepts/04-01.svg?v=16dca515b62a)](../images/concepts/04-01.svg?v=16dca515b62a)
+
+<figcaption>Sharing is explicit; a tree would duplicate the producer.</figcaption>
+</figure>
+<!-- hammer:figure:4.1:end -->
 
 ### Intuition
 
@@ -323,6 +341,15 @@ self-check: the unshared-tree expansion is strictly larger than the real DAG (co
 
 ## 4.2 Nodes and Values: The Building Blocks
 
+<!-- hammer:figure:4.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Nodes carry operations and dependencies](../images/concepts/04-02.svg?v=40c228156a3b)](../images/concepts/04-02.svg?v=40c228156a3b)
+
+<figcaption>Shape and type contracts are part of graph validity.</figcaption>
+</figure>
+<!-- hammer:figure:4.2:end -->
+
 ### Intuition
 
 A library's own catalog does not hand a reader the book itself -- it hands them a call slip recording where the book lives: which shelf, which copy. Two different readers can hold identical call slips pointing at the exact same shelf entry, and neither one owns a private copy; neither slip can ever go stale from the book being moved, either, because the library's own shelving (not the slip) is what actually holds the book. CUDA Hammer's `Value` is that call slip, and `Graph` is the library's own shelves.
@@ -347,6 +374,15 @@ File 005 above already contains this section's own code -- `Value{nodeId, output
 
 ## 4.3 A Graph Must Be Acyclic (And How CUDA Hammer's API Guarantees It)
 
+<!-- hammer:figure:4.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Topological order respects dependencies](../images/concepts/04-03.svg?v=3429b85cd29f)](../images/concepts/04-03.svg?v=3429b85cd29f)
+
+<figcaption>Public mutation can still require explicit cycle validation.</figcaption>
+</figure>
+<!-- hammer:figure:4.3:end -->
+
 ### Intuition
 
 A course catalog's prerequisite chart is only usable if some valid enrollment order actually exists: Calculus 1 before Calculus 2, Calculus 2 before Linear Algebra, and so on. A broken catalog that required Course A as a prerequisite for Course B, and Course B as a prerequisite for Course A, would leave no student able to take either course first -- there is no valid starting point, because everything that could come first already requires something else to come first. A computation graph has exactly the same requirement: every node's inputs have to be genuinely computable before that node runs, which means the graph has to be acyclic, or there is no order in which CUDA Hammer could ever actually execute it.
@@ -365,7 +401,7 @@ A BROKEN CATALOG (a cycle -- no student could ever start):
 
 ### Background
 
-CUDA Hammer's own `addInput`/`addConst`/`addUnary`/`addBinary` API can only ever take `Value`s that some *earlier* call already returned -- there is no way to reference a node that does not exist yet -- so a graph built only through that API can never contain a cycle, by construction, the same way Chapter 2's parser could never produce an AST node with itself as its own child. File 006 below proves the resulting acyclicity two ways. First, it runs a genuine topological sort (Kahn's algorithm: repeatedly remove a node with no unprocessed producers left, decrementing every consumer's own remaining-producer count) on File 005's own diamond graph, and cross-checks that order with a second, independently implemented method -- a positional check confirming every node really does appear after all of its own producers -- the same independent-cross-check discipline Chapter 2 used for its AST evaluator. Second, it reaches *past* the normal API -- directly mutating a `Node`'s own `inputs` vector after construction, something ordinary use of `Graph` never does -- to hand-build one small graph that genuinely contains a cycle, and confirms the same checker correctly reports it as invalid rather than silently producing a wrong order.
+CUDA Hammer's own `addInput`/`addConst`/`addUnary`/`addBinary` API can only ever take `Value`s that some *earlier* call already returned -- provided callers do not forge Value ids or mix graphs -- so a graph built only through that API can never contain a cycle, by construction, the same way Chapter 2's parser could never produce an AST node with itself as its own child. File 006 below proves the resulting acyclicity two ways. First, it runs a genuine topological sort (Kahn's algorithm: repeatedly remove a node with no unprocessed producers left, decrementing every consumer's own remaining-producer count) on File 005's own diamond graph, and cross-checks that order with a second, independently implemented method -- a positional check confirming every node really does appear after all of its own producers -- the same independent-cross-check discipline Chapter 2 used for its AST evaluator. Second, it reaches *past* the normal API -- directly mutating a `Node`'s own `inputs` vector after construction, something ordinary use of `Graph` never does -- to hand-build one small graph that genuinely contains a cycle, and confirms the same checker correctly reports it as invalid rather than silently producing a wrong order.
 
 ```cpp
 // Chapter 4: Representing Tensors and Operations as a Graph

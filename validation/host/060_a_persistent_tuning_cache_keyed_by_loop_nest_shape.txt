@@ -1,0 +1,47 @@
+SOURCE: docs/part5/code/060_a_persistent_tuning_cache_keyed_by_loop_nest_shape.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part5/code/060_a_persistent_tuning_cache_keyed_by_loop_nest_shape.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-d6lrn3no/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 24.1: a real, persistent tuning cache, keyed by LoopNest shape ===
+
+--- Part 1: loopNestKey() and Schedule serialize/deserialize, round-tripped ---
+
+  loopNestKey(LoopNest[dim0:6, dim1:8]) = "dim0:6,dim1:8"
+
+  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1 -> "1-1|0-1|1" -> round-trip: exact match
+  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4 -> "6-8|0-1|4" -> round-trip: exact match
+  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=8 -> "2-4|1-0|8" -> round-trip: exact match
+
+self-check: every Schedule serializes to one plain-text line and deserializes back to the exact
+same tile sizes, loop order, and unroll factor (confirmed) -- no information lost round-tripping
+through real text, the same discipline this book's own generated code has used since Chapter 17.
+
+--- Part 2: TuningCache -- a real file, written by one object, loaded by a fresh one ---
+
+  writerCache: put 1 entry, saved to a real file at /tmp/060_tuning_cache_demo.txt
+  readerCache (freshly constructed, before load()): has(key) = false
+  readerCache (after load() from the real file): has(key) = true, entry matches: yes
+
+self-check: an entry written by ONE TuningCache object, through a real file on disk, is read
+back correctly by a COMPLETELY DIFFERENT object that never saw the original put() call (confirmed) --
+the real behavior a NEW PROGRAM RUN needs: no shared memory, no live process, just a real file.
+
+--- Part 3: getOrAutotune() -- real autotuning cost paid once, skipped on the next real run ---
+
+  run 1 (fresh cache, nothing on disk yet): MISS in 6973.3 ms -> tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+  run 2 (brand new TuningCache object, loaded from run 1's real file): HIT in 4.3 us -> tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+
+  run 1 was a MISS, run 2 was a HIT, both returned the IDENTICAL schedule
+  real wall-clock: run 1 = 6973.3 ms, run 2 = 4.3 us (ratio: run 1 is 1625095x slower)
+  a ratio this large is not a claim that caching is generally a million-times speedup --
+  it reflects what is actually being compared: 8 real g++ processes plus 8 real timed
+  measurement loops on one side, one short file read and a string parse on the other.
+
+self-check: run 1 pays Chapter 23's own real hybrid-autotuning cost in full (a MISS, compiling
+and measuring 8 real candidates); run 2 -- a genuinely different TuningCache object, loaded from
+the real file run 1 actually wrote -- finds a HIT and returns the identical schedule almost
+instantly, with no compilation and no measurement at all. This is the entire point of this
+chapter: a real autotuning result, paid for once, reused for real on every later run that asks
+for the same LoopNest shape -- exactly the role TVM's own AutoTVM tuning logs (Chapter 3) play
+in a real production compiler.

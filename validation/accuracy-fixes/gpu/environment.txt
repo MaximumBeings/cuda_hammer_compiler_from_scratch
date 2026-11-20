@@ -1,0 +1,11 @@
+Linux 192-222-53-120 6.8.0-1064-nvidia #67-Ubuntu SMP PREEMPT_DYNAMIC Mon Sep 14 23:03:45 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2025 NVIDIA Corporation
+Built on Fri_Feb_21_20:23:50_PST_2025
+Cuda compilation tools, release 12.8, V12.8.93
+Build cuda_12.8.r12.8/compiler.35583870_0
+NVIDIA (R) Compute Sanitizer
+Copyright (c) 2020-2025 NVIDIA Corporation
+Version 2025.1.0.0 (build 35583870) (public-release)
+name, memory.total [MiB], compute_cap, driver_version
+NVIDIA A100-PCIE-40GB, 40960 MiB, 8.0, 580.105.08

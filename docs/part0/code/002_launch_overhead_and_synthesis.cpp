@@ -1,13 +1,13 @@
 // Chapter 1: The Cost of Eager Execution
 // 002_launch_overhead_and_synthesis.cpp
 //
-// Section 1.2 -- fixed per-launch overhead multiplied by chain length --
+// Section 1.2 -- cited synchronized per-kernel latency multiplied by chain length --
 // and a closing synthesis combining it with File 1's real byte-traffic
 // model.
 //
 // This file never fabricates a timing number. The one number here that
 // is not directly counted by this program is NVIDIA's own real, cited,
-// published measurement of CUDA kernel launch overhead (9.6 microseconds
+// published end-to-end synchronized per-kernel latency (9.6 microseconds
 // per kernel, "including overheads", measured with a CPU wallclock timer
 // around per-kernel-synchronized launches) from NVIDIA's own "Getting
 // Started with CUDA Graphs" developer blog post -- used here exactly the
@@ -28,25 +28,27 @@
 #include <cstdint>
 
 int main() {
-    printf("=== Section 1.2: fixed per-launch overhead, multiplied by chain length ===\n\n");
+    printf("=== Section 1.2: cited synchronized per-kernel latency, multiplied by chain length ===\n\n");
 
     // Real, cited constant -- NOT measured by this program. See the
     // header comment above for the exact source and quote.
-    const double NVIDIA_CITED_LAUNCH_OVERHEAD_US = 9.6;
+    const double NVIDIA_CITED_SYNCHRONIZED_LATENCY_US = 9.6;
 
-    printf("NVIDIA's own cited figure (CUDA Graphs blog post): %.1f us per kernel launch,\n",
-           NVIDIA_CITED_LAUNCH_OVERHEAD_US);
-    printf("measured end to end with per-kernel host synchronization -- the same\n");
-    printf("op-at-a-time shape Section 1.1's EAGER mode models, one real launch per op.\n");
+    printf("NVIDIA's own cited figure (CUDA Graphs blog post): %.1f us per synchronized kernel,\n",
+           NVIDIA_CITED_SYNCHRONIZED_LATENCY_US);
+    printf("measured end to end with per-kernel host synchronization -- a worst-case\n");
+    printf("reference pattern; eager submission need not host-synchronize per operation.\n");
+    printf("The cited 9.6 us INCLUDES 2.9 us of GPU kernel execution; it is not pure launch overhead.\n");
+    printf("This illustrative model assumes unchanged per-kernel latency, not a fusion speed prediction.\n");
     printf("A fused kernel replaces the whole chain with exactly ONE launch, regardless\n");
     printf("of how many operations were fused into it.\n\n");
 
-    printf("%-8s %-24s %-24s %-12s\n", "num_ops", "eager_overhead_us",
-           "fused_overhead_us", "reduction_x");
+    printf("%-8s %-24s %-24s %-12s\n", "num_ops", "eager_model_us",
+           "one_kernel_model_us", "reduction_x");
 
     for (int numOps = 1; numOps <= 8; ++numOps) {
-        double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_LAUNCH_OVERHEAD_US;
-        double fusedOverheadUs = 1.0 * NVIDIA_CITED_LAUNCH_OVERHEAD_US;
+        double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
+        double fusedOverheadUs = 1.0 * NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
         double reduction = eagerOverheadUs / fusedOverheadUs;
         printf("%-8d %-24.2f %-24.2f %-12.2f\n", numOps, eagerOverheadUs, fusedOverheadUs, reduction);
     }
@@ -67,15 +69,15 @@ int main() {
 
     // Launch-overhead side: the real cited constant applied to this
     // example's own chain length.
-    double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_LAUNCH_OVERHEAD_US;
-    double fusedOverheadUs = NVIDIA_CITED_LAUNCH_OVERHEAD_US;
+    double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
+    double fusedOverheadUs = NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
 
-    printf("Chain length: %d operations. Tensor: %llu float32 elements (%.2f MB).\n\n",
+    printf("Chain length: %d operations. Tensor: %llu float32 elements (%.2f MiB).\n\n",
            numOps, (unsigned long long)numElements, arrayBytes / (1024.0 * 1024.0));
     printf("%-30s %-15s %-15s\n", "", "eager", "fused");
-    printf("%-30s %-15.2f %-15.2f  (us, from NVIDIA's cited per-launch figure)\n",
-           "kernel-launch overhead", eagerOverheadUs, fusedOverheadUs);
-    printf("%-30s %-15.2f %-15.2f  (MB, genuinely counted from array sizes)\n",
+    printf("%-30s %-15.2f %-15.2f  (us, from NVIDIA's cited synchronized-kernel figure)\n",
+           "synchronized latency model", eagerOverheadUs, fusedOverheadUs);
+    printf("%-30s %-15.2f %-15.2f  (MiB, logically counted from array sizes)\n",
            "memory traffic", eagerBytes / (1024.0 * 1024.0), fusedBytes / (1024.0 * 1024.0));
 
     printf("\nThese two reductions are reported SEPARATELY and are not combined into a\n");
@@ -84,12 +86,12 @@ int main() {
     printf("time, which this book's own standing discipline does not fabricate. What is\n");
     printf("real here is that a compiler that fuses this chain removes %dx of the launch\n",
            numOps);
-    printf("overhead AND %dx of the memory traffic, from two independent mechanisms --\n",
+    printf("modeled synchronized-latency cost AND %dx of logical memory traffic, from two independent mechanisms --\n",
            numOps);
 
     bool launchReductionCorrect = (eagerOverheadUs / fusedOverheadUs) == static_cast<double>(numOps);
     bool trafficReductionCorrect = (eagerBytes / fusedBytes) == static_cast<uint64_t>(numOps);
-    printf("self-check: launch-overhead reduction equals the chain length exactly (%s),\n",
+    printf("self-check: synchronized-latency model ratio equals the chain length exactly (%s),\n",
            launchReductionCorrect ? "confirmed" : "MISMATCH");
     printf("memory-traffic reduction equals the chain length exactly (%s)\n",
            trafficReductionCorrect ? "confirmed" : "MISMATCH");

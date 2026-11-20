@@ -1,5 +1,14 @@
 # 16. Fusion Boundaries: What Can't Be Fused, and Why
 
+<!-- hammer:figure:opener-16:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Fusion Boundaries: What Can't Be Fused, and Why](../images/openers/16.svg?v=fe09e3cca612)](../images/openers/16.svg?v=fe09e3cca612)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-16:end -->
+
 **What you will understand:** `classifyNode()`, a diagnostic taxonomy that re-derives every boundary condition Chapters 13-15 already enforce and exposes it as an explicit, inspectable reason rather than a side effect of deciding whether to inline; a genuinely different KIND of boundary -- a cost-based size cap, `computeSizeCapBoundaries()`, that exists even where fusing further would still be correct; and `boundedReductionFusionPass()`, which closes Part 3 by combining every boundary this Part has built into one pass, measured honestly, cost and all, through Chapter 8's still-unmodified `PassManager`.
 
 **What you need to know first:** Chapter 13's `resolveIntoGroup()`/`elementwiseFusionPass()`, Chapter 14's `OpKind::Sum`/`FusedReduction`/`reductionFusionPass()`, Chapter 15's loop-nest view (referenced, not extended, in this chapter), and Chapter 8's `TransformPass`/`runPasses()`.
@@ -36,6 +45,15 @@ PART 3'S OWN BOUNDARIES, GATHERED IN ONE PLACE:
 ```
 
 ## 16.1 A Taxonomy of Fusion Boundaries: Explaining, Not Just Enforcing
+
+<!-- hammer:figure:16.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Not every boundary has the same cause](../images/concepts/16-01.svg?v=d9f0ef832b97)](../images/concepts/16-01.svg?v=d9f0ef832b97)
+
+<figcaption>Classify the reason before deciding whether to fuse.</figcaption>
+</figure>
+<!-- hammer:figure:16.1:end -->
 
 ### Intuition
 
@@ -88,6 +106,7 @@ classifyNode() RETURNS EVERY REASON THAT APPLIES, NOT JUST ONE:
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 036_a_taxonomy_of_fusion_boundaries_explaining_not_just_enforcing.cpp -o 036_a_taxonomy_of_fusion_boundaries_explaining_not_just_enforcing
 // Run:     ./036_a_taxonomy_of_fusion_boundaries_explaining_not_just_enforcing
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -215,7 +234,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
@@ -600,6 +624,15 @@ y2 carries GraphRoot too (confirmed)
     Every condition `classifyNode()` checks was already being checked somewhere in Chapters 13-14's own passes; this section restates none of it differently and adds nothing a pass didn't already decide. The value is entirely in making that decision INSPECTABLE on its own terms -- answerable in one function call rather than requiring a fresh trace through `resolveIntoGroup()`'s own recursion every time the question comes up. `verifyClassificationAgreesWithPass()` exists specifically to keep that promise honest: a diagnostic tool that could silently drift out of sync with the real passes it describes would be worse than no diagnostic at all.
 
 ## 16.2 A Cost-Based Boundary: Capping How Large One Fused Kernel Can Grow
+
+<!-- hammer:figure:16.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Larger fusion is not always better](../images/concepts/16-02.svg?v=e98a9a5a94b2)](../images/concepts/16-02.svg?v=e98a9a5a94b2)
+
+<figcaption>Cost thresholds are policies; validate them on target hardware.</figcaption>
+</figure>
+<!-- hammer:figure:16.2:end -->
 
 ### Intuition
 
@@ -1282,6 +1315,15 @@ byte-counting was never built to measure (register pressure, compile time).
 
 ## 16.3 Putting It Together: A Full Fusion Report Through Chapter 8's PassManager
 
+<!-- hammer:figure:16.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Explain the final partition](../images/concepts/16-03.svg?v=cc8ab2efb184)](../images/concepts/16-03.svg?v=cc8ab2efb184)
+
+<figcaption>A report should identify why each boundary remains.</figcaption>
+</figure>
+<!-- hammer:figure:16.3:end -->
+
 ### Intuition
 
 Part 3 opened with Chapter 12 asking why fusion matters at all, then spent four chapters building the machinery to actually do it -- and, just as importantly, to know precisely when NOT to. This closing section is the capstone every Part-ending chapter in this book has used since Chapter 7 and Chapter 11: one graph, built to exercise everything the Part has introduced at once, run through the real pipeline, and measured honestly -- costs included, not just the wins.
@@ -1331,6 +1373,7 @@ ONE GRAPH, EVERY BOUNDARY CATEGORY AT ONCE (a=[8], b=scalar):
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager.cpp -o 038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager
 // Run:     ./038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1472,7 +1515,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {

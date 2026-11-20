@@ -1,14 +1,29 @@
 # 18. Generating CUDA C++ From the Fused IR
 
+<!-- hammer:figure:opener-18:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Generating CUDA C++ From the Fused IR](../images/openers/18.svg?v=06fc202bfb9f)](../images/openers/18.svg?v=06fc202bfb9f)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-18:end -->
+
+!!! note "Current device validation"
+    The no-GPU narrative below describes the original edition. The corrected drivers compare actual generated CUDA results with their interpreter, return an explicit skip when no device is available, and fail fast on CUDA errors. The current physical-device results and direct-kernel sanitizer checks are recorded on [Validation Status](../validation-status.md).
+
+
 **What you will understand:** `emitSteps()`, the shared codegen core that generates the exact same step sequence for both a CPU backend and a CUDA backend, differing only in HOW an external input gets read and HOW ReLU's own max gets spelled; `generateCudaElementwiseKernel()`, which turns a node's own `LoopNest` and `FusedStep` body into a `__global__` CUDA kernel launching one THREAD per output element instead of one more pass through a shared loop variable; `generateCudaReductionKernel()`, which does the same for a reduction while avoiding a genuine data race with `atomicAdd()`; and a full, multi-kernel CUDA program -- generated from Chapter 16's own 10-node capstone graph, compiled by a real `nvcc` toolchain, and verified end to end against a real, executed CPU reference.
 
 **What you need to know first:** Chapter 17's own `LoopNest`/`FusedStep`/`lowerNode()`/`generateLoopFunction()`, Chapter 16's own `boundedReductionFusionPass()` (reused verbatim in Section 18.3), and Chapter 14's own reduction-fusion `Sum` rule.
+
+ > **Validation history:** The original transcripts below were captured without a CUDA device; they are historical diagnostics, not results produced by the repaired fail-fast checks. A later NVIDIA A100 run executes the generated kernels and compares their output with the interpreter; see the fresh GPU results at the end of this chapter. No-device now exits77 as an incomplete runtime validation.
 
 ---
 
 Chapter 17 built CUDA Hammer's first real, working, executable backend -- but it targeted the plainest possible execution model: one CPU thread, running one serial `for` loop, one element after another. This chapter targets the platform this book is actually named for. But before writing a single line of kernel-generation code, it is worth asking an honest question this book has asked before, at Chapter 12's own roofline numbers and Chapter 14's own FLOPs convention: what can actually be checked here, given this toolchain's own real, physical constraints?
 
-Neither machine this book runs on has a physical GPU. The cloud sandbox this book verifies `.cu` files against does have a real `nvcc 12.0` install, and a short, throwaway experiment against it (three tiny test programs, written, compiled, run, and deleted before this chapter's own real files were started) settled three things this chapter's whole verification strategy rests on. First: `nvcc` can compile a COMPLETE CUDA program -- a real `__global__` kernel, `cudaMalloc`, `cudaMemcpy`, a kernel launch, `cudaFree` -- into a real, runnable ELF executable, with no physical GPU present at compile time at all. Second: running that compiled binary WITHOUT checking any CUDA error code returns silently -- exit code 0, no crash, and every "result" is uninitialized garbage, because every CUDA API call failed and nothing noticed. Third: running the exact same program WITH every CUDA API call wrapped in a macro that checks its own returned `cudaError_t` and prints `cudaGetErrorString()` on failure makes the SAME toolchain honestly report, at every single call, `"no CUDA-capable device is detected"` -- a real, accurate, checkable fact about this toolchain, not a guess or a simulation. This chapter's own generated CUDA programs check every call this same way, for the same reason Section 17.1's own `evaluateArrays()` checked per-element correctness instead of trusting an aggregate number: an unchecked result that happens to look fine is not the same thing as a result that was actually verified. The device this book also delivers to has no `nvcc` at all -- so, matching the discipline every earlier `.cu`/CUDA-linked file in this book has followed, every file in this chapter is compiled and run ONLY in the cloud sandbox; the device receives byte-identical copies, verified by content, never re-compiled there.
+The original cloud/device validation environments had no physical CUDA GPU; the cloud had `nvcc`, while the device did not. Those historical transcripts established compilation and failure diagnostics, not device execution correctness. CPU-generated counterparts checked the shared arithmetic, but could not prove CUDA launch, memory-space, atomic or scheduling behavior. The repaired generated programs stop on their first CUDA error, and no-device returns77 rather than a numeric pass. A later NVIDIA A100 run, documented at the end of this chapter, executes the generated kernels, compares their results with the interpreter, and directly sanitizes all four generated executables.
 
 ```text
 FROM A SERIAL CPU LOOP (CHAPTER 17) TO A REAL, COMPILED CUDA PROGRAM (THIS CHAPTER):
@@ -27,17 +42,16 @@ FROM A SERIAL CPU LOOP (CHAPTER 17) TO A REAL, COMPILED CUDA PROGRAM (THIS CHAPT
   +-----------------------+     +-----------------------+
   | CPU wrapper: a nested  |     | CUDA wrapper: one       |
   | for-loop, one more      |     | THREAD per loop          |
-  | pass through a shared   |     | iteration, launched       |
-  | loop variable            |     | concurrently, not         |
-  | (Chapter 17's own       |     | serially                  |
+  | pass through a shared   |     | iteration, scheduled      |
+  | loop variable            |     | in blocks/warps as         |
+  | (Chapter 17's own       |     | resources permit          |
   | generateLoopFunction()) |     | (this chapter's own      |
   |                         |     | CUDA kernel generators)  |
   +-----------------------+     +-----------------------+
 
   Section 18.1 -- elementwise: one CUDA thread per OUTPUT element, generated,
-                  compiled by real nvcc, run -- honestly reporting no physical
-                  GPU -- and proven correct via the SAME step sequence,
-                  actually executed on the CPU
+                  compiled by nvcc; historical no-GPU diagnostics plus
+                  CPU reference checks, followed by actual A100 validation.
 
   Section 18.2 -- reduction: why one thread per REDUCE element doing
                   "*out += step;" directly is a real data race, and how
@@ -52,9 +66,18 @@ FROM A SERIAL CPU LOOP (CHAPTER 17) TO A REAL, COMPILED CUDA PROGRAM (THIS CHAPT
 
 ## 18.1 From Loops to Threads: A CUDA Elementwise Kernel Generator
 
+<!-- hammer:figure:18.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Map output elements to CUDA threads](../images/concepts/18-01.svg?v=0127da76640d)](../images/concepts/18-01.svg?v=0127da76640d)
+
+<figcaption>Compilation does not establish device execution correctness.</figcaption>
+</figure>
+<!-- hammer:figure:18.1:end -->
+
 ### Intuition
 
-Chapter 17's own `generateLoopFunction()` and this section's own CUDA kernel generator need the exact same thing at their core: given a node's own `FusedStep` program, emit `float stepN = ...;` for every step, in the right order, chaining each step's own operands to whichever earlier step (or external input) they reference. What differs between a CPU loop and a CUDA kernel is not that core sequencing logic -- it is the EXECUTION MODEL wrapped around it. A CPU loop processes one element, then the next, then the next, inside a single thread; a CUDA kernel launches one THREAD per element, all of them running the identical body concurrently, each computing its own `flat` index from its own `blockIdx`/`threadIdx` and returning immediately if that index is out of range. `emitSteps()` is built to make that distinction the ONLY thing that differs: it is called once by a CPU wrapper and once by a CUDA wrapper, with the exact same steps, and produces the exact same step sequence both times -- proving, structurally, that fusion's own step-by-step arithmetic does not change when the execution model around it does.
+Chapter 17's own `generateLoopFunction()` and this section's own CUDA kernel generator need the exact same thing at their core: given a node's own `FusedStep` program, emit `float stepN = ...;` for every step, in the right order, chaining each step's own operands to whichever earlier step (or external input) they reference. What differs between a CPU loop and a CUDA kernel is not that core sequencing logic -- it is the EXECUTION MODEL wrapped around it. A CPU loop processes one element, then the next, then the next, inside a single thread; a CUDA kernel launches one THREAD per element, each scheduled to run the same body; hardware executes blocks/warps as resources permit, each computing its own `flat` index from its own `blockIdx`/`threadIdx` and returning immediately if that index is out of range. `emitSteps()` is built to make that distinction the ONLY thing that differs: it is called once by a CPU wrapper and once by a CUDA wrapper, with the exact same steps, and produces the exact same step sequence both times -- keeping the emitted operator sequence aligned; backend floating-point semantics and device execution still require separate validation.
 
 ### Background
 
@@ -96,7 +119,7 @@ CUDA elementwise kernel -- one THREAD per output element, not one loop pass:
 // Section 18.1 -- Chapter 17 lowered a node's own LoopNest + FusedStep body
 // into a SERIAL C++ for-loop. This section targets a genuinely different
 // execution model: a CUDA grid, where every loop ITERATION becomes its own
-// THREAD running concurrently, not one more pass through a shared loop
+// THREAD eligible for concurrent scheduling, not one more pass through a shared loop
 // variable. emitSteps() is the shared core this shares with Chapter 17's
 // own generateLoopFunction(): the SAME step-sequencing logic (which op
 // happens in which order, how a PriorStep operand chains to an earlier
@@ -108,21 +131,24 @@ CUDA elementwise kernel -- one THREAD per output element, not one loop pass:
 // std::vector<const float*>'s own internal buffer lives in HOST memory and
 // would be an invalid address if a __global__ kernel tried to dereference
 // it directly), and how ReLU's own max gets spelled (std::max vs fmaxf).
-// The generated .cu program is compiled with real nvcc and then actually
-// RUN, honestly reporting this toolchain's real constraint: no physical
-// GPU exists on either side of this book's own toolchain, so every CUDA
-// API call reports "no CUDA-capable device is detected" -- checked, not
-// glossed over, the same way Chapter 12's roofline model or Chapter 14's
-// FLOPs convention were checked against real published or real measured
-// numbers rather than assumed correct.
+// Generated programs are compiled by nvcc and compared numerically on a
+// physical CUDA device. The original environment had no GPU; that historical
+// diagnostic did not validate device arithmetic. No-device now skips with77.
+// The later A100 run validates this fixture on actual GPU hardware.
 //
-// Compile: g++ -std=c++17 -Wall -Wextra -O2 042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.cu -o 042_driver
+// Compile: g++ -x c++ -std=c++17 -Wall -Wextra -O2 042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.cu -o 042_driver
 // Run:     ./042_driver
 // (This file's own main() is plain C++: it GENERATES a .cu program as a
 // string, writes it to disk, and shells out to nvcc to compile and run IT.
 // The driver itself needs no CUDA toolchain to build -- only the .cu file
 // it writes does.)
+// Override for the test GPU, including kernels compiled by this generator.
+#ifndef HAMMER_CUDA_ARCH
+#define HAMMER_CUDA_ARCH "sm_70"
+#endif
+
 #include <cstdio>
+#include <sys/wait.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -564,7 +590,12 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    // A generated program uses 77 for fail-fast CUDA diagnostics. The
+    // caller distinguishes a no-device skip from other CUDA failures.
+    if (status == -1 || !WIFEXITED(status) ||
+        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
@@ -639,8 +670,8 @@ int main() {
     };
 
     std::string prog = "#include <cstdio>\n#include <cuda_runtime.h>\n\n";
-    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) "
-            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); } while (0)\n\n";
+    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) { "
+            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); return 77; } } while (0)\n\n";
     prog += kernelSrc + "\n";
     prog += "int main() {\n";
     prog += "    float hExt0[] = " + formatArrayLiteral(t1Concrete) + ";\n";
@@ -659,28 +690,41 @@ int main() {
     prog += "    CUDA_CHECK(cudaDeviceSynchronize());\n";
     prog += "    float hOut[" + std::to_string(n) + "];\n";
     prog += "    CUDA_CHECK(cudaMemcpy(hOut, dOut, n * sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result (garbage/zero without a real GPU): \");\n";
+    prog += "    printf(\"kernel result: \");\n";
     prog += "    for (long long i = 0; i < n; ++i) printf(\"%.6f \", hOut[i]);\n";
     prog += "    printf(\"\\n\");\n";
     prog += "    CUDA_CHECK(cudaFree(dExt0)); CUDA_CHECK(cudaFree(dExt1)); CUDA_CHECK(cudaFree(dOut));\n";
     prog += "    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch18_042.cu", prog);
-    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=sm_70 -o /tmp/hammer_ch18_042 /tmp/hammer_ch18_042.cu 2>&1");
+    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o /tmp/hammer_ch18_042 /tmp/hammer_ch18_042.cu 2>&1");
     bool compileClean = compileLog.find("error") == std::string::npos;
     printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- clean compile)\n" : compileLog.c_str());
     printf("self-check: nvcc accepts the generated .cu file as valid CUDA C++ (%s)\n\n",
            compileClean ? "confirmed" : "MISMATCH");
 
     std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_042 2>&1");
-    printf("--- Running the compiled binary (this toolchain has no physical GPU, on either side) ---\n\n");
+    printf("--- Running the compiled CUDA binary ---\n\n");
     printf("%s\n", runOutput.c_str());
-    bool honestlyReportsNoDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
-    printf("self-check: checked CUDA error codes honestly report \"no CUDA-capable device is\n");
-    printf("detected\" at every API call, rather than silently returning garbage (%s)\n\n",
-           honestlyReportsNoDevice ? "confirmed" : "MISMATCH");
+    bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
+    if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
+    bool gpuMatches = runOutput.find("CUDA error") == std::string::npos;
+    try {
+        size_t pos = runOutput.find("kernel result:");
+        if (pos == std::string::npos) gpuMatches = false;
+        else {
+            std::istringstream values(runOutput.substr(pos + std::string("kernel result:").size()));
+            std::vector<float> got; float value;
+            while (values >> value) got.push_back(value);
+            const auto& expectedGpu = fusedArrays.at("out");
+            gpuMatches = gpuMatches && got.size() == expectedGpu.size();
+            for (size_t i = 0; gpuMatches && i < got.size(); ++i)
+                gpuMatches = std::fabs(got[i] - expectedGpu[i]) <= 1e-3f;
+        }
+    } catch (const std::exception&) { gpuMatches = false; }
+    printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
-    // ---- What this kernel's arithmetic WOULD compute, proven the only way this toolchain allows: real CPU execution ----
+    // ---- Independent CPU reference for the shared emitted arithmetic ----
     printf("--- The host-side reference: same emitSteps() body, run for real on the CPU ---\n\n");
     std::string cpuFuncSrc = generateCpuElementwiseFunction("compute_out_cpu", outLowered);
     std::string cpuProg = "#include <cstdio>\n#include <vector>\n#include <algorithm>\n\n" + cpuFuncSrc + "\n";
@@ -705,11 +749,11 @@ int main() {
     float v;
     while (iss >> v) cpuVals.push_back(v);
     bool cpuMatches = (cpuVals.size() == fusedArrays.at("out").size());
-    if (cpuMatches) for (size_t i = 0; i < cpuVals.size(); ++i) if (std::fabs(cpuVals[i] - fusedArrays.at("out")[i]) > 1e-3f) cpuMatches = false;
+    if (cpuMatches) for (size_t i = 0; i < cpuVals.size(); ++i) if (!(std::fabs(cpuVals[i] - fusedArrays.at("out")[i]) <= 1e-3f)) cpuMatches = false;
     printf("self-check: this IS the number the kernel's own arithmetic computes -- proven by real\n");
     printf("execution of the identical emitSteps() body on the CPU (%s)\n", cpuMatches ? "confirmed" : "MISMATCH");
 
-    bool allOk = sameStepCount && compileClean && honestlyReportsNoDevice && cpuMatches;
+    bool allOk = sameStepCount && compileClean && gpuMatches && cpuMatches;
     return allOk ? 0 : 1;
 }
 ```
@@ -791,6 +835,15 @@ execution of the identical emitSteps() body on the CPU (confirmed)
 
 ## 18.2 Reductions on the GPU: Avoiding a Data Race With atomicAdd()
 
+<!-- hammer:figure:18.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A reduction needs race-free accumulation](../images/concepts/18-02.svg?v=c814f5763ace)](../images/concepts/18-02.svg?v=c814f5763ace)
+
+<figcaption>Atomics avoid a data race but do not fix summation order.</figcaption>
+</figure>
+<!-- hammer:figure:18.2:end -->
+
 ### Intuition
 
 Section 18.1's own elementwise kernel launched one thread per OUTPUT element, and every thread wrote its own, distinct `out[flat]` -- safe, because no two threads ever touch the same memory address. A reduction kernel breaks that pattern on purpose: every thread that helps compute a Sum is, by definition, contributing to the exact SAME single output value. Launch one thread per REDUCE element (the natural first instinct, mirroring the elementwise kernel's own one-thread-per-iteration design) and have each thread execute `*out += step0;` directly, and the result is a textbook DATA RACE: multiple threads performing a non-atomic read-modify-write on the identical address, with no guarantee any thread ever sees another thread's update. Some updates get silently lost -- not a rare edge case, a near-certainty at any real thread count. `atomicAdd()` is the simplest CORRECT fix: a single hardware-guaranteed atomic add per thread, serializing only the one operation that genuinely needs it.
@@ -859,7 +912,13 @@ reduction -- see this section's own stated limitation, above).
 //
 // Compile: g++ -x c++ -std=c++17 -Wall -Wextra -O2 043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.cu -o 043_driver
 // Run:     ./043_driver
+// Override for the test GPU, including kernels compiled by this generator.
+#ifndef HAMMER_CUDA_ARCH
+#define HAMMER_CUDA_ARCH "sm_70"
+#endif
+
 #include <cstdio>
+#include <sys/wait.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1284,7 +1343,12 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    // A generated program uses 77 for fail-fast CUDA diagnostics. The
+    // caller distinguishes a no-device skip from other CUDA failures.
+    if (status == -1 || !WIFEXITED(status) ||
+        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
@@ -1342,8 +1406,8 @@ int main() {
     };
 
     std::string prog = "#include <cstdio>\n#include <cuda_runtime.h>\n\n";
-    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) "
-            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); } while (0)\n\n";
+    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) { "
+            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); return 77; } } while (0)\n\n";
     prog += kernelSrc + "\n";
     prog += "int main() {\n";
     prog += "    float hExt0[] = " + formatArrayLiteral(xVals) + ";\n";
@@ -1360,21 +1424,27 @@ int main() {
     prog += "    CUDA_CHECK(cudaDeviceSynchronize());\n";
     prog += "    float hOut = 0.0f;\n";
     prog += "    CUDA_CHECK(cudaMemcpy(&hOut, dOut, sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result (0/garbage without a real GPU): %f\\n\", hOut);\n";
+    prog += "    printf(\"kernel result: %f\\n\", hOut);\n";
     prog += "    CUDA_CHECK(cudaFree(dExt0)); CUDA_CHECK(cudaFree(dOut));\n";
     prog += "    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch18_043.cu", prog);
-    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=sm_70 -o /tmp/hammer_ch18_043 /tmp/hammer_ch18_043.cu 2>&1");
+    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o /tmp/hammer_ch18_043 /tmp/hammer_ch18_043.cu 2>&1");
     bool compileClean = compileLog.find("error") == std::string::npos;
     printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- clean compile)\n" : compileLog.c_str());
     printf("self-check: nvcc accepts the generated atomicAdd()-based kernel (%s)\n\n", compileClean ? "confirmed" : "MISMATCH");
 
     std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_043 2>&1");
     printf("--- Running the compiled binary ---\n\n%s\n", runOutput.c_str());
-    bool honestlyReportsNoDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
-    printf("self-check: honestly reports no CUDA-capable device, same as Section 18.1 (%s)\n\n",
-           honestlyReportsNoDevice ? "confirmed" : "MISMATCH");
+    bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
+    if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
+    bool gpuMatches = runOutput.find("CUDA error") == std::string::npos;
+    try {
+        size_t pos = runOutput.find("kernel result:");
+        if (pos == std::string::npos) gpuMatches = false;
+        else gpuMatches = gpuMatches && std::fabs(std::stof(runOutput.substr(pos + std::string("kernel result:").size())) - 11.0f) <= 1e-2f;
+    } catch (const std::exception&) { gpuMatches = false; }
+    printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
     printf("--- The host-side reference: same emitSteps() body, run for real on the CPU ---\n\n");
     std::string cpuFuncSrc = generateCpuReductionFunction("compute_s_cpu", sLowered);
@@ -1397,7 +1467,7 @@ int main() {
     printf("self-check: this IS the number the kernel's own arithmetic computes -- proven by real\n");
     printf("execution of the identical emitSteps() body on the CPU (%s)\n", cpuMatches ? "confirmed" : "MISMATCH");
 
-    bool allOk = compileClean && honestlyReportsNoDevice && cpuMatches;
+    bool allOk = compileClean && gpuMatches && cpuMatches;
     return allOk ? 0 : 1;
 }
 ```
@@ -1465,6 +1535,15 @@ execution of the identical emitSteps() body on the CPU (confirmed)
 
 ## 18.3 Putting It Together: A Full CUDA Program, Compiled End to End
 
+<!-- hammer:figure:18.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Validate the full generated GPU program](../images/concepts/18-03.svg?v=6a9b424a0270)](../images/concepts/18-03.svg?v=6a9b424a0270)
+
+<figcaption>Check API calls, launch errors and completed device results.</figcaption>
+</figure>
+<!-- hammer:figure:18.3:end -->
+
 ### Intuition
 
 Sections 18.1 and 18.2 each generated ONE kernel in isolation, with its own inputs handed to it as ready-made device buffers. A real compiler has to do more: given an entire GRAPH, it has to generate one kernel per node, generate the HOST-SIDE driver code that allocates every buffer, copies the leaf inputs in, launches every kernel in the right order with each node's own inputs pointing at whichever earlier kernel produced them, and copies the final result back -- Chapter 17's own `generateFullProgram()`, now targeting a CUDA grid instead of a single CPU thread. This section builds that glue and points it at the same graph Chapter 16 and Chapter 17 both already used to make a specific, repeated claim: Chapter 16's own 10-node capstone, run through `boundedReductionFusionPass()` twice, once uncapped (5 nodes, 3 kernels) and once with `maxChainLength=3` (6 nodes, 4 kernels) -- two structurally different CUDA programs, generated from the same original graph, that this section proves compute the exact same final number.
@@ -1524,7 +1603,7 @@ UNCAPPED (5 nodes -> 3 kernels)              CAPPED, maxChainLength=3 (6 nodes -
 // same math," now proven on the target this whole book has been building
 // toward. Each generated .cu program is compiled with real nvcc (a genuine
 // toolchain check on a nontrivial, multi-kernel program) and run, honestly
-// reporting this toolchain's real constraint -- no physical GPU exists on
+// historically reporting the original environment's constraint -- no GPU existed on
 // either side of it, checked via CUDA_CHECK exactly as Sections 18.1 and
 // 18.2 already checked it, not glossed over. The actual numeric proof comes
 // from the SAME emitSteps() step sequences, generated instead as CPU
@@ -1538,7 +1617,13 @@ UNCAPPED (5 nodes -> 3 kernels)              CAPPED, maxChainLength=3 (6 nodes -
 //
 // Compile: g++ -x c++ -std=c++17 -Wall -Wextra -O2 044_a_full_cuda_program_from_ir_to_gpu_end_to_end.cu -o 044_driver
 // Run:     ./044_driver
+// Override for the test GPU, including kernels compiled by this generator.
+#ifndef HAMMER_CUDA_ARCH
+#define HAMMER_CUDA_ARCH "sm_70"
+#endif
+
 #include <cstdio>
+#include <sys/wait.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -2056,8 +2141,8 @@ static std::string generateFullCudaProgram(const Graph& g, const std::map<int, S
                                             const std::map<std::string, std::vector<float>>& inputArrays) {
     TopoResult topo = topologicalSort(g);
     std::string prog = "#include <cstdio>\n#include <cuda_runtime.h>\n\n";
-    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) "
-            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); } while (0)\n\n";
+    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) { "
+            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); return 77; } } while (0)\n\n";
 
     std::map<int, std::string> kernelNameById;
     std::map<int, LoweredNode> loweredById;
@@ -2114,7 +2199,7 @@ static std::string generateFullCudaProgram(const Graph& g, const std::map<int, S
     }
     prog += "    float h_y;\n";
     prog += "    CUDA_CHECK(cudaMemcpy(&h_y, d_y, sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result y (0/garbage without a real GPU): %f\\n\", h_y);\n";
+    prog += "    printf(\"kernel result y: %f\\n\", h_y);\n";
     for (int id : topo.order) prog += "    CUDA_CHECK(cudaFree(d_" + g.node(id)->debugName + "));\n";
     prog += "    return 0;\n}\n";
     return prog;
@@ -2183,7 +2268,12 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    // A generated program uses 77 for fail-fast CUDA diagnostics. The
+    // caller distinguishes a no-device skip from other CUDA failures.
+    if (status == -1 || !WIFEXITED(status) ||
+        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
@@ -2271,15 +2361,21 @@ int main() {
         std::string cudaProg = generateFullCudaProgram(fusedGraph, fusedShapes, fusedElementCounts, inputArrays);
         std::string cudaStem = std::string("/tmp/hammer_ch18_044_") + (variant == 0 ? "uncapped" : "capped");
         writeFile(cudaStem + ".cu", cudaProg);
-        std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=sm_70 -o " + cudaStem + " " + cudaStem + ".cu 2>&1");
+        std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o " + cudaStem + " " + cudaStem + ".cu 2>&1");
         bool compileClean = compileLog.find("error") == std::string::npos;
         if (compileClean) printf("nvcc compile (%zu kernels): clean\n", kernelCount);
         else printf("nvcc compile (%zu kernels): FAILED:\n%s\n", kernelCount, compileLog.c_str());
 
         std::string runOutput = runShellCaptureAll(cudaStem + " 2>&1");
-        bool honestlyReportsNoDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
-        printf("running the compiled binary: honestly reports no CUDA-capable device at every\n");
-        printf("CUDA_CHECK'd call, same as Sections 18.1 and 18.2 (%s)\n\n", honestlyReportsNoDevice ? "confirmed" : "MISMATCH");
+        bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
+        if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
+        bool gpuMatches = runOutput.find("CUDA error") == std::string::npos;
+        try {
+            size_t pos = runOutput.find("kernel result y:");
+            if (pos == std::string::npos) gpuMatches = false;
+            else gpuMatches = gpuMatches && std::fabs(std::stof(runOutput.substr(pos + std::string("kernel result y:").size())) - fusedArrays.at("y")[0]) <= 1e-2f;
+        } catch (const std::exception&) { gpuMatches = false; }
+        printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
         // ---- CPU: generate, compile, run for real -- the actual numeric oracle ----
         std::string cpuProg = generateFullCpuProgram(fusedGraph, fusedShapes, fusedElementCounts, inputArrays);
@@ -2306,7 +2402,7 @@ int main() {
                generatedY, origArrays.at("y")[0], matchesOriginal ? "confirmed" : "MISMATCH");
 
         if (variant == 0) finalYUncapped = generatedY; else finalYCapped = generatedY;
-        allOk = allOk && compileClean && honestlyReportsNoDevice && everyBufferMatches && matchesOriginal;
+        allOk = allOk && compileClean && gpuMatches && everyBufferMatches && matchesOriginal;
     }
 
     printf("=== Two structurally different generated CUDA programs (3 kernels vs. 4 kernels,\n");
@@ -2378,7 +2474,7 @@ structure, same math" claim to a real CUDA target for the first time (confirmed)
 
 ## Chapter Summary
 
-This chapter turned CUDA Hammer's fused IR into real, `nvcc`-compiled CUDA C++ for the first time. Section 18.1 built `emitSteps()`, a codegen core shared unchanged between a CPU wrapper and a CUDA wrapper, isolating the only two things a CPU-versus-GPU backend genuinely requires -- how an external input gets read (an indexed buffer array versus a named device pointer parameter, a real host/device memory-space distinction, not a style choice) and how ReLU's own max gets spelled (`std::max` versus `fmaxf`) -- and used it to generate a `__global__` elementwise kernel launching one thread per output element, compiled by real `nvcc`, run, and honestly checked to report this toolchain's real "no CUDA-capable device" constraint rather than silently returning garbage. Section 18.2 built the reduction case, explaining concretely why launching one thread per reduce element with a plain `*out += step;` is a genuine data race, fixing it with `atomicAdd()` (the correct, not the fastest, approach -- a stated limitation, not a hidden one), and proving its own generated kernel's arithmetic correct via a real, executed CPU counterpart matching a hand-derived sum. Section 18.3 closed the chapter with a full, multi-kernel CUDA program generated from Chapter 16's own 10-node capstone graph, run through `boundedReductionFusionPass()` both uncapped (3 kernels) and capped at `maxChainLength=3` (4 kernels) -- both compiling cleanly, both honestly reporting the same toolchain constraint, and both, via their real executed CPU counterparts, reporting the exact same `y=132.0` Chapter 16 and Chapter 17 already established -- extending this book's own "different fusion structure, same math" claim to a real CUDA target for the first time.
+This chapter emits elementwise and atomic-reduction CUDA kernels from shared step sequences, then composes a multi-kernel capstone under two fusion policies. The original host-only checks established compilation and CPU-reference arithmetic. The later A100 validation confirms the concrete device outputs and twelve direct sanitizer checks. Shared code generation keeps sequencing aligned; actual GPU execution is still required to validate backend behavior.
 
 ## Self-Check Questions
 
@@ -2387,7 +2483,7 @@ This chapter turned CUDA Hammer's fused IR into real, `nvcc`-compiled CUDA C++ f
 3. Section 18.2 opens by explaining why `*out += step0;`, executed by one thread per reduce element, is a data race. Concretely, what can go wrong, and how does `atomicAdd()` fix it?
 4. What CUDA API call is required immediately BEFORE launching an `atomicAdd()`-based reduction kernel, and what specifically goes wrong if it is skipped?
 5. This chapter states that `atomicAdd()` is the CORRECT approach to a GPU reduction but not the FASTEST one. What technique does it name as the faster alternative, and what, structurally, makes that alternative faster?
-6. Every CUDA program this chapter generates is compiled with `nvcc` but never actually executes its own kernel's arithmetic. What DOES get checked by running the compiled binary, and what separate, genuinely executed program proves the kernel's own arithmetic correct?
+6. What did the original no-GPU execution establish, and what additional checks does the later A100 run provide?
 7. Section 18.3's own `generateFullCudaProgram()` calls `cudaMemcpy` to copy data device-to-host exactly once, at the very end, for the node named `y`. Why is copying every intermediate buffer back unnecessary for this section's own verification strategy?
 8. The uncapped and capped CUDA programs in Section 18.3 have different kernel counts (3 versus 4) and different kernel signatures. What is proven to stay IDENTICAL between them, and by what mechanism?
 
@@ -2402,8 +2498,8 @@ Chapter 19, "Generating Vectorized CPU Code," targets the exact same `LoopNest`-
 3. Multiple threads perform a non-atomic READ, then MODIFY, then WRITE on the exact same memory address, with no guarantee about the order those reads and writes actually interleave across threads. Two threads can both read the same starting value before either one writes its own update, so one thread's contribution gets silently overwritten and lost -- the classic lost-update bug, and a near-certainty at any real thread count, not a rare edge case. `atomicAdd(out, value)` replaces the three separate, interruptible steps with a single hardware-guaranteed ATOMIC operation: no other thread's `atomicAdd` on the same address can interleave in the middle of it, so every thread's own contribution is correctly, indivisibly added.
 4. `cudaMemset(dOut, 0, sizeof(float))` is required immediately before the launch. `atomicAdd()` ADDS its value to whatever the output buffer already holds -- it does not initialize that buffer to zero itself. A freshly `cudaMalloc`'d buffer holds whatever bytes happened to already be in that device memory, not zero, so skipping the `cudaMemset` call would silently corrupt every real result into garbage-plus-the-correct-sum instead of the correct sum alone.
 5. The faster alternative named (but not implemented) is a shared-memory tree reduction or warp-shuffle instructions. What makes it faster, structurally, is combining values WITHIN a single thread block first -- using fast on-chip shared memory or direct register-to-register warp shuffles -- so that only ONE `atomicAdd()` per BLOCK, rather than one per THREAD, ever has to touch slower global memory, dramatically reducing contention on that single shared address as thread count grows.
-6. Running the compiled binary checks that each checked CUDA API call it actually reaches -- in program order, up to wherever execution stops -- honestly reports `"no CUDA-capable device is detected"` via its own `cudaError_t`, rather than crashing or silently returning uninitialized garbage; it does not validate that those calls would succeed, or behave as written, on real hardware, since this toolchain has no physical GPU on either side to test that against. A completely SEPARATE program -- the same `emitSteps()` step sequences, generated instead for `Target::Cpu`, chained through named buffers, compiled with `g++`, and genuinely EXECUTED as a real process -- proves the kernel's own underlying arithmetic is correct, matched against `evaluateArrays()` on every buffer.
-7. Copying every intermediate buffer back is unnecessary because this toolchain cannot execute the CUDA kernels at all -- every intermediate device buffer would just hold whatever `cudaMalloc` happened to leave there (since every `cudaMemcpy` and kernel launch honestly fails), so copying them back would only ever report the SAME "no CUDA-capable device" style failure this section's own top-line `y` result already reports once. The genuine per-buffer correctness check -- comparing every single buffer of the fused graph against `evaluateArrays()` -- is instead performed against the separately generated, separately compiled, and ACTUALLY EXECUTED CPU program, where every buffer really does get computed and really can be compared.
+6. The original no-GPU run established compilation and diagnostic handling only. CPU counterparts checked reference arithmetic. The later A100 run executes the generated CUDA kernels and compares042 outputs,043 reduction and both044 final results against the interpreter. Direct sanitizer checks add evidence for these concrete fixtures; neither shared source nor a CPU reference alone proves GPU correctness.
+7. The A100 capstone copies and compares the final y result for both fusion variants. The CPU reference checks each materialized buffer, but this does not imply every GPU intermediate was independently inspected. Device-side buffer checks or more targeted tests would be needed to localize a wrong final result. The current small fixtures plus sanitizer runs are useful evidence, not a general proof.
 8. What is proven identical is the FINAL COMPUTED NUMBER, `y = 132.0`, not the kernel count, the kernel signatures, or the generated CUDA text, all of which genuinely differ between the two variants. The mechanism is not the CUDA programs themselves (which cannot execute on this toolchain) -- it is each variant's own separately generated, separately compiled, and separately EXECUTED CPU counterpart (the identical `emitSteps()` step sequences targeting `Target::Cpu` instead of `Target::Cuda`), whose real, printed output is parsed back and compared, buffer by buffer, against `evaluateArrays()` run on that same fused graph, and whose final `y` value is compared directly against the other variant's own.
 
 ---
@@ -2411,3 +2507,33 @@ Chapter 19, "Generating Vectorized CPU Code," targets the exact same `LoopNest`-
 **Sources cited in this chapter:**
 
 None new. This chapter's own shared `emitSteps()` codegen core, CUDA kernel generators, and `atomicAdd()`-based reduction design are all original to this book, building directly on the `LoopNest`/`FusedStep` view Chapter 15 and Chapter 17 already established, verified against this book's own directly observed `nvcc` toolchain behavior (documented in this chapter's own opening section) rather than any external source.
+### Repeating runtime validation on an NVIDIA A10
+
+A10 has compute capability 8.6. Run `python3 tools/validate_gpu.py --arch sm_86 --sanitize` from the repository root on a CUDA host. The runner compiles both the generator drivers and their generated child kernels for `sm_86`, captures outputs, rejects no-device skips, and runs Compute Sanitizer across child processes when requested. The historical default `sm_70` is configurable using `HAMMER_CUDA_ARCH`; it is not an assertion that every current toolkit supports that target. Toolkit availability alone does not establish runtime correctness. [NVIDIA GPU capabilities](https://developer.nvidia.com/cuda/gpus)
+
+### Fresh GPU execution: NVIDIA A100, CUDA12.8
+
+The three generator drivers were built with `-arch=sm_80` and `HAMMER_CUDA_ARCH="sm_80"`, so their runtime-generated CUDA programs used the same target. The generated programs ran on an NVIDIA A100-PCIE-40GB (compute capability8.0):
+
+```text
+042 elementwise kernel:
+22.000000 66.000000 132.000000 220.000000 90.000000 182.000000
+296.000000 432.000000 190.000000 330.000000 492.000000 676.000000
+GPU numeric comparison against interpreter: confirmed
+
+043 atomic reduction: kernel result: 11.000000
+GPU numeric comparison against interpreter: confirmed
+
+044 uncapped graph: kernel result y: 132.000000
+044 capped graph:   kernel result y: 132.000000
+GPU numeric comparison against interpreter: confirmed (both variants)
+```
+
+All four generated CUDA executables were directly instrumented with ComputeSanitizer2025.1 using memcheck, racecheck and synccheck. Every run exited0 and reported zero errors or hazards. For example:
+
+```text
+========= ERROR SUMMARY: 0 errors
+========= RACECHECK SUMMARY: 0 hazards displayed (0 errors, 0 warnings)
+```
+
+Directly instrumenting the generated executables matters: this installation did not attach to the host-only driver's `popen` child tree, so wrapper-only runs were rejected as uninstrumented rather than counted as passes. These checks validate the chapter's concrete fixtures and their generated kernels; they do not establish performance or correctness for every possible shape. The A10 command above is a supported target configuration, not a claim that this A100 run used an A10.

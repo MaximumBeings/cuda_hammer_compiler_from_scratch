@@ -1,5 +1,14 @@
 # Chapter 31: Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline
 
+<!-- hammer:figure:opener-31:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline](../images/openers/31.svg?v=10658c5bb53e)](../images/openers/31.svg?v=10658c5bb53e)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-31:end -->
+
 Parts 1 through 5 built CUDA Hammer itself, piece by piece: its IR
 (Part 1), its optimization passes (Part 2), its fusion engine (Part 3),
 its code generators (Part 4), its autotuner (Part 5). Part 6 turned
@@ -67,6 +76,15 @@ every chapter in this book has used since Chapter 1:
 ```
 
 ## 31.1 -- Calibrated brightness/contrast normalization
+
+<!-- hammer:figure:31.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Calibration parameters define preprocessing](../images/concepts/31-01.svg?v=f7376c91c455)](../images/concepts/31-01.svg?v=f7376c91c455)
+
+<figcaption>Parameter units and clipping choices affect the result.</figcaption>
+</figure>
+<!-- hammer:figure:31.1:end -->
 
 A real vision pipeline rarely feeds raw pixel intensities straight into
 a model. It normalizes first: measure a real statistic from the actual
@@ -477,6 +495,15 @@ image -- this is the invariant an affine calibration is supposed to guarantee (c
 
 ## 31.2 -- A real fixed 3x3 filter via im2col-style pre-shifted inputs
 
+<!-- hammer:figure:31.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Shifted inputs make a fixed stencil explicit](../images/concepts/31-02.svg?v=52752b010f6c)](../images/concepts/31-02.svg?v=52752b010f6c)
+
+<figcaption>Preparing shifted inputs is part of end-to-end cost.</figcaption>
+</figure>
+<!-- hammer:figure:31.2:end -->
+
 CUDA Hammer's IR has never had a "read my neighbor" op. Every graph
 since Chapter 4 combines whole tensors elementwise or reduces one down
 to a scalar; nothing shifts, slices, or gathers. A 3x3 spatial filter --
@@ -561,6 +588,7 @@ answer.
 // Run:     ./082_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -777,13 +805,16 @@ static Value buildConvGraph(Graph& g, const std::array<Value, 9>& shiftedInputs,
 
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-3f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!std::isfinite(a[i]) || !std::isfinite(b[i]) || std::fabs(a[i] - b[i]) > tol) return false;
     return true;
 }
 
 int main() {
     printf("=== Chapter 31 (Part 7): Section 31.2 -- a real fixed 3x3 filter via im2col-style pre-shifted inputs ===\n\n");
     bool allOk = true;
+    // A non-finite result must fail validation, never compare equal via NaN.
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::quiet_NaN()}, {0.0f});
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::infinity()}, {std::numeric_limits<float>::infinity()});
 
     std::vector<float> img = buildStepImage();
 
@@ -971,6 +1002,15 @@ a real 9.0x blow-up, matching CUTLASS's own stated tradeoff for this exact techn
 
 ## 31.3 -- The whole pipeline, fused and vectorized for real
 
+<!-- hammer:figure:31.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Validate a fused preprocessing pipeline](../images/concepts/31-03.svg?v=5b785dfa9a68)](../images/concepts/31-03.svg?v=5b785dfa9a68)
+
+<figcaption>Kernel-only timings can omit preparation and allocation.</figcaption>
+</figure>
+<!-- hammer:figure:31.3:end -->
+
 Files 081 and 082 each proved ONE real graph correct in isolation. This
 capstone chains both ideas into a single, larger real graph -- 9
 shifted-and-normalized inputs feeding a box blur AND a ReLU'd Sobel edge
@@ -1048,6 +1088,7 @@ that gets fused and vectorized.
 // Run:     ./083_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1651,7 +1692,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
 }
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-2f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!std::isfinite(a[i]) || !std::isfinite(b[i]) || std::fabs(a[i] - b[i]) > tol) return false;
     return true;
 }
 
@@ -1679,6 +1720,9 @@ static std::vector<float> shiftImage(const std::vector<float>& img, int dr, int 
 int main() {
     printf("=== Chapter 31 (Part 7): Section 31.3 -- the whole CV pipeline, fused and vectorized for real ===\n\n");
     bool allOk = true;
+    // A non-finite result must fail validation, never compare equal via NaN.
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::quiet_NaN()}, {0.0f});
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::infinity()}, {std::numeric_limits<float>::infinity()});
 
 #if defined(__x86_64__)
     Isa hostIsa = Isa::Avx2;

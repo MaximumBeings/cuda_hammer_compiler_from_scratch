@@ -1,0 +1,42 @@
+SOURCE: docs/part7/code/084_per_token_mean_centering_a_real_layernorm_building_block.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part7/code/084_per_token_mean_centering_a_real_layernorm_building_block.cpp', '-o', '/tmp/hammer-host-0z722mhs/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Chapter 32 (Part 7): Section 32.1 -- per-token mean-centering, a real LayerNorm building block ===
+
+4 tokens, embedding dimension 8 -- token1 is a CONSTANT vector (an edge case: every
+real variance computation must send it to exactly 0); token2 is already exactly zero-mean
+(centering must be a real no-op).
+
+--- running Chapter 30/31's own two-pass calibration graph ONCE PER TOKEN (host-orchestrated,
+    since CUDA Hammer's Sum has never supported a per-row/batched reduction) ---
+
+token0: measured mean (real Sum, Pass 1) =   4.5000 | centered[0..7] =  -3.500  -2.500  -1.500  -0.500   0.500   1.500   2.500   3.500
+         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
+         self-check: mean(centered) == 0 (confirmed)
+
+token1: measured mean (real Sum, Pass 1) =  10.0000 | centered[0..7] =   0.000   0.000   0.000   0.000   0.000   0.000   0.000   0.000
+         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
+         self-check: mean(centered) == 0 (confirmed)
+
+token2: measured mean (real Sum, Pass 1) =   0.0000 | centered[0..7] =  -4.000  -3.000  -2.000  -1.000   1.000   2.000   3.000   4.000
+         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
+         self-check: mean(centered) == 0 (confirmed)
+
+token3: measured mean (real Sum, Pass 1) =  50.0000 | centered[0..7] = -50.000 -50.000 -50.000 -50.000  50.000  50.000  50.000  50.000
+         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
+         self-check: mean(centered) == 0 (confirmed)
+
+self-check: token1 (a constant vector) centers to EXACTLY the zero vector, the real edge
+case a variance computation must also send to 0 (confirmed)
+self-check: token2 (already zero-mean) is UNCHANGED by centering, a real no-op (confirmed)
+
+--- the real gap this section works around, named directly ---
+
+this section computes x - mean only. Real LayerNorm also divides by sqrt(variance + eps)
+and applies a learned gamma/beta -- this IR has no sqrt and no division (Chapters 4-30 never
+added either), so that half is left out here rather than faked with a hardcoded constant
+standing in for a real standard deviation. Section 32.2 continues without it.
+
+=== Section 32.1 complete: all self-checks confirmed ===

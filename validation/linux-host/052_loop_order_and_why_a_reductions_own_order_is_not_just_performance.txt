@@ -1,0 +1,38 @@
+SOURCE: docs/part5/code/052_loop_order_and_why_a_reductions_own_order_is_not_just_performance.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part5/code/052_loop_order_and_why_a_reductions_own_order_is_not_just_performance.cpp', '-o', '/tmp/hammer-host-5czye1zl/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 21.2: enumerateLoopOrders() -- and what order does and doesn't change ===
+
+LoopNest [dim0:3, dim1:4] (elementwise, 12 total iterations): 2 loop orders
+
+  order dim0 -> dim1     -> visits 12 points, matches baseline order (confirmed)
+  order dim1 -> dim0     -> visits 12 points, matches baseline order (confirmed)
+
+self-check: all 2 loop orders visit the exact same 12 (dim0,dim1) index pairs -- for
+an ELEMENTWISE nest, loop order is a pure performance knob (cache locality), never a
+correctness concern, because every iteration writes a distinct output independent of every
+other iteration (confirmed)
+
+--- Why a reduction's own summation ORDER is not just a performance knob ---
+
+float32 has a 24-bit mantissa: every integer up to 2^24 = 16,777,216 is exactly
+representable, but past that point the gap between representable values (the ULP)
+exceeds 1.0 -- so adding 1.0f to a value already at 2^24 can do NOTHING AT ALL.
+
+same 17 real float32 values, two different (both perfectly valid) summation orders:
+
+  forward order (big value first, then sixteen +1.0f):  16777216.000000
+  reverse order (sixteen 1.0f summed first, big value added once): 16777232.000000
+  true mathematical sum:                                 16777232.000000
+
+self-check: forward order loses ALL sixteen +1.0f increments (result == the big value alone,
+unchanged) while reverse order recovers the exact mathematical answer (confirmed) -- neither
+program has a bug; float32 addition is genuinely not associative, and this is exactly why
+every array comparison since Chapter 17 (evaluateArrays() vs. generated code) has used a
+TOLERANCE (1e-3f, 1e-2f) instead of exact equality -- not a hedge, a direct consequence of
+this real, measurable fact. A reduction's own summation order -- partial sums, a tree
+reduction, Chapter 19's own lane-parallel vector accumulator -- is a real schedule choice a
+later autotuner may want to search over, but it is the ONE schedule dimension in this
+chapter that can change the actual floating-point ANSWER, not just how fast it arrives.

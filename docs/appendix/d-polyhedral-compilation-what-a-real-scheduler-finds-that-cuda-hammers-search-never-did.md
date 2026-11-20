@@ -1,5 +1,14 @@
 # Appendix D: Polyhedral Compilation -- What a Real Scheduler Finds That CUDA Hammer's Search Never Did
 
+<!-- hammer:figure:appendix-D:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Polyhedral Compilation -- What a Real Scheduler Finds That CUDA Hammer's Search Never Did](../images/openers/appendix-d.svg?v=e2102d4530b2)](../images/openers/appendix-d.svg?v=e2102d4530b2)
+
+<figcaption>Appendix roadmap.</figcaption>
+</figure>
+<!-- hammer:figure:appendix-D:end -->
+
 Chapter 33.2's own honest boundary named a real gap directly: CUDA
 Hammer's IR has never had a loop or control-flow construct, so its own
 finite-difference heat stencil could only be expressed by unrolling a
@@ -54,6 +63,15 @@ still sent to the device and md5-verified byte-identical, same as every
 earlier chapter.
 
 ## D.1 -- A Genuine SCoP
+
+<!-- hammer:figure:D.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A Genuine SCoP](../images/concepts/d-01.svg?v=d11dfca0f2b4)](../images/concepts/d-01.svg?v=d11dfca0f2b4)
+
+<figcaption>Non-affine control flow and side effects limit applicability.</figcaption>
+</figure>
+<!-- hammer:figure:D.1:end -->
 
 This file writes Chapter 33's own real update rule --
 `w[t+1][i] = r*w[t][i-1] + (1-2r)*w[t][i] + r*w[t][i+1]`, `r=0.25` --
@@ -187,6 +205,15 @@ structure of a stencil from the loop's own array-subscript arithmetic,
 with no stencil-specific code anywhere in Polly itself.
 
 ## D.2 -- What Polly's Own Scheduler Finds, With Zero Measurement
+
+<!-- hammer:figure:D.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![What Polly's Own Scheduler Finds, With Zero Measurement](../images/concepts/d-02.svg?v=47143f894517)](../images/concepts/d-02.svg?v=47143f894517)
+
+<figcaption>Non-affine control flow and side effects limit applicability.</figcaption>
+</figure>
+<!-- hammer:figure:D.2:end -->
 
 Chapter 21 enumerated 128 real schedules over one
 small `LoopNest` by brute force; Chapter 23's hybrid autotuner pruned
@@ -333,6 +360,15 @@ such a reordering is still safe.
 
 ## D.3 -- Capstone: What's Actually Safe to Parallelize
 
+<!-- hammer:figure:D.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Capstone: What's Actually Safe to Parallelize](../images/concepts/d-03.svg?v=3ae0d6ef09aa)](../images/concepts/d-03.svg?v=3ae0d6ef09aa)
+
+<figcaption>Non-affine control flow and side effects limit applicability.</figcaption>
+</figure>
+<!-- hammer:figure:D.3:end -->
+
 A second, independent real SCoP, chosen to contrast
 directly with File 101's stencil: every iteration of this loop touches
 completely independent array elements, with no loop-carried dependence
@@ -347,6 +383,8 @@ at all.
  * (reused unchanged), where the same real analysis correctly finds the
  * opposite answer for the outer, time-carried loop.
  */
+// Parallel independence assumes a and b do not partially overlap.
+// Array parameter syntax decays to pointers and does not establish no-alias.
 #define N 100
 
 void axpy(double a[N], double b[N], double s) {
@@ -476,3 +514,5 @@ exists: the moment that stencil is written as the real loop it always
 was, structurally, a real, independent, off-the-shelf polyhedral
 compiler can reason about it in ways CUDA Hammer's own from-scratch
 autotuner, built for a completely different IR shape, never could.
+
+> **Aliasing precondition:** The AXPY independence claim assumes non-overlapping input/output regions (or an otherwise proven dependence-safe alias pattern). C array-parameter syntax does not guarantee this. Polly may need runtime alias checks/versioning before parallelizing pointer-based loops; a partially overlapping `a`/`b` pair can introduce loop-carried dependencies.

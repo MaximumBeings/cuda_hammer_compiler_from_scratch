@@ -1,5 +1,14 @@
 # Chapter 32: NLP / Transformers -- A Real Bag-of-Embeddings Classifier
 
+<!-- hammer:figure:opener-32:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![NLP / Transformers -- A Real Bag-of-Embeddings Classifier](../images/openers/32.svg?v=a92581fb822b)](../images/openers/32.svg?v=a92581fb822b)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-32:end -->
+
 Chapter 31 opened Part 7 with computer vision and closed it having kept
 Part 7's own opening promise exactly: no new `OpKind`, no new pass, no
 new backend -- only domain-shaped graph construction and one honest,
@@ -40,6 +49,15 @@ different real technique.
 ```
 
 ## 32.1 -- Per-token mean-centering, a real LayerNorm building block
+
+<!-- hammer:figure:32.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Mean-centering is one normalization component](../images/concepts/32-01.svg?v=867500f1b502)](../images/concepts/32-01.svg?v=867500f1b502)
+
+<figcaption>Centering alone is not full LayerNorm.</figcaption>
+</figure>
+<!-- hammer:figure:32.1:end -->
 
 Chapter 31 found a gap in CUDA Hammer's op set (no "read my neighbor"
 primitive) and worked around it with pure host-side staging: im2col
@@ -471,6 +489,15 @@ standing in for a real standard deviation. Section 32.2 continues without it.
 
 ## 32.2 -- Bag-of-embeddings averaging and a small unrolled linear classifier
 
+<!-- hammer:figure:32.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Pooling produces a bag representation](../images/concepts/32-02.svg?v=af3ab2f71bb1)](../images/concepts/32-02.svg?v=af3ab2f71bb1)
+
+<figcaption>This model omits token order and attention.</figcaption>
+</figure>
+<!-- hammer:figure:32.2:end -->
+
 Section 32.1 closed with 4 real, independently mean-centered token
 vectors. This section builds a real sentence classifier out of them,
 mirroring a real, well-documented, and deliberately simple architecture:
@@ -890,6 +917,15 @@ exactly cancel, a real property of THIS data, checked above, not assumed.
 
 ## 32.3 -- The whole classifier, fused and vectorized for real
 
+<!-- hammer:figure:32.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Compile the supported classifier graph](../images/concepts/32-03.svg?v=1a75ae4cbf98)](../images/concepts/32-03.svg?v=1a75ae4cbf98)
+
+<figcaption>This is a small fixed classifier, not a full transformer compiler.</figcaption>
+</figure>
+<!-- hammer:figure:32.3:end -->
+
 Files 084 and 085 each proved ONE real graph correct in isolation, the
 same two-step shape Chapter 31 used. This capstone takes Section 32.2's
 own graph -- unchanged, not reimplemented -- and runs it through
@@ -965,6 +1001,7 @@ branches.
 // Run:     ./086_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1568,7 +1605,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
 }
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-2f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!std::isfinite(a[i]) || !std::isfinite(b[i]) || std::fabs(a[i] - b[i]) > tol) return false;
     return true;
 }
 
@@ -1594,6 +1631,9 @@ static std::array<std::array<float, 8>, 3> buildClassWeights() {
 int main() {
     printf("=== Chapter 32 (Part 7): Section 32.3 -- the whole classifier, fused and vectorized for real ===\n\n");
     bool allOk = true;
+    // A non-finite result must fail validation, never compare equal via NaN.
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::quiet_NaN()}, {0.0f});
+    allOk = allOk && !arraysMatch({std::numeric_limits<float>::infinity()}, {std::numeric_limits<float>::infinity()});
     const int dim = 8;
 
 #if defined(__x86_64__)

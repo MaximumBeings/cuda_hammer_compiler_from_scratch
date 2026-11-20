@@ -1,0 +1,37 @@
+SOURCE: docs/part7/code/091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part7/code/091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp', '-o', '/tmp/hammer-host-5wj9bra0/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Chapter 34 (Part 7): Section 34.2 -- the whole binomial tree as ONE static graph (European put) ===
+
+real gap named directly, and the real finding this section is actually about: Section
+31.2's im2col shifts and Section 33.1's 1D stencil shifts both worked because their own
+neighbor relationship was REGULAR -- a fixed offset across a flat array, known only once
+that array's own real data existed. A binomial tree's own parent-child relationship is
+IRREGULAR but completely, statically known at BUILD time: V_i[j]'s two children are
+always exactly V_{i+1}[j] and V_{i+1}[j+1]. That is exactly what an ordinary CUDA Hammer
+Value reference already expresses -- the SAME mechanism Chapter 4's own diamond graph used
+for one node feeding two consumers. So this section needs NO im2col-style staging and NO
+host-orchestrated re-evaluation between levels (unlike Section 33.2's own fixed-depth
+chain): the WHOLE tree is built as ONE static graph, evaluated once.
+
+real tree graph: 65 nodes total -- 5 terminal payoff node(s), 10 backward-induction
+node(s) (N=4 steps -> 4+3+2+1 = 10 backward nodes), 5 shared Const parameters
+
+real CUDA Hammer graph's own European put price (root of the tree): 5.093463
+independent host-side reference (plain C++, never touches CUDA Hammer): 5.093463
+
+self-check: the graph's own root price matches the independent reference exactly (confirmed)
+self-check: 0 < price < K (100.0000), a real no-arbitrage bound on any put's own price (confirmed)
+
+--- what this section actually shows ---
+
+unlike Section 33.2's own honest workaround (unroll a fixed step count into the host
+driver, because this IR has no loop), this section needed no workaround for the tree's
+own recursive structure at all: a fixed, finite, completely statically-known DAG -- which
+is exactly what a binomial tree of depth N already is -- is exactly the shape CUDA
+Hammer's own graph model was built for since Chapter 4. Section 34.3 extends this SAME
+static graph to a harder real problem: American-style early exercise.
+
+=== Section 34.2 complete: all self-checks confirmed ===

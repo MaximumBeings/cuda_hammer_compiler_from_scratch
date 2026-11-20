@@ -1,5 +1,18 @@
 # 12. Why Fusion Matters: Memory-Bound vs. Compute-Bound Kernels
 
+<!-- hammer:figure:opener-12:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Why Fusion Matters: Memory-Bound vs. Compute-Bound Kernels](../images/openers/12.svg?v=130e4b897d43)](../images/openers/12.svg?v=130e4b897d43)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-12:end -->
+
+!!! note "Analytical model, not GPU timing"
+    The byte counters count logical array/IR accesses under the stated materialization model. They do not measure HBM transactions, cache reuse, launch timing, occupancy, or achieved throughput. Roofline classifications are optimistic model predictions, not experimentally established bottlenecks; for multiple kernels, per-kernel bounds and launch costs must be considered separately.
+
+
 **What you will understand:** arithmetic intensity -- the ratio of total FLOPs to total bytes moved -- and why that ratio, not either quantity alone, determines whether a kernel's runtime is limited by how fast a GPU can compute or by how fast it can move data; the roofline model, which turns that ratio into a concrete classification using one real GPU's own published peak numbers; and, measured on both a hand-picked chain and a real `Graph` from this book's own IR, exactly how much fusion raises that ratio -- the quantitative case Part 3's actual fusion passes exist to act on.
 
 **What you need to know first:** Chapter 1's memory-traffic model (`eager(N) = N * 2 * array_bytes` vs. `fused = 2 * array_bytes`), Chapter 4's `Value`/`Node`/`Graph` and `topologicalSort()`, Chapter 6's `Shape` and `inferShapes()`, and Chapter 9's "the last node is the graph's own output" convention.
@@ -31,6 +44,15 @@ WHAT THIS CHAPTER ADDS TO CHAPTER 1's OWN ARGUMENT:
 ```
 
 ## 12.1 Arithmetic Intensity: The Ratio That Predicts Performance
+
+<!-- hammer:figure:12.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Arithmetic intensity compares work and traffic](../images/concepts/12-01.svg?v=8ba765c42526)](../images/concepts/12-01.svg?v=8ba765c42526)
+
+<figcaption>Logical array traffic is not necessarily measured DRAM traffic.</figcaption>
+</figure>
+<!-- hammer:figure:12.1:end -->
 
 ### Intuition
 
@@ -200,6 +222,15 @@ traffic stays flat while fused work keeps growing, so the ratio climbs without b
     `AI_fused` climbing from `0.125` to `125000` FLOPs/byte as `K` grows from 1 to 1,000,000 is a real, computed fact -- but nothing so far says whether any particular value on that climb actually matters. A ratio only becomes an answer once it is compared against something. Section 12.2 supplies that something: a real GPU's own ridge point.
 
 ## 12.2 The Roofline Model: A Real GPU's Ridge Point
+
+<!-- hammer:figure:12.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Roofline is a performance bound](../images/concepts/12-02.svg?v=494cb17eee18)](../images/concepts/12-02.svg?v=494cb17eee18)
+
+<figcaption>Peak specifications and simplified models are not benchmark results.</figcaption>
+</figure>
+<!-- hammer:figure:12.2:end -->
 
 ### Intuition
 
@@ -389,6 +420,15 @@ intensity is fixed at 0.125000 FLOPs/byte forever, by construction.
 
 ## 12.3 Measuring Fusion's Effect on CUDA Hammer's Own Graph
 
+<!-- hammer:figure:12.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Fusion changes the modeled traffic](../images/concepts/12-03.svg?v=26273db9f060)](../images/concepts/12-03.svg?v=26273db9f060)
+
+<figcaption>Register pressure and launch details can still affect runtime.</figcaption>
+</figure>
+<!-- hammer:figure:12.3:end -->
+
 ### Intuition
 
 Sections 12.1 and 12.2 both worked from one convenient, hand-picked shape: a straight chain, where every node has exactly one consumer and exactly one producer. A real tensor graph is rarely that tidy -- Chapter 4's own very first example graph, the diamond built in File 005, has a node (`t1`) with *two* consumers. An unfused kernel for each of `t1`'s two consumers has to read `t1` from memory separately, once per consumer -- a second, different kind of wasted traffic that a straight chain's analysis never exercises at all. Measuring fusion's benefit on a real `Graph`, not just a formula, means confronting that case directly.
@@ -441,6 +481,7 @@ WHY A SHARED NODE COSTS MORE THAN A CHAIN'S ANALYSIS ALONE WOULD SUGGEST:
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp -o 026_measuring_fusions_effect_on_cuda_hammers_own_graph
 // Run:     ./026_measuring_fusions_effect_on_cuda_hammers_own_graph
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -556,7 +597,12 @@ static std::string shapeStr(const Shape& s) {
 
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 

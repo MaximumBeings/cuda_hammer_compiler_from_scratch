@@ -1,5 +1,18 @@
 # 6. Graph Validation and Shape Inference
 
+<!-- hammer:figure:opener-6:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Graph Validation and Shape Inference](../images/openers/06.svg?v=9a1e5f86acca)](../images/openers/06.svg?v=9a1e5f86acca)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-6:end -->
+
+!!! note "Shape scope"
+    These examples accept positive static dimensions and rank-zero scalars. Zero-sized/dynamic dimensions are outside this teaching IR. Invalid negative or zero extents are rejected rather than propagated as tensor sizes.
+
+
 **What you will understand:** given a `Graph` of `Input`/`Const`/`Add`/`Mul`/`ReLU` nodes -- built by hand in Chapter 4, or parsed from text in Chapter 5 -- how to determine whether it is actually a *valid* tensor computation, and how to compute the shape of every node's own output without a user ever stating it for a computed value. This is the last piece Part 1 needs: Part 2's optimization passes all assume they are working on a graph that has already been checked this way.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph` and its topological sort (`topologicalSort()`, reused completely unchanged in this chapter), and Chapter 2's vocabulary for what a "pass" is.
@@ -27,6 +40,15 @@ WHAT THIS CHAPTER ADDS (a SEPARATE side table, keyed by node id):
 ```
 
 ## 6.1 What "Valid" Means for a Tensor Graph
+
+<!-- hammer:figure:6.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Graph validation checks contracts](../images/concepts/06-01.svg?v=165425c00b5c)](../images/concepts/06-01.svg?v=165425c00b5c)
+
+<figcaption>Validation is necessary before interpretation and lowering.</figcaption>
+</figure>
+<!-- hammer:figure:6.1:end -->
 
 ### Intuition
 
@@ -291,6 +313,8 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
             if (it == declaredShapes.end()) {
                 throw std::runtime_error(context + ": no declared shape was provided for this leaf node");
             }
+            for (int d : it->second.dims)
+                if (d <= 0) throw std::runtime_error(context + ": dimensions must be positive");
             shapes[id] = it->second;
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             const Shape& lhs = shapes.at(n->inputs[0].nodeId);
@@ -397,6 +421,15 @@ ReLU (t3) -- correctly infers to [3, 4] (confirmed)
 
 ## 6.2 Inferring Shapes by Walking the Graph in Topological Order
 
+<!-- hammer:figure:6.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Shape inference follows dependencies](../images/concepts/06-02.svg?v=0ea1bea3e80e)](../images/concepts/06-02.svg?v=0ea1bea3e80e)
+
+<figcaption>Broadcasting must follow the implementation's actual supported rules.</figcaption>
+</figure>
+<!-- hammer:figure:6.2:end -->
+
 ### Intuition
 
 A relay race only works because each runner already has the baton in hand before they need to start running -- nobody is ever asked to run *before* the previous leg finishes. Shape inference has exactly this same dependency: a node's own output shape can only be computed once every one of its inputs' shapes is already known, which means visiting nodes in *some* order where a node's producers always come before it. Chapter 4 already built and proved exactly this ordering -- `topologicalSort()` -- for an entirely different reason (proving a graph has a valid execution order at all), and shape inference reuses that same function, unchanged, simply because the ordering guarantee it provides is exactly the one this new problem also needs.
@@ -443,6 +476,15 @@ File 009's own `inferShapes()` is short specifically because it delegates the ha
     For this chapter's own diamond graph, node ids happen to already be in a valid topological order (Chapter 4's own `addBinary`/`addUnary` API can only reference an already-existing node, so a node's own id is always assigned after every one of its producers' ids) -- so walking `g.nodes()` directly, in raw id order, would happen to give the same answer here. `inferShapes()` deliberately does not rely on that coincidence: it calls `topologicalSort()` and walks *its* `order` instead, because a future graph-construction API (a pass that rewrites or reorders nodes, for instance, which Part 2 starts building) is not guaranteed to keep id order and topological order in sync the way this chapter's simple, append-only construction API always does.
 
 ## 6.3 Catching a Real Shape Mismatch Before It Propagates
+
+<!-- hammer:figure:6.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A mismatch should stop compilation](../images/concepts/06-03.svg?v=4e4c84b559e3)](../images/concepts/06-03.svg?v=4e4c84b559e3)
+
+<figcaption>A failed shape check is not a runtime result.</figcaption>
+</figure>
+<!-- hammer:figure:6.3:end -->
 
 ### Intuition
 
@@ -630,6 +672,8 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
             if (it == declaredShapes.end()) {
                 throw std::runtime_error(context + ": no declared shape was provided for this leaf node");
             }
+            for (int d : it->second.dims)
+                if (d <= 0) throw std::runtime_error(context + ": dimensions must be positive");
             shapes[id] = it->second;
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             const Shape& lhs = shapes.at(n->inputs[0].nodeId);

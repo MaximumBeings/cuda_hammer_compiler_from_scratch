@@ -1,0 +1,11 @@
+Platform: macOS-26.6-arm64-arm-64bit-Mach-O
+nvcc: None
+compute-sanitizer: None
+mlir-opt: None
+opt: None
+valgrind: None
+perf: None
+107_the_same_autotune_and_cache_problem_through_tvms_own_real_metaschedule.py: Python syntax OK
+105_the_same_diamond_graph_through_tvm_relaxs_own_real_fusion_pipeline.py: Python syntax OK
+tvm import available: False
+torch import available: False

@@ -1,0 +1,42 @@
+SOURCE: docs/part5/code/053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part5/code/053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-tpgi00w4/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 21.3: unrolling, and the full schedule search space this chapter built toward ===
+
+--- Unrolling a real computation: out[i] = a[i]*2+1, extent=13 (not evenly divisible) ---
+
+  unrollFactor=2  -> 6 full trip(s) of 2 + a 1-element scalar tail, bit-for-bit
+                 identical to the un-unrolled result (confirmed)
+  unrollFactor=4  -> 3 full trip(s) of 4 + a 1-element scalar tail, bit-for-bit
+                 identical to the un-unrolled result (confirmed)
+  unrollFactor=8  -> 1 full trip(s) of 8 + a 5-element scalar tail, bit-for-bit
+                 identical to the un-unrolled result (confirmed)
+
+self-check: unlike Section 21.2's own reduction-order finding, unrolling an ELEMENTWISE loop
+never changes so much as one bit of the result -- every iteration is independent, so
+processing them W at a time instead of one at a time is a PURE performance knob (confirmed)
+
+--- The capstone: tile size x loop order x unroll factor, ONE real LoopNest ---
+
+LoopNest [dim0:6, dim1:8] (48 total iterations):
+  dim0 tile-size candidates: 4
+  dim1 tile-size candidates: 4
+  loop orders:               2
+  unroll-factor candidates:  4 (applied to the innermost loop, dim1, extent 8)
+
+cartesian product: 4 x 4 x 2 x 4 = 128 total schedules
+enumerateSchedules() actually produced: 128 schedules (confirmed)
+
+a few real schedules from that list:
+  [0] tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  [64] tiles=[dim0:1,dim1:4] order=dim0>dim1 unroll=1
+  [127] tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+
+self-check: 128 schedules for a TINY 2-loop, 48-iteration nest -- a real fused kernel in
+this book has more loops (multi-dim shapes, Chapter 6), larger extents, and this book's own
+candidate lists are already a REDUCED heuristic (Section 21.1), not the naive full search --
+the space only grows from here. Brute-force MEASURING every one is not how Chapter 23's own
+autotuner will work; Chapter 22 builds a cost model specifically to rank candidates without
+compiling and running every single one of them.

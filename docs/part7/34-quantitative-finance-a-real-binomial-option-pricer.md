@@ -1,5 +1,14 @@
 # Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer
 
+<!-- hammer:figure:opener-34:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Quantitative Finance -- A Real Binomial Option Pricer](../images/openers/34.svg?v=68f92e4b84ed)](../images/openers/34.svg?v=68f92e4b84ed)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-34:end -->
+
 Chapter 31 opened Part 7 with computer vision, finding no shift/gather
 primitive and working around it with host-side im2col staging. Chapter
 32 moved to NLP, finding no batched/per-row reduction and working
@@ -46,6 +55,15 @@ without unrolling.
 ```
 
 ## 34.1 -- Terminal payoff via ReLU, a real exact fit
+
+<!-- hammer:figure:34.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A put payoff can use a maximum](../images/concepts/34-01.svg?v=338130f82f8c)](../images/concepts/34-01.svg?v=338130f82f8c)
+
+<figcaption>The payoff is one part of the pricing model.</figcaption>
+</figure>
+<!-- hammer:figure:34.1:end -->
 
 A European option's own payoff at maturity is, by definition,
 `max(S_T - K, 0)` for a call and `max(K - S_T, 0)` for a put, where
@@ -490,6 +508,15 @@ Section 34.2 continues with the harder part: the tree's own backward induction.
 
 
 ## 34.2 -- The whole binomial tree as ONE static graph (European put)
+
+<!-- hammer:figure:34.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Backward induction prices a European put](../images/concepts/34-02.svg?v=00847dfe678f)](../images/concepts/34-02.svg?v=00847dfe678f)
+
+<figcaption>Risk-neutral parameters require a valid binomial model.</figcaption>
+</figure>
+<!-- hammer:figure:34.2:end -->
 
 This is the real finding this chapter is actually about. Section
 31.2's im2col shifts and Section 33.1's 1D stencil shifts both worked
@@ -952,6 +979,15 @@ static graph to a harder real problem: American-style early exercise.
 
 
 ## 34.3 -- The capstone: early exercise via ReLU-as-max, the American put, fused and vectorized
+
+<!-- hammer:figure:34.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![American exercise adds a local decision](../images/concepts/34-03.svg?v=1ca6f3d26666)](../images/concepts/34-03.svg?v=1ca6f3d26666)
+
+<figcaption>Numerical agreement is not a market valuation guarantee.</figcaption>
+</figure>
+<!-- hammer:figure:34.3:end -->
 
 An American option's holder may exercise at ANY interior node, not
 only at expiry. Wikipedia's own "Binomial options pricing model" page

@@ -1,0 +1,636 @@
+{
+  "platform": "Linux-6.8.0-1064-nvidia-x86_64-with-glibc2.39",
+  "machine": "x86_64",
+  "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "date": "2026-11-20T17:29:10.526535+00:00",
+  "results": [
+    {
+      "source": "docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.369,
+      "passed": true
+    },
+    {
+      "source": "docs/appendix/code/094_detecting_your_real_vector_isa_before_chapter_19.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.517,
+      "passed": true
+    },
+    {
+      "source": "docs/appendix/code/096_one_combined_toolchain_report_the_capstone.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.61,
+      "passed": true
+    },
+    {
+      "source": "docs/appendix/code/103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.895,
+      "passed": true
+    },
+    {
+      "source": "docs/appendix/code/104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.714,
+      "passed": true
+    },
+    {
+      "source": "docs/appendix/code/106_the_same_diamond_graph_through_cuda_hammers_own_real_fusion_pass.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.407,
+      "passed": true
+    },
+    {
+      "source": "docs/appendix/code/108_the_same_autotune_and_cache_problem_through_cuda_hammers_own_real_hybrid_autotuner.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 7.899,
+      "passed": true
+    },
+    {
+      "source": "docs/part0/code/001_eager_vs_fused_memory_traffic.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.449,
+      "passed": true
+    },
+    {
+      "source": "docs/part0/code/002_launch_overhead_and_synthesis.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.133,
+      "passed": true
+    },
+    {
+      "source": "docs/part0/code/003_parsing_lowering_and_ir.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.573,
+      "passed": true
+    },
+    {
+      "source": "docs/part0/code/004_constant_folding_pass.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.565,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/005_graph_representation_and_sharing.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.626,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/006_topological_order_and_cycle_detection.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.794,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/007_text_frontend_builds_graph_directly.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.228,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/008_frontend_error_handling.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.246,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/009_shape_inference_by_topological_walk.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.261,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/010_shape_validation_errors.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.41,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/011_printing_the_ir_as_reparseable_text.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.246,
+      "passed": true
+    },
+    {
+      "source": "docs/part1/code/012_visualizing_the_ir_as_graphviz_dot.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.377,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/013_pass_interface_and_a_first_transform_pass.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.063,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/014_pass_manager_runs_passes_and_validates_between_them.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.231,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/015_constant_folding_replaces_computation_with_its_answer.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.23,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/016_dead_code_elimination_from_the_graphs_own_output.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.067,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/017_folding_and_dce_together_through_chapter_8s_pass_manager.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.6,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/018_common_subexpression_elimination_reuses_what_already_exists.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.436,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/019_what_counts_as_the_same_a_structural_keys_real_limits.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.394,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/020_folding_cse_and_dce_together_a_three_chapter_pipeline.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.668,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/021_algebraic_simplification_the_additive_identity.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.33,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/022_multiplicative_identity_absorbing_zero_and_relu_idempotence.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.323,
+      "passed": true
+    },
+    {
+      "source": "docs/part2/code/023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.881,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/024_arithmetic_intensity_of_an_unfused_vs_fused_chain.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.343,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/025_the_roofline_model_and_a_real_gpus_ridge_point.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.369,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.154,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.443,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/028_fusion_boundaries_what_a_shared_value_forces.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.46,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.102,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.128,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/031_the_reduction_boundary_what_a_reductions_output_forces_downstream.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.064,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.247,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/033_from_shapes_to_loop_nests_giving_fused_nodes_real_iteration_bounds.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.004,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.786,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.999,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/036_a_taxonomy_of_fusion_boundaries_explaining_not_just_enforcing.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.843,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.071,
+      "passed": true
+    },
+    {
+      "source": "docs/part3/code/038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.537,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/039_from_scalars_to_arrays_a_real_per_element_interpreter.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.564,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/040_generating_real_loop_code_a_textual_c++_backend.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 4.202,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/041_lowering_a_whole_fused_graph.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 4.746,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/045_from_threads_to_lanes_a_portable_simd_elementwise_kernel_generator.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 4.216,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 4.352,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/047_a_whole_graph_vectorized_dispatch_reduction_and_a_real_fallback.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 5.787,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/048_extern_c_and_dlopen_a_function_pointer_from_generated_text.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 3.256,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/049_one_shared_library_many_functions_a_jit_module_for_a_whole_graph.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 3.647,
+      "passed": true
+    },
+    {
+      "source": "docs/part4/code/050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 5.081,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/051_tile_size_candidates_enumerating_one_loops_own_search_space.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.559,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/052_loop_order_and_why_a_reductions_own_order_is_not_just_performance.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 0.812,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.048,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/054_a_loop_overhead_cost_model_for_tile_size_and_unroll_factor.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 7.544,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/055_a_memory_stride_cost_model_for_loop_order.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 4.25,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/056_combining_both_cost_models_prediction_vs_measurement_for_real_schedules.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 5.613,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 3.136,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/058_real_codegen_for_a_full_schedule_tile_size_loop_order_and_unroll_factor_together.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 6.594,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 33.741,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/060_a_persistent_tuning_cache_keyed_by_loop_nest_shape.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 7.968,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/061_what_a_cache_key_must_capture.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 11.138,
+      "passed": true
+    },
+    {
+      "source": "docs/part5/code/062_caching_across_machines_why_the_key_needs_a_target_too.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 2.651,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/081_calibrated_brightness_contrast_normalization.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.608,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.634,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 5.92,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/084_per_token_mean_centering_a_real_layernorm_building_block.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.762,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.777,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/086_the_whole_classifier_fused_and_vectorized_for_real.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 5.498,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/087_a_real_1d_ftcs_finite_difference_heat_stencil_single_step.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.63,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/088_five_steps_unrolled_a_fixed_depth_chain_no_loop_construct.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.712,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/089_the_whole_stencil_chain_fused_and_vectorized_for_real.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 9.99,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/090_terminal_payoff_via_relu_a_real_exact_fit.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.529,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 1.657,
+      "passed": true
+    },
+    {
+      "source": "docs/part7/code/092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp",
+      "compile_exit": 0,
+      "run_exit": 0,
+      "elapsed_seconds": 5.902,
+      "passed": true
+    }
+  ],
+  "excluded_non_source_entries": [
+    "docs/appendix/code/._093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp",
+    "docs/appendix/code/._094_detecting_your_real_vector_isa_before_chapter_19.cpp",
+    "docs/appendix/code/._096_one_combined_toolchain_report_the_capstone.cpp",
+    "docs/appendix/code/._103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp",
+    "docs/appendix/code/._104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp",
+    "docs/appendix/code/._106_the_same_diamond_graph_through_cuda_hammers_own_real_fusion_pass.cpp",
+    "docs/appendix/code/._108_the_same_autotune_and_cache_problem_through_cuda_hammers_own_real_hybrid_autotuner.cpp",
+    "docs/part0/code/._001_eager_vs_fused_memory_traffic.cpp",
+    "docs/part0/code/._002_launch_overhead_and_synthesis.cpp",
+    "docs/part0/code/._003_parsing_lowering_and_ir.cpp",
+    "docs/part0/code/._004_constant_folding_pass.cpp",
+    "docs/part1/code/._005_graph_representation_and_sharing.cpp",
+    "docs/part1/code/._006_topological_order_and_cycle_detection.cpp",
+    "docs/part1/code/._007_text_frontend_builds_graph_directly.cpp",
+    "docs/part1/code/._008_frontend_error_handling.cpp",
+    "docs/part1/code/._009_shape_inference_by_topological_walk.cpp",
+    "docs/part1/code/._010_shape_validation_errors.cpp",
+    "docs/part1/code/._011_printing_the_ir_as_reparseable_text.cpp",
+    "docs/part1/code/._012_visualizing_the_ir_as_graphviz_dot.cpp",
+    "docs/part2/code/._013_pass_interface_and_a_first_transform_pass.cpp",
+    "docs/part2/code/._014_pass_manager_runs_passes_and_validates_between_them.cpp",
+    "docs/part2/code/._015_constant_folding_replaces_computation_with_its_answer.cpp",
+    "docs/part2/code/._016_dead_code_elimination_from_the_graphs_own_output.cpp",
+    "docs/part2/code/._017_folding_and_dce_together_through_chapter_8s_pass_manager.cpp",
+    "docs/part2/code/._018_common_subexpression_elimination_reuses_what_already_exists.cpp",
+    "docs/part2/code/._019_what_counts_as_the_same_a_structural_keys_real_limits.cpp",
+    "docs/part2/code/._020_folding_cse_and_dce_together_a_three_chapter_pipeline.cpp",
+    "docs/part2/code/._021_algebraic_simplification_the_additive_identity.cpp",
+    "docs/part2/code/._022_multiplicative_identity_absorbing_zero_and_relu_idempotence.cpp",
+    "docs/part2/code/._023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp",
+    "docs/part3/code/._024_arithmetic_intensity_of_an_unfused_vs_fused_chain.cpp",
+    "docs/part3/code/._025_the_roofline_model_and_a_real_gpus_ridge_point.cpp",
+    "docs/part3/code/._026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp",
+    "docs/part3/code/._027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body.cpp",
+    "docs/part3/code/._028_fusion_boundaries_what_a_shared_value_forces.cpp",
+    "docs/part3/code/._029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp",
+    "docs/part3/code/._030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest.cpp",
+    "docs/part3/code/._031_the_reduction_boundary_what_a_reductions_output_forces_downstream.cpp",
+    "docs/part3/code/._032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes.cpp",
+    "docs/part3/code/._033_from_shapes_to_loop_nests_giving_fused_nodes_real_iteration_bounds.cpp",
+    "docs/part3/code/._034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary.cpp",
+    "docs/part3/code/._035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion.cpp",
+    "docs/part3/code/._036_a_taxonomy_of_fusion_boundaries_explaining_not_just_enforcing.cpp",
+    "docs/part3/code/._037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow.cpp",
+    "docs/part3/code/._038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager.cpp",
+    "docs/part4/code/._039_from_scalars_to_arrays_a_real_per_element_interpreter.cpp",
+    "docs/part4/code/._040_generating_real_loop_code_a_textual_c++_backend.cpp",
+    "docs/part4/code/._041_lowering_a_whole_fused_graph.cpp",
+    "docs/part4/code/._045_from_threads_to_lanes_a_portable_simd_elementwise_kernel_generator.cpp",
+    "docs/part4/code/._046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized.cpp",
+    "docs/part4/code/._047_a_whole_graph_vectorized_dispatch_reduction_and_a_real_fallback.cpp",
+    "docs/part4/code/._048_extern_c_and_dlopen_a_function_pointer_from_generated_text.cpp",
+    "docs/part4/code/._049_one_shared_library_many_functions_a_jit_module_for_a_whole_graph.cpp",
+    "docs/part4/code/._050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp",
+    "docs/part5/code/._051_tile_size_candidates_enumerating_one_loops_own_search_space.cpp",
+    "docs/part5/code/._052_loop_order_and_why_a_reductions_own_order_is_not_just_performance.cpp",
+    "docs/part5/code/._053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward.cpp",
+    "docs/part5/code/._054_a_loop_overhead_cost_model_for_tile_size_and_unroll_factor.cpp",
+    "docs/part5/code/._055_a_memory_stride_cost_model_for_loop_order.cpp",
+    "docs/part5/code/._056_combining_both_cost_models_prediction_vs_measurement_for_real_schedules.cpp",
+    "docs/part5/code/._057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp",
+    "docs/part5/code/._058_real_codegen_for_a_full_schedule_tile_size_loop_order_and_unroll_factor_together.cpp",
+    "docs/part5/code/._059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp",
+    "docs/part5/code/._060_a_persistent_tuning_cache_keyed_by_loop_nest_shape.cpp",
+    "docs/part5/code/._061_what_a_cache_key_must_capture.cpp",
+    "docs/part5/code/._062_caching_across_machines_why_the_key_needs_a_target_too.cpp",
+    "docs/part7/code/._081_calibrated_brightness_contrast_normalization.cpp",
+    "docs/part7/code/._082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs.cpp",
+    "docs/part7/code/._083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp",
+    "docs/part7/code/._084_per_token_mean_centering_a_real_layernorm_building_block.cpp",
+    "docs/part7/code/._085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp",
+    "docs/part7/code/._086_the_whole_classifier_fused_and_vectorized_for_real.cpp",
+    "docs/part7/code/._087_a_real_1d_ftcs_finite_difference_heat_stencil_single_step.cpp",
+    "docs/part7/code/._088_five_steps_unrolled_a_fixed_depth_chain_no_loop_construct.cpp",
+    "docs/part7/code/._089_the_whole_stencil_chain_fused_and_vectorized_for_real.cpp",
+    "docs/part7/code/._090_terminal_payoff_via_relu_a_real_exact_fit.cpp",
+    "docs/part7/code/._091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp",
+    "docs/part7/code/._092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp"
+  ],
+  "raw_runner_exit": 1,
+  "note": "All 78 actual C++ lessons passed. The original archive also contained AppleDouble metadata; those non-source entries caused aggregate failure. The validator now excludes dotfiles. Raw records are preserved in raw-results.json."
+}

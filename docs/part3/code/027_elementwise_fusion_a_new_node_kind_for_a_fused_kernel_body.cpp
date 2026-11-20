@@ -312,7 +312,7 @@ static void printGraph(const Graph& g) {
         if (n->op != OpKind::FusedElementwise) {
             printf("  %%%d %s = %s(", n->id, n->debugName.c_str(), opKindStr(n->op).c_str());
             if (n->op == OpKind::Const) {
-                printf("%g", n->constValue);
+                printf("%.9g", n->constValue);
             } else {
                 for (size_t i = 0; i < n->inputs.size(); ++i) {
                     if (i) printf(", ");

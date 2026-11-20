@@ -1,0 +1,51 @@
+COMMAND: ['compute-sanitizer', '--tool', 'synccheck', '--target-processes', 'all', '--error-exitcode', '99', '/tmp/cuda-hammer-audit/validation/accuracy-fixes/gpu/042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.bin']
+========= COMPUTE-SANITIZER
+=== Section 18.1: from loops to threads -- a CUDA elementwise kernel generator ===
+
+--- Shared core: emitSteps() called with Target::Cpu vs. Target::Cuda, same steps ---
+
+CPU body (Target::Cpu):
+  float step0 = ext[0][(flat) % extCounts[0]] * ext[1][(flat) % extCounts[1]];
+  float step1 = std::max(0.0f, ext[0][(flat) % extCounts[0]]);
+  float step2 = step0 + step1;
+out[flat] = step2;
+
+CUDA body (Target::Cuda):
+  float step0 = ext0[(flat) % extCount0] * ext1[(flat) % extCount1];
+  float step1 = fmaxf(0.0f, ext0[(flat) % extCount0]);
+  float step2 = step0 + step1;
+out[flat] = step2;
+
+self-check: same number of steps, same sequencing, from the SAME emitSteps() call site,
+only the external-input read syntax and ReLU's own max differ (confirmed)
+
+--- Generated CUDA kernel ---
+
+__global__ void compute_out(const float* ext0, const float* ext1, long long extCount0, long long extCount1, float* out, long long n) {
+    long long flat = blockIdx.x * (long long)blockDim.x + threadIdx.x;
+    if (flat >= n) return;
+    float step0 = ext0[(flat) % extCount0] * ext1[(flat) % extCount1];
+    float step1 = fmaxf(0.0f, ext0[(flat) % extCount0]);
+    float step2 = step0 + step1;
+    out[flat] = step2;
+}
+
+--- nvcc compile ---
+
+(no output -- clean compile)
+
+self-check: nvcc accepts the generated .cu file as valid CUDA C++ (confirmed)
+
+--- Running the compiled binary (this toolchain has no physical GPU, on either side) ---
+
+kernel result: 22.000000 66.000000 132.000000 220.000000 90.000000 182.000000 296.000000 432.000000 190.000000 330.000000 492.000000 676.000000 
+
+GPU numeric comparison against interpreter: confirmed
+--- The host-side reference: same emitSteps() body, run for real on the CPU ---
+
+CPU (actually executed) result: 22.000000 66.000000 132.000000 220.000000 90.000000 182.000000 296.000000 432.000000 190.000000 330.000000 492.000000 676.000000 
+
+evaluateArrays(fused).out       = 22.000000 66.000000 132.000000 220.000000 90.000000 182.000000 296.000000 432.000000 190.000000 330.000000 492.000000 676.000000 
+self-check: this IS the number the kernel's own arithmetic computes -- proven by real
+execution of the identical emitSteps() body on the CPU (confirmed)
+========= Error: Target application terminated before first instrumented API call

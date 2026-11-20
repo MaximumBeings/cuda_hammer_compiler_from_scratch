@@ -98,8 +98,8 @@ if __name__ == "__main__":
 
     print()
     print("Real end-to-end execution: torch.compile(f, mode='max-autotune') "
-          "on CPU with no GPU present (the mode still runs; it just narrows "
-          "to backends that make sense without a GPU):")
+          "on CPU tensors (the mode still runs; it considers "
+          "CPU-capable candidates for these inputs):")
 
     def matmul(x, y):
         return x @ y
@@ -124,6 +124,5 @@ if __name__ == "__main__":
 
     print()
     print("Real torch.cuda.is_available():", torch.cuda.is_available())
-    print("(max-autotune ran and produced a correct result with zero "
-          "physical GPU present -- Inductor's own backend search degrades "
-          "to CPU-capable candidates automatically rather than failing)")
+    print("(max-autotune produced a CPU-tensor result; GPU availability "
+          "above is a separate host property, not the execution device)")

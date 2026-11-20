@@ -1,5 +1,14 @@
 # 14. Reduction Fusion
 
+<!-- hammer:figure:opener-14:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Reduction Fusion](../images/openers/14.svg?v=16fdfa73621f)](../images/openers/14.svg?v=16fdfa73621f)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-14:end -->
+
 **What you will understand:** `reductionFusionPass()`, the sixth real optimization pass to share Chapter 8's exact `TransformPass` signature unmodified -- the first genuinely SHAPE-CHANGING operator this book's IR has ever needed (`OpKind::Sum`), why a shape change forces a fusion rule Chapter 13's own machinery never had to enforce, and how much of Chapter 13's own infrastructure (byte-counting, `inferShapes()`, the pass-manager contract) keeps working unmodified versus what genuinely has to bend.
 
 **What you need to know first:** Chapter 13's entire IR and pass (`OpKind::FusedElementwise`, `FusedStep`, `resolveIntoGroup()`, `elementwiseFusionPass()`) -- this chapter extends all of it rather than starting over -- plus Chapter 6's `Shape`/`inferShapes()`, Chapter 8's `TransformPass`/`runPasses()`, and Chapter 9's `evaluate()`.
@@ -25,6 +34,15 @@ WHAT CHANGES, ELEMENTWISE-ONLY vs. WITH A REDUCTION:
 ```
 
 ## 14.1 A Shape-Changing Operator: Sum, FusedReduction, and reductionFusionPass()
+
+<!-- hammer:figure:14.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Reduction changes the output shape](../images/concepts/14-01.svg?v=4d6533e76bb3)](../images/concepts/14-01.svg?v=4d6533e76bb3)
+
+<figcaption>A reduction is not an elementwise expression substitution.</figcaption>
+</figure>
+<!-- hammer:figure:14.1:end -->
 
 ### Intuition
 
@@ -87,6 +105,7 @@ A FusedReduction NODE'S OWN SHAPE (compare Chapter 13's FusedElementwise):
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest.cpp -o 030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest
 // Run:     ./030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -241,8 +260,13 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
-    return n;  // an EMPTY dims vector (a scalar) is the empty product: 1 element, no special case needed
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
     size_t rank = std::max(a.dims.size(), b.dims.size());
@@ -771,6 +795,15 @@ generalization, not a separate pass with separate rules (confirmed)
 
 ## 14.2 The Reduction Boundary: What a Reduction's Output Forces Downstream
 
+<!-- hammer:figure:14.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A reduction creates a dependency barrier](../images/concepts/14-02.svg?v=d37356bc4b64)](../images/concepts/14-02.svg?v=d37356bc4b64)
+
+<figcaption>Cross-thread execution needs a valid synchronization strategy.</figcaption>
+</figure>
+<!-- hammer:figure:14.2:end -->
+
 ### Intuition
 
 Section 13.2 showed that a SHARED value -- read by more than one consumer -- forces a fusion boundary, because duplicating its computation into two different kernels risks the two copies disagreeing. This section shows a second, completely different reason a node can be forced to stand alone: even with exactly ONE consumer, a reduction's own output can never be inlined into that consumer, because there is no per-element correspondence left for a `PriorStep` operand to preserve. Two different reasons, two different rules -- and, on a graph where both apply to different nodes at once, both are respected correctly, with no interaction bugs between them.
@@ -824,6 +857,7 @@ GRAPH A (one reason to stand alone)         GRAPH B (two DIFFERENT reasons, same
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 031_the_reduction_boundary_what_a_reductions_output_forces_downstream.cpp -o 031_the_reduction_boundary_what_a_reductions_output_forces_downstream
 // Run:     ./031_the_reduction_boundary_what_a_reductions_output_forces_downstream
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -943,7 +977,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
@@ -1345,6 +1384,15 @@ self-check: evaluate(original, x=2,w=3).y2 = 6, evaluate(fused, ...).y2 = 6 (con
 
 ## 14.3 Real Savings: Reduction Fusion Through Chapter 8's PassManager, Measured in Bytes
 
+<!-- hammer:figure:14.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Fuse the producer into reduction work](../images/concepts/14-03.svg?v=ff6f4b3835f8)](../images/concepts/14-03.svg?v=ff6f4b3835f8)
+
+<figcaption>Reduction order can change floating-point rounding.</figcaption>
+</figure>
+<!-- hammer:figure:14.3:end -->
+
 ### Intuition
 
 Sections 14.1 and 14.2 established WHEN reduction fusion is safe. This section closes the chapter the way Chapter 13's own Section 13.3 did: plugging the real pass into Chapter 8's real, unmodified `PassManager`, and measuring REAL bytes moved on a real graph -- this time a clean chain ending in a reduction, with no sharing anywhere, so nothing stops it from fusing all the way down to a single kernel.
@@ -1398,6 +1446,7 @@ BEFORE vs. AFTER, ON A CLEAN CHAIN ENDING IN A REDUCTION (a=[3,4], b=[4], no sha
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes.cpp -o 032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes
 // Run:     ./032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1518,7 +1567,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {

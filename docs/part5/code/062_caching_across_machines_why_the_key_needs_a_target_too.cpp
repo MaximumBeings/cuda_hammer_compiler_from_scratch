@@ -236,6 +236,8 @@ private:
 
 // ==================== Section 24.3: caching across machines ====================
 
+// Coarse teaching key only: CPU model, compiler/flags, generator revision,
+// dtype/layout and numerical policy need additional production key fields.
 // targetId() names the real architecture this program is actually
 // compiled for, using the same predefined compiler macros a real build
 // system would check -- no runtime detection needed, because the target

@@ -1,0 +1,40 @@
+COMMAND: ['compute-sanitizer', '--tool', 'synccheck', '--target-processes', 'all', '--error-exitcode', '99', '/tmp/cuda-hammer-audit/validation/accuracy-fixes/gpu/043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.bin']
+========= COMPUTE-SANITIZER
+=== Section 18.2: reductions on the GPU -- avoiding a data race with atomicAdd() ===
+
+--- Why NOT a plain '*out += ...;' inside the kernel ---
+
+Launching one thread per reduce element (6 threads here) and having each do
+'*out += step0;' directly is a DATA RACE: multiple threads perform a non-atomic
+read-modify-write on the exact same address, with no guarantee any thread sees
+another's update -- the classic lost-update bug. atomicAdd() replaces that with a
+single hardware-guaranteed atomic operation per thread.
+
+--- Generated CUDA reduction kernel ---
+
+__global__ void compute_s(const float* ext0, long long extCount0, float* out) {
+    long long r = blockIdx.x * (long long)blockDim.x + threadIdx.x;
+    if (r >= 6) return;
+    float step0 = fmaxf(0.0f, ext0[(r) % extCount0]);
+    atomicAdd(out, step0);
+}
+
+--- nvcc compile ---
+
+(no output -- clean compile)
+
+self-check: nvcc accepts the generated atomicAdd()-based kernel (confirmed)
+
+--- Running the compiled binary ---
+
+kernel result: 11.000000
+
+GPU numeric comparison against interpreter: confirmed
+--- The host-side reference: same emitSteps() body, run for real on the CPU ---
+
+x = [-3, 5, -1, 2, 0, 4]  ->  relu(x) = [0, 5, 0, 2, 0, 4]  ->  sum = 11 (hand-derived)
+CPU (actually executed) result: 11.000000
+evaluateArrays(fused).s          = 11.000000
+self-check: this IS the number the kernel's own arithmetic computes -- proven by real
+execution of the identical emitSteps() body on the CPU (confirmed)
+========= Error: Target application terminated before first instrumented API call

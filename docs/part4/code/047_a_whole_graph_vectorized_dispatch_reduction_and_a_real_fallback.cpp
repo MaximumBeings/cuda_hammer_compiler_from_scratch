@@ -18,6 +18,8 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 047_a_whole_graph_vectorized_dispatch_reduction_and_a_real_fallback.cpp -o 047_driver
 // Run:     ./047_driver
+// Numerical policy: FMA contraction and vector reductions may change rounding.
+// These teaching backends permit contraction; they are not strict bitwise FP rewrites.
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -796,7 +798,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
 }
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-2f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!(std::fabs(a[i] - b[i]) <= tol)) return false;
     return true;
 }
 

@@ -1,0 +1,17 @@
+SOURCE: docs/appendix/code/094_detecting_your_real_vector_isa_before_chapter_19.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/appendix/code/094_detecting_your_real_vector_isa_before_chapter_19.cpp', '-o', '/tmp/hammer-host-3lc5aja_/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
+
+compile-time architecture macro: __x86_64__ defined
+-> Chapter 19's own generator will pick Isa::Avx2 for this machine.
+
+real /proc/cpuinfo check: avx2 flag PRESENT, fma flag PRESENT
+self-check: this CPU's own real advertised flags CONFIRM the compile-time
+assumption -- Chapter 19's AVX2/FMA path will genuinely compile and run here
+(confirmed)
+
+real result: read directly from this machine's own /proc/cpuinfo, not assumed
+from the compile-time architecture macro alone.

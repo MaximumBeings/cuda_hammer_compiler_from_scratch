@@ -1,5 +1,14 @@
 # 2. What a Compiler Pipeline Looks Like
 
+<!-- hammer:figure:opener-2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![What a Compiler Pipeline Looks Like](../images/openers/02.svg?v=9ea07cdb02d1)](../images/openers/02.svg?v=9ea07cdb02d1)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-2:end -->
+
 **What you will understand:** the general vocabulary every real compiler is built from -- lexing, parsing, an abstract syntax tree (AST), lowering, a linear intermediate representation (IR), a pass, and code generation -- built here on a tiny arithmetic expression language, genuinely implemented and run, before Part 1 ever starts building CUDA Hammer's own tensor-graph version of the same pipeline.
 
 **What you need to know first:** Chapter 1's argument for why fusing operations matters. Basic C++ (classes, recursion, `std::unique_ptr`). No prior compiler-construction background is assumed -- that is exactly what this chapter builds.
@@ -23,6 +32,15 @@ SOURCE TEXT        front end                     middle end                back 
 ```
 
 ## 2.1 Source Code to an Abstract Syntax Tree
+
+<!-- hammer:figure:2.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A frontend makes structure explicit](../images/concepts/02-01.svg?v=d0d9e9151203)](../images/concepts/02-01.svg?v=d0d9e9151203)
+
+<figcaption>Parsing establishes syntax; semantic validation is a separate step.</figcaption>
+</figure>
+<!-- hammer:figure:2.1:end -->
 
 ### Intuition
 
@@ -441,6 +459,15 @@ direct-AST-evaluated result (confirmed)
 
 ## 2.2 From an AST to a Linear IR
 
+<!-- hammer:figure:2.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Lowering changes representation](../images/concepts/02-02.svg?v=b2ac3a2b00ae)](../images/concepts/02-02.svg?v=b2ac3a2b00ae)
+
+<figcaption>The representation must preserve the program semantics.</figcaption>
+</figure>
+<!-- hammer:figure:2.2:end -->
+
 ### Intuition
 
 A tree is a natural shape for representing *how* an expression is structured, but it is an awkward shape for a pass to transform mechanically -- there's no single, ordered sequence of "steps" to walk through and rewrite. A linear IR fixes that: it's the same computation, flattened into an ordered list of simple instructions, each one computing exactly one operation and storing its result in a numbered temporary. This is the same flattening a recipe writer does converting "a dish that needs the sauce, which needs the reduction, which needs the stock" into a numbered list of steps a line cook can execute one at a time without needing to hold the whole recipe's structure in their head at once.
@@ -467,6 +494,15 @@ File 003's own `lower()` function (shown in full above, in Section 2.1's backgro
     Literal and `Variable` leaves never get an instruction in this lowering -- look at any locked IR block above and count: a 3-node subtree like `a + 2` produces exactly one instruction, `t0 = a + 2`, not three. Giving every AST node its own instruction is a real, common mistake in a first attempt at a lowering pass, and it isn't just wasteful: it also means a later pass has to work harder to see that `a` and `2` were ever related, since they'd be sitting in separate, disconnected instructions instead of appearing directly as one instruction's own operands.
 
 ## 2.3 Passes and Codegen: Transforming and Executing the IR
+
+<!-- hammer:figure:2.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Passes operate before code generation](../images/concepts/02-03.svg?v=8f7dba8fdde3)](../images/concepts/02-03.svg?v=8f7dba8fdde3)
+
+<figcaption>Execute and compare with a reference after lowering.</figcaption>
+</figure>
+<!-- hammer:figure:2.3:end -->
 
 ### Intuition
 

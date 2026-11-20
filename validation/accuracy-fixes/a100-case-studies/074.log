@@ -1,0 +1,21 @@
+Real torch._inductor.config autotuning fields (library defaults):
+  max_autotune = False
+  max_autotune_gemm = False
+  max_autotune_pointwise = False
+  coordinate_descent_tuning = False
+  autotune_local_cache = True
+  search_autotune_cache = False
+  max_autotune_gemm_backends = 'ATEN,TRITON,CPP'
+
+Compared against CUDA Hammer's own autotuning machinery:
+  Chapter 21 Schedule{tile_size_per_loop, loop_order, unroll_factor} <-> Inductor's own internal per-op Config objects (block sizes, num_warps, num_stages -- never exposed as a public dataclass the way CUDA Hammer's own Schedule is)
+  Chapter 23.3 hybrid cost-model-then-measurement autotuner <-> Inductor's own coordinate_descent_tuning=False (a real greedy local search over the config space, distinct from CUDA Hammer's own top-K-prune-then-measure hybrid) plus max_autotune_gemm_backends='ATEN,TRITON,CPP' (the real, named set of candidate implementations -- ATen's own library call, a real generated Triton kernel, or a real generated C++ kernel -- Inductor benchmarks against each other under max-autotune, a genuinely different search axis than CUDA Hammer's tile/order/unroll space: WHICH BACKEND, not just which schedule)
+  Chapter 24 TuningCache (plain-text, human-keyed, winner-only) <-> autotune_local_cache=True (True by default: a real persistent local autotuning cache, keeping this book's Chapter 27 Triton-vs-CUDA-Hammer disk-cache comparison consistent -- a third independent real production compiler defaulting to ON persistent caching, where CUDA Hammer's own TuningCache requires an explicit save)
+
+Real end-to-end execution: torch.compile(f, mode='max-autotune') on CPU tensors (the mode still runs; it considers CPU-capable candidates for these inputs):
+  max_autotune_gemm_backends temporarily set to 'ATEN,CPP'
+  Real correctness check: compiled vs. eager match = True
+
+Real torch.cuda.is_available(): True
+(max-autotune produced a CPU-tensor result; GPU availability above is a separate host property, not the execution device)
+EXIT=0

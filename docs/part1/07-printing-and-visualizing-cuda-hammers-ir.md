@@ -1,5 +1,18 @@
 # 7. Printing and Visualizing CUDA Hammer's IR
 
+<!-- hammer:figure:opener-7:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Printing and Visualizing CUDA Hammer's IR](../images/openers/07.svg?v=4c2678059b79)](../images/openers/07.svg?v=4c2678059b79)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-7:end -->
+
+!!! note "Text-format scope"
+    Finite FP32 constants are emitted with nine significant digits and parsed with signed/scientific notation. Source names must be valid frontend identifiers. NaN/infinity literals and arbitrary debug-name escaping are outside this small text format.
+
+
 **What you will understand:** how to turn an in-memory `Graph` -- a heap of `Node` objects linked by `Value{nodeId, outputIndex}`, invisible to anyone not stepping through it in a debugger -- into two genuinely different, genuinely useful external views: text that Chapter 5's own parser can read straight back in, and a real Graphviz picture a human can look at to see the graph's actual shape. This closes Part 1.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph`, Chapter 5's tokenizer and parser (`lexLine`/`parseStatement`/`parseProgram`), and Chapter 6's `Shape`/`inferShapes()` -- this chapter reuses all three completely unchanged and adds nothing to any of them.
@@ -32,6 +45,15 @@ WHAT A Graph LOOKS LIKE FROM THE OUTSIDE, RIGHT NOW (Chapters 4-6):
 ```
 
 ## 7.1 Why an IR You Can't Print Is a Debugging Dead End
+
+<!-- hammer:figure:7.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Readable IR reveals structure](../images/concepts/07-01.svg?v=f5564d7cc9e4)](../images/concepts/07-01.svg?v=f5564d7cc9e4)
+
+<figcaption>A printer is a debugging interface, not a correctness proof.</figcaption>
+</figure>
+<!-- hammer:figure:7.1:end -->
 
 ### Intuition
 
@@ -71,6 +93,15 @@ The distinction this section is making precise -- a *debug dump* versus a *seria
     Chapters 4, 5, and 6 each wrote their own small, slightly different print helper inside a `main()`, purely to make that one chapter's own terminal output readable while writing it -- none of them were built to be read back in, and none of them were meant to survive past that chapter. This chapter's own `printGraphAsSource()` (Section 7.2) is the first one in this book actually designed as a serialization, checked by the strongest test available: parsing its own output and confirming the result is structurally identical to what was printed. A print function that has never been tested this way should not be assumed to be one, no matter how readable its output looks.
 
 ## 7.2 A Printer That Is a Real Inverse of the Parser
+
+<!-- hammer:figure:7.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Round trips test the text interface](../images/concepts/07-02.svg?v=3656d813ff2d)](../images/concepts/07-02.svg?v=3656d813ff2d)
+
+<figcaption>Compare graph semantics rather than incidental pointer identity.</figcaption>
+</figure>
+<!-- hammer:figure:7.2:end -->
 
 ### Intuition
 
@@ -207,6 +238,9 @@ File 011 below proves all of this concretely: it prints the familiar diamond gra
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 011_printing_the_ir_as_reparseable_text.cpp -o 011_printing_the_ir_as_reparseable_text
 // Run:     ./011_printing_the_ir_as_reparseable_text
 #include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <cstring>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -285,11 +319,15 @@ static std::vector<Token> lexLine(const std::string& line) {
             toks.push_back({TokKind::Ident, line.substr(start, i - start), 0.0f});
             continue;
         }
-        if (isdigit(static_cast<unsigned char>(c)) || c == '.') {
-            size_t start = i;
-            while (i < line.size() && (isdigit(static_cast<unsigned char>(line[i])) || line[i] == '.')) ++i;
-            std::string text = line.substr(start, i - start);
-            toks.push_back({TokKind::Number, text, std::stof(text)});
+        if (isdigit(static_cast<unsigned char>(c)) || c == '.' || c == '-' || c == '+') {
+            const char* start = line.c_str() + i;
+            char* end = nullptr;
+            float value = std::strtof(start, &end);
+            if (end == start || !std::isfinite(value))
+                throw std::runtime_error("lex: invalid or nonfinite numeric literal");
+            size_t count = static_cast<size_t>(end - start);
+            toks.push_back({TokKind::Number, line.substr(i, count), value});
+            i += count;
             continue;
         }
         switch (c) {
@@ -403,6 +441,7 @@ static bool graphsStructurallyEqual(const Graph& a, const Graph& b) {
         const Node* na = a.node(static_cast<int>(i));
         const Node* nb = b.node(static_cast<int>(i));
         if (na->op != nb->op) return false;
+        if (na->op == OpKind::Const && std::memcmp(&na->constValue, &nb->constValue, sizeof(float)) != 0) return false;
         if (na->inputs.size() != nb->inputs.size()) return false;
         for (size_t j = 0; j < na->inputs.size(); ++j) {
             if (na->inputs[j].nodeId != nb->inputs[j].nodeId) return false;
@@ -436,7 +475,7 @@ static std::string printGraphAsSource(const Graph& g) {
             // Const's one argument is a NUMBER, not a name -- print the
             // stored value itself, not a reference to another node.
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {
@@ -539,6 +578,15 @@ self-check: a graph containing a Const node also round-trips correctly (confirme
 ```
 
 ## 7.3 Seeing the Graph: Exporting to Real Graphviz DOT
+
+<!-- hammer:figure:7.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![DOT turns dependencies into edges](../images/concepts/07-03.svg?v=819bd21e9839)](../images/concepts/07-03.svg?v=819bd21e9839)
+
+<figcaption>Rendering requires Graphviz; DOT output alone is source text.</figcaption>
+</figure>
+<!-- hammer:figure:7.3:end -->
 
 ### Intuition
 
@@ -789,6 +837,8 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
             auto it = declaredShapes.find(id);
             if (it == declaredShapes.end()) throw std::runtime_error(context + ": no declared shape");
+            for (int d : it->second.dims)
+                if (d <= 0) throw std::runtime_error(context + ": dimensions must be positive");
             shapes[id] = it->second;
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
@@ -938,7 +988,7 @@ digraph IR {
 self-check: 6 node statements emitted, matching the graph's 6 nodes (confirmed)
 self-check: 7 edge statements emitted, matching the graph's 7 real input edges (confirmed)
 self-check: 'out' (n5) has exactly 2 incoming edges in the DOT text (confirmed)
-self-check: the real `dot` binary parsed this exact file without error (confirmed)
+(`dot` not found on this machine -- skipping the real-Graphviz validation step)
 ```
 
 !!! warning "[COMMON TRAP] Assuming a picture that looks right is proof the exporter is correct"

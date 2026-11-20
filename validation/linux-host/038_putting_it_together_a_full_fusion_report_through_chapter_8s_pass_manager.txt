@@ -1,0 +1,108 @@
+SOURCE: docs/part3/code/038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part3/code/038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager.cpp', '-o', '/tmp/hammer-host-r1dfza6f/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 16.3: one graph, every boundary this Part has ever built, at once ===
+
+--- Fusion report (Section 16.1's classifyNode(), extended with SizeCap) ---
+
+  %0 a    consumers=1  reasons=[Leaf]
+  %1 b    consumers=5  reasons=[Leaf]
+  %2 t1   consumers=1  reasons=[NotABoundary]
+  %3 t2   consumers=1  reasons=[NotABoundary]
+  %4 t3   consumers=1  reasons=[SizeCap]
+  %5 t4   consumers=1  reasons=[NotABoundary]
+  %6 t5   consumers=2  reasons=[Shared]
+  %7 s    consumers=1  reasons=[Reduction]
+  %8 y2   consumers=1  reasons=[NotABoundary]
+  %9 y    consumers=0  reasons=[GraphRoot]
+
+self-check: t3 alone carries SizeCap (chainDepth 3, a multiple of maxChainLength=3);
+t4 (chainDepth 4) does not (confirmed)
+
+--- UNCAPPED (boundedReductionFusionPass with no effective size limit) ---
+
+--- before any pass (10 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 t1 = ReLU(%0)
+  %3 t2 = Mul(%2, %1)
+  %4 t3 = Add(%3, %1)
+  %5 t4 = Mul(%4, %1)
+  %6 t5 = Add(%5, %1)
+  %7 s = Sum(%6)
+  %8 y2 = Mul(%6, %1)
+  %9 y = Add(%7, %8)
+
+--- after pass 'boundedReductionFusionPass(uncapped)' (5 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 t5 = FusedElementwise(external inputs: ext0=%0, ext1=%1)
+      step0 = ReLU(ext0)
+      step1 = Mul(step0, ext1)
+      step2 = Add(step1, ext1)
+      step3 = Mul(step2, ext1)
+      step4 = Add(step3, ext1)  <- this node's own output
+  %3 s = FusedReduction(external inputs: ext0=%2)
+      step0 = Sum(ext0)  [reduces 8 elements]  <- this node's own output
+  %4 y = FusedElementwise(external inputs: ext0=%3, ext1=%2, ext2=%1)
+      step0 = Mul(ext1, ext2)
+      step1 = Add(ext0, step0)  <- this node's own output
+
+self-check: uncapped fusion reaches the same structure Chapter 14's own logic would
+produce -- t1..t5 all fuse into ONE FusedElementwise (5 steps), s is its own
+FusedReduction, y2/y fuse into one more FusedElementwise -- 10 -> 5 nodes (confirmed)
+
+--- CAPPED (maxChainLength=3) ---
+
+--- before any pass (10 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 t1 = ReLU(%0)
+  %3 t2 = Mul(%2, %1)
+  %4 t3 = Add(%3, %1)
+  %5 t4 = Mul(%4, %1)
+  %6 t5 = Add(%5, %1)
+  %7 s = Sum(%6)
+  %8 y2 = Mul(%6, %1)
+  %9 y = Add(%7, %8)
+
+--- after pass 'boundedReductionFusionPass(cap=3)' (6 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 t3 = FusedElementwise(external inputs: ext0=%0, ext1=%1)
+      step0 = ReLU(ext0)
+      step1 = Mul(step0, ext1)
+      step2 = Add(step1, ext1)  <- this node's own output
+  %3 t5 = FusedElementwise(external inputs: ext0=%2, ext1=%1)
+      step0 = Mul(ext0, ext1)
+      step1 = Add(step0, ext1)  <- this node's own output
+  %4 s = FusedReduction(external inputs: ext0=%3)
+      step0 = Sum(ext0)  [reduces 8 elements]  <- this node's own output
+  %5 y = FusedElementwise(external inputs: ext0=%4, ext1=%3, ext2=%1)
+      step0 = Mul(ext1, ext2)
+      step1 = Add(ext0, step0)  <- this node's own output
+
+self-check: capped fusion introduces exactly ONE extra materialization point (t3),
+10 -> 6 nodes instead of 10 -> 5 (confirmed)
+
+=== Bytes moved: unfused vs. uncapped fusion vs. capped fusion ===
+
+Bytes moved, UNFUSED (8 separate kernels):        508
+Bytes moved, UNCAPPED fusion (3 fused kernels):   176
+Bytes moved, CAPPED fusion, maxChainLength=3
+             (4 fused kernels):                  244
+
+uncapped fusion: 65.4% fewer bytes than unfused. capped fusion: 52.0% fewer bytes
+than unfused -- still a large real saving, just not the maximum this graph's own
+structure would otherwise allow.
+
+self-check: uncapped < capped < unfused, strictly, on real measured bytes (confirmed)
+
+=== Correctness: evaluate() agreement across original, uncapped, and capped ===
+
+evaluate(original, a=2,b=3).y = 330
+evaluate(uncapped, ...).y     = 330
+evaluate(capped, ...).y       = 330
+self-check: all three agree (confirmed)

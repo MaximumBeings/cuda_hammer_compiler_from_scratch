@@ -1,5 +1,14 @@
 # Chapter 33: Scientific Computing -- A Real Finite-Difference Heat Stencil
 
+<!-- hammer:figure:opener-33:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Scientific Computing -- A Real Finite-Difference Heat Stencil](../images/openers/33.svg?v=44c5d1de9a07)](../images/openers/33.svg?v=44c5d1de9a07)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-33:end -->
+
 Chapter 31 opened Part 7 with computer vision, finding no shift/gather
 primitive and working around it with host-side im2col staging. Chapter
 32 moved to NLP, finding no batched/per-row reduction and working
@@ -42,6 +51,15 @@ construct -- CUDA Hammer's IR has never had a loop.
 ```
 
 ## 33.1 -- A real 1D FTCS finite-difference heat stencil, one step
+
+<!-- hammer:figure:33.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![The heat stencil depends on neighboring values](../images/concepts/33-01.svg?v=a7827fdedfa1)](../images/concepts/33-01.svg?v=a7827fdedfa1)
+
+<figcaption>Boundary conditions and the stability parameter matter.</figcaption>
+</figure>
+<!-- hammer:figure:33.1:end -->
 
 The explicit (FTCS -- Forward Time, Centered Space) finite-difference
 method is one of the oldest, most standard ways to numerically solve
@@ -510,6 +528,15 @@ continues with the real gap THIS chapter is actually about: running more than on
 
 ## 33.2 -- 5 steps unrolled, a fixed-depth chain (no loop construct)
 
+<!-- hammer:figure:33.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Unrolling time creates a fixed-depth graph](../images/concepts/33-02.svg?v=69a44f167c44)](../images/concepts/33-02.svg?v=69a44f167c44)
+
+<figcaption>A finite unrolled graph is not a general time loop.</figcaption>
+</figure>
+<!-- hammer:figure:33.2:end -->
+
 Section 33.1 proved ONE real step correct. A real PDE solver needs many
 steps -- it repeats the update until some stopping point, which every
 real implementation expresses as a loop in the host driver. This is the
@@ -967,6 +994,15 @@ fusion pass and Chapter 19's real vectorized-CPU codegen at every step.
 
 
 ## 33.3 -- The whole stencil chain, fused and vectorized for real
+
+<!-- hammer:figure:33.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Validate fusion across stencil stages](../images/concepts/33-03.svg?v=a5d89ce4362f)](../images/concepts/33-03.svg?v=a5d89ce4362f)
+
+<figcaption>Temporary preparation and graph construction also have costs.</figcaption>
+</figure>
+<!-- hammer:figure:33.3:end -->
 
 Section 33.1's own single-step graph -- unchanged, not reimplemented --
 is run through Chapter 14/16's real `boundedReductionFusionPass()` and
@@ -1799,6 +1835,7 @@ int main() {
 
         bool stepMatches = true;
         for (int i = 0; i < n; ++i) {
+            if (!std::isfinite(wInterpreted[static_cast<size_t>(i)]) || !std::isfinite(wFusedInterpreted[static_cast<size_t>(i)]) || !std::isfinite(wVectorized[static_cast<size_t>(i)])) stepMatches = false;
             if (std::fabs(wInterpreted[static_cast<size_t>(i)] - wFusedInterpreted[static_cast<size_t>(i)]) > 1e-3f) stepMatches = false;
             if (std::fabs(wInterpreted[static_cast<size_t>(i)] - wVectorized[static_cast<size_t>(i)]) > 1e-2f) stepMatches = false;
         }

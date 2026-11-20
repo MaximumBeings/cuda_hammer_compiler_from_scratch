@@ -1,0 +1,61 @@
+Fresh Apple Clang arm64 run
+
+EXECUTION:
+=== Section 19.3: a whole graph, vectorized dispatch, reduction, and a real fallback ===
+
+--- Part 1: a genuine broadcast the vector path can't safely handle ---
+
+a:[3,4] (12 elements), b:[4] (4 elements) -- canVectorizeElementwise(out) = false
+self-check: a real trailing-dimension broadcast is correctly rejected by the vector
+path's own scope check (confirmed)
+
+dispatcher chose: SCALAR-FALLBACK
+
+scalar fallback, compiled and run for real: clean compile. output matches evaluateArrays() (confirmed)
+
+--- Part 2: Chapter 16's 10-node graph, vectorized end to end ---
+
+a = [1,-2,3,-4,5,-6,7,-8], b = [2]. evaluateArrays(original).y = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
+
+fused graph (maxChainLength=3, same cap Section 17.3/18.3 used): a b t3(FE,3st) t5(FE,2st) s(FR,1st) y(FE,2st) 
+
+per-node dispatch (NEON):
+  t3   -> VECTOR+FMA
+  t5   -> VECTOR+FMA
+  s    -> VECTOR-REDUCTION
+  y    -> VECTOR+FMA
+
+self-check: every fused node in this graph -- 3 elementwise groups plus the
+reduction -- is genuinely vectorizable (no broadcast beyond a scalar anywhere
+in this graph), so the dispatcher chose VECTOR paths for all 4 nodes, 0
+scalar fallbacks (confirmed)
+
+self-check: 3 total FMA fold(s) applied across the 3 elementwise groups --
+t3's own ReLU-then-Mul-then-Add folds its trailing Mul+Add, t5's own Mul-then-Add
+folds, and y's own Mul-then-Add (s + t5*b) folds too, for exactly 3 (confirmed)
+
+--- g++ compile (real NEON flags, 4 generated functions) ---
+
+(no output -- clean compile)
+
+--- Running the whole vectorized graph FOR REAL on this machine's own NEON hardware ---
+
+a: 1.000000 -2.000000 3.000000 -4.000000 5.000000 -6.000000 7.000000 -8.000000
+b: 2.000000
+t3: 4.000000 2.000000 8.000000 2.000000 12.000000 2.000000 16.000000 2.000000
+t5: 10.000000 6.000000 18.000000 6.000000 26.000000 6.000000 34.000000 6.000000
+s: 112.000000
+y: 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000
+
+evaluateArrays(original).y = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
+generated (vectorized, 4 functions dispatched, compiled and run for real).y = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
+
+self-check: y[0] = 132.000000 -- the SAME number Section 17.3's own CPU loop nest and
+Section 18.3's own CPU reference both reported for this exact graph, now produced
+by real vector instructions on real NEON hardware (confirmed)
+
+self-check: every generated buffer (not just y) matches evaluateArrays() on the
+SAME fused graph -- the vector path and the interpreter agree at every node, not
+just at the output (confirmed)
+
+EXIT: 0

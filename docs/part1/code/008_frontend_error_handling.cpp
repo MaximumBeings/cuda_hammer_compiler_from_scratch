@@ -17,6 +17,8 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 008_frontend_error_handling.cpp -o 008_frontend_error_handling
 // Run:     ./008_frontend_error_handling
 #include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -93,11 +95,15 @@ static std::vector<Token> lexLine(const std::string& line) {
             toks.push_back({TokKind::Ident, line.substr(start, i - start), 0.0f});
             continue;
         }
-        if (isdigit(static_cast<unsigned char>(c)) || c == '.') {
-            size_t start = i;
-            while (i < line.size() && (isdigit(static_cast<unsigned char>(line[i])) || line[i] == '.')) ++i;
-            std::string text = line.substr(start, i - start);
-            toks.push_back({TokKind::Number, text, std::stof(text)});
+        if (isdigit(static_cast<unsigned char>(c)) || c == '.' || c == '-' || c == '+') {
+            const char* start = line.c_str() + i;
+            char* end = nullptr;
+            float value = std::strtof(start, &end);
+            if (end == start || !std::isfinite(value))
+                throw std::runtime_error("lex: invalid or nonfinite numeric literal");
+            size_t count = static_cast<size_t>(end - start);
+            toks.push_back({TokKind::Number, line.substr(i, count), value});
+            i += count;
             continue;
         }
         switch (c) {

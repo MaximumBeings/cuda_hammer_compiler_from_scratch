@@ -1,0 +1,57 @@
+SOURCE: docs/part2/code/014_pass_manager_runs_passes_and_validates_between_them.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part2/code/014_pass_manager_runs_passes_and_validates_between_them.cpp', '-o', '/tmp/hammer-host-rl_h6rg5/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 8.3: PassManager runs a sequence of passes, validating between each ===
+
+>>> Pipeline 1: [identityPass, canonicalizeNodeNames] over the diamond graph
+
+--- before any pass ---
+a = input()
+b = input()
+t1 = add(a, b)
+t2 = mul(t1, a)
+t3 = relu(t1)
+out = add(t2, t3)
+
+--- after pass 'identityPass' ---
+a = input()
+b = input()
+t1 = add(a, b)
+t2 = mul(t1, a)
+t3 = relu(t1)
+out = add(t2, t3)
+
+--- after pass 'canonicalizeNodeNames' ---
+%0 = input()
+%1 = input()
+%2 = add(%0, %1)
+%3 = mul(%2, %0)
+%4 = relu(%2)
+%5 = add(%3, %4)
+
+self-check: after both passes, every node's name is canonical (confirmed)
+self-check: the pipeline visited BOTH passes in order, not just the last one --
+the printed dumps above show 3 distinct states: before, after identityPass,
+and after canonicalizeNodeNames (visually confirmed by the 3 blocks above)
+
+>>> Pipeline 2: a deliberately BROKEN pass, to prove runPasses() catches it
+
+--- before any pass ---
+a = input()
+b = input()
+t1 = add(a, b)
+t2 = mul(t1, a)
+t3 = relu(t1)
+out = add(t2, t3)
+
+--- after pass 'identityPass' ---
+a = input()
+b = input()
+t1 = add(a, b)
+t2 = mul(t1, a)
+t3 = relu(t1)
+out = add(t2, t3)
+
+self-check: runPasses() threw when the broken pass ran, naming it specifically: "runPasses: pass 'breakGraphByInsertingCycle' produced an invalid (non-acyclic) graph" (confirmed)

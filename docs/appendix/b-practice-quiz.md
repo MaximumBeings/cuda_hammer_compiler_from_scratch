@@ -1,5 +1,14 @@
 # Appendix B: Practice Quiz
 
+<!-- hammer:figure:appendix-B:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Practice Quiz](../images/openers/appendix-b.svg?v=5c92e417c884)](../images/openers/appendix-b.svg?v=5c92e417c884)
+
+<figcaption>Appendix roadmap.</figcaption>
+</figure>
+<!-- hammer:figure:appendix-B:end -->
+
 Every question below is grounded in a real, specific fact this book already established somewhere in Chapters 1-34 or Appendix A -- a real measured number, a real quoted source, a real compiled/run result, or a real design decision this book's own code demonstrated rather than merely stated. None of these answers is a paraphrase of "what the chapter was about"; each one names the exact real fact, and the exact chapter and file where it was established, so this appendix can double as a fast way to relocate something you remember reading but can't quite place.
 
 Click a question to reveal its answer.
@@ -7,7 +16,7 @@ Click a question to reveal its answer.
 ## Part 0 -- Why Compile Tensor Programs At All (Chapters 1-3)
 
 ??? question "Q1. Chapter 1 quantified two real, independent costs of eager execution. What was the real memory-traffic formula, and what real NVIDIA-cited figure did the second cost use?"
-    The memory-traffic model: `eager(N) = N * 2 * array_bytes` versus `fused = 2 * array_bytes`, checked for N=1..8 with the EAGER and FUSED outputs verified bit-identical. The second real cost used NVIDIA's own cited kernel-launch-overhead figure -- 9.6us per kernel, from NVIDIA's "Getting Started with CUDA Graphs" blog post -- applied via a real formula to the same chain lengths.
+    The memory-traffic model: `eager(N) = N * 2 * array_bytes` versus `fused = 2 * array_bytes`, checked for N=1..8 with the EAGER and FUSED outputs verified bit-identical. The second real cost used NVIDIA's own cited kernel-launch-overhead figure -- 9.6us per kernel in that blog's measured setup, not a universal hardware constant -- applied as an illustrative parameter to the same chain lengths.
 
     *(Chapter 1, "The Cost of Eager Execution")*
 
@@ -154,7 +163,7 @@ Click a question to reveal its answer.
     *(Chapter 27, Files 069-070)*
 
 ??? question "Q4. Did Chapter 29 find that XLA, Relax, or Inductor could automatically DISCOVER Flash Attention's own online-softmax fusion boundary from ordinary primitives?"
-    No -- none of the three real systems re-derives online-softmax from primitives; Flash Attention needed a genuinely new ALGORITHM (Milakov and Gimelshein's online-softmax, applied by Dao et al.'s Flash Attention), not a fusion boundary any of them could discover automatically. Triton (Chapter 27) is the one system where the programmer writes that kernel by hand -- exactly what File 076 did.
+    This experiment did not test that claim for all three systems. Its recorded Inductor CPU run dispatched the selected SDPA graph to an existing aten implementation. NumPy validated online softmax numerically; Triton was only offline-compiled. Compiler backends may use library calls, templates, specialized code generation and pattern rewrites; FlexAttention is a compiler-generated attention example. No universal inability follows from one dispatch observation.
 
     *(Chapter 29, "Flash Attention as a Cross-System Fusion Case Study")*
 

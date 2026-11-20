@@ -1,5 +1,8 @@
 site_name: CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
 site_description: A Tensor Compiler in C++, From a Minimal IR to Fused, Autotuned Kernels
+site_url: https://maximumbeings.github.io/cuda_hammer_compiler_from_scratch/
+repo_url: https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch
+edit_uri: edit/main/docs/
 site_author: Oluwaseyi Awoga
 copyright: Copyright &copy; 2026 Oluwaseyi Awoga
 
@@ -8,15 +11,15 @@ theme:
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: yellow
-      accent: amber
+      primary: blue
+      accent: blue
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: yellow
-      accent: amber
+      primary: blue
+      accent: blue
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
@@ -61,6 +64,7 @@ extra_css:
 nav:
   - Home: index.md
   - Getting Started: getting-started.md
+  - Validation Status: validation-status.md
   - "Part 0 -- Why Compile Tensor Programs At All":
       - "1. The Cost of Eager Execution": part0/01-the-cost-of-eager-execution.md
       - "2. What a Compiler Pipeline Looks Like": part0/02-what-a-compiler-pipeline-looks-like.md

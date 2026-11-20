@@ -1,0 +1,3 @@
+COMMAND: ['nvcc', '-std=c++17', '-O2', '-arch=sm_80', '-DHAMMER_CUDA_ARCH="sm_80"', '/tmp/cuda-hammer-audit/docs/part4/code/043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.cu', '-o', '/tmp/cuda-hammer-audit/validation/accuracy-fixes/gpu/043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.bin']
+
+EXIT: 0

@@ -1,5 +1,14 @@
 # 10. Common Subexpression Elimination for Tensor Graphs
 
+<!-- hammer:figure:opener-10:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Common Subexpression Elimination for Tensor Graphs](../images/openers/10.svg?v=3bf273521f70)](../images/openers/10.svg?v=3bf273521f70)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-10:end -->
+
 **What you will understand:** the book's third genuinely *optimizing* transform pass -- common subexpression elimination (CSE), which notices when two different nodes compute the exact same thing and collapses them into one -- exactly what "the exact same thing" means for a simple structural key, where that definition is deliberately conservative, and how constant folding can expose a CSE opportunity CSE could never have found on its own.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph` and `topologicalSort()`, Chapter 7's `printGraphAsSource()`, Chapter 8's `TransformPass` and `runPasses()`, and Chapter 9's `constantFoldPass()`, `deadCodeEliminationPass()`, and `evaluate()` -- this chapter adds one more pass to that same, unmodified pipeline, and reuses Chapter 9's own passes directly in Section 10.3.
@@ -28,6 +37,15 @@ WHAT THIS CHAPTER ADDS TO CHAPTERS 8 AND 9's OWN INFRASTRUCTURE:
 ```
 
 ## 10.1 Common Subexpression Elimination: Reusing What's Already Computed
+
+<!-- hammer:figure:10.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Reuse structurally identical expressions](../images/concepts/10-01.svg?v=248d65ae2677)](../images/concepts/10-01.svg?v=248d65ae2677)
+
+<figcaption>Only merge operations whose semantics and attributes agree.</figcaption>
+</figure>
+<!-- hammer:figure:10.1:end -->
 
 ### Intuition
 
@@ -514,6 +532,15 @@ self-check: a graph with NO duplicate computations comes back the same size, 6 -
 
 ## 10.2 What Counts as "the Same": A Structural Key's Real Limits
 
+<!-- hammer:figure:10.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A key defines the equivalence being used](../images/concepts/10-02.svg?v=4b853233c251)](../images/concepts/10-02.svg?v=4b853233c251)
+
+<figcaption>Floating-point operand reordering is not automatically valid.</figcaption>
+</figure>
+<!-- hammer:figure:10.2:end -->
+
 ### Intuition
 
 A strict but literal-minded assistant, told to "flag any two paragraphs that say the same thing," might correctly flag two paragraphs that are character-for-character identical, but miss two paragraphs that say the identical thing in a different word order -- "the cat sat on the mat" and "on the mat sat the cat" mean the same thing to a person, but they are not the same STRING. `cseKey()` is exactly that literal-minded assistant: it merges two nodes only when they are identical in a very specific, narrow sense -- same operation, same operands, in the same order -- and it is worth being precise about exactly where that narrowness shows up, because the gap between "always computes the same number" and "has an identical key" is a real, honestly-stated limitation of this chapter's pass, not an oversight to quietly patch over.
@@ -920,6 +947,15 @@ self-check: evaluate(original, x=2,y=10).out = 24, evaluate(deduped, ...).out = 
 
 ## 10.3 Folding, CSE, and Dead Code Elimination Together: A Three-Chapter Pipeline
 
+<!-- hammer:figure:10.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Combine local optimizations](../images/concepts/10-03.svg?v=e18e97db50cf)](../images/concepts/10-03.svg?v=e18e97db50cf)
+
+<figcaption>Repeat only to an explicitly defined fixed point or pass budget.</figcaption>
+</figure>
+<!-- hammer:figure:10.3:end -->
+
 ### Intuition
 
 Section 9.3's own closing warning left a question open on purpose: could a more elaborate graph need constant folding and dead code elimination to alternate more than once each, each pass exposing new work for the other? It raised that question but did not resolve it -- and this section does not resolve it either. What it does instead is show the SAME underlying question appearing from a completely different angle: not "can removing dead code expose a new constant to fold," but "can folding a constant expose two nodes that are now duplicates of each other, which common subexpression elimination could never have recognized on its own, no matter when it ran, without folding having happened first."
@@ -1116,7 +1152,7 @@ static std::string printGraphAsSource(const Graph& g) {
         out += n->debugName + " = " + opKindToSourceKeyword(n->op) + "(";
         if (n->op == OpKind::Const) {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {

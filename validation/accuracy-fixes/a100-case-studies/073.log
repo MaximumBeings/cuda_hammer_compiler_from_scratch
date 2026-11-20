@@ -1,0 +1,10 @@
+Real torch._dynamo.explain() summary, no break:
+  graph_count=1 graph_break_count=0 op_count=4
+
+Real torch._dynamo.explain() summary, with one .item() break:
+  graph_count=2 graph_break_count=1 op_count=4
+  real break reason (first line): Tensor.item
+
+Real correctness check (graph-broken version): compiled vs. eager match = True
+Real generated kernel count with the break: 2 (cpp_fused_add_sum_0, cpp_fused_add_mul_relu_0) -- TWO real compiled kernels where File 072's clean version needed only one. t1 ITSELF (not just its sum) is threaded across the break as a real compiled buffer: the first kernel's own module returns (sum, t1) -- `.item()` only needed the sum, but Inductor keeps t1 alive as a real second output because the second kernel needs it as an input -- and the second kernel's own signature takes t1 and c directly, computing t1*c and relu(t1) from them. A close parallel to File 070's Triton split-kernel finding, reached here by a completely different real mechanism (a tracing boundary, not a hand-written kernel split)
+EXIT=0

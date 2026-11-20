@@ -1,0 +1,33 @@
+=== Section 16.1: classifyNode() -- re-deriving fusion's own logic as an explicit taxonomy ===
+
+--- Graph 1: Chapter 13's own diamond (a=[3,4], b=[4]) ---
+
+  %0 a    consumers=2  reasons=[Leaf]
+  %1 b    consumers=1  reasons=[Leaf]
+  %2 t1   consumers=2  reasons=[Shared]
+  %3 t2   consumers=1  reasons=[NotABoundary]
+  %4 t3   consumers=1  reasons=[NotABoundary]
+  %5 out  consumers=0  reasons=[GraphRoot]
+
+self-check: classifyNode()'s own predicted boundary/not-boundary verdict agrees with
+reductionFusionPass()'s own actual output on every node of the diamond graph (confirmed)
+
+--- Graph 2: Chapter 14's own Graph B (x=[4], w=scalar) ---
+
+  %0 x    consumers=1  reasons=[Leaf]
+  %1 w    consumers=2  reasons=[Leaf]
+  %2 t1   consumers=2  reasons=[Shared]
+  %3 s    consumers=1  reasons=[Reduction]
+  %4 y    consumers=0  reasons=[GraphRoot]
+  %5 y2   consumers=0  reasons=[GraphRoot]
+
+self-check: t1 is classified Shared (2 consumers), s is classified Reduction (1
+consumer, but Sum) -- two DIFFERENT reasons on two DIFFERENT nodes. y AND y2 are BOTH
+classified GraphRoot: this graph, reused verbatim from Chapter 14's own File 031, was
+never run through deadCodeEliminationPass(), so it genuinely has TWO independent
+zero-consumer sinks, not one -- and reductionFusionPass() materializes both as their
+own roots without caring how many there are, exactly as GraphRoot's own definition
+above says it should. All four predictions agree with the pass's own actual output
+(which fuses nothing in this graph at all) (confirmed)
+self-check: t1 carries Shared (confirmed), s carries Reduction (confirmed), y carries GraphRoot (confirmed),
+y2 carries GraphRoot too (confirmed)

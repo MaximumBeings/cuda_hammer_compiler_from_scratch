@@ -1,5 +1,14 @@
 # Appendix F: From torch.compile and TVM's Python API to C++: A Rosetta Stone
 
+<!-- hammer:figure:appendix-F:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![From torch.compile and TVM's Python API to C++: A Rosetta Stone](../images/openers/appendix-f.svg?v=5635c018a4f1)](../images/openers/appendix-f.svg?v=5635c018a4f1)
+
+<figcaption>Appendix roadmap.</figcaption>
+</figure>
+<!-- hammer:figure:appendix-F:end -->
+
 Chapters 25 through 30 studied five real production systems -- XLA,
 TVM, Triton, torch.compile, and Flash Attention across two of them --
 each time laying one of CUDA Hammer's own real C++ names next to that
@@ -79,6 +88,15 @@ byte-identical AND independently compiled and run on both the cloud
 sandbox and the device, same as every earlier chapter's plain C++.
 
 ## F.1 -- Building and Fusing a Graph
+
+<!-- hammer:figure:F.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Building and Fusing a Graph](../images/concepts/f-01.svg?v=0e9a133caed5)](../images/concepts/f-01.svg?v=0e9a133caed5)
+
+<figcaption>Related concepts do not imply identical implementation behavior.</figcaption>
+</figure>
+<!-- hammer:figure:F.1:end -->
 
 File 105 reuses Chapter 26's own File 067 completely
 unchanged (the real Relax pipeline on Chapter 4's own diamond graph),
@@ -782,6 +800,15 @@ bit-exact match: True
 ```
 
 ## F.2 -- Capstone: Autotuning and Caching Results
+
+<!-- hammer:figure:F.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Capstone: Autotuning and Caching Results](../images/concepts/f-02.svg?v=5a5b31ea6fdf)](../images/concepts/f-02.svg?v=5a5b31ea6fdf)
+
+<figcaption>Related concepts do not imply identical implementation behavior.</figcaption>
+</figure>
+<!-- hammer:figure:F.2:end -->
 
 File 107 reuses Chapter 26's own File 068 completely
 unchanged (a real schedule measured for real, then committed to TVM's

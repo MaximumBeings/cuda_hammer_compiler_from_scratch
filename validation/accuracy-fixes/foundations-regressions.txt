@@ -1,0 +1,15 @@
+floating_semantics: PASS
+strict Inf*0 remains NaN; signed-zero addition preserved; relaxed mode requires opt-in: PASS
+
+frontend_roundtrip: PASS
+negative/scientific/precise/signed-zero constants round-trip; changed constants and malformed syntax detected: PASS
+
+shape_validation: PASS
+negative static shape rejected before propagation: PASS
+
+shape_overflow: PASS
+shape product overflow rejected without signed overflow: PASS
+
+loop_boundary: PASS
+LLONG_MAX ceiling division, partial tile, zero/negative extent and invalid index: PASS
+

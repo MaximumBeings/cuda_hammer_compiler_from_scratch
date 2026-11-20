@@ -6,6 +6,8 @@
  * (reused unchanged), where the same real analysis correctly finds the
  * opposite answer for the outer, time-carried loop.
  */
+// Parallel independence assumes a and b do not partially overlap.
+// Array parameter syntax decays to pointers and does not establish no-alias.
 #define N 100
 
 void axpy(double a[N], double b[N], double s) {

@@ -1,0 +1,6 @@
+COMMAND: ['compute-sanitizer', '--tool', 'memcheck', '--target-processes', 'all', '--error-exitcode', '99', '/tmp/hammer_ch18_044_uncapped']
+========= COMPUTE-SANITIZER
+kernel result y: 132.000000
+========= ERROR SUMMARY: 0 errors
+
+EXIT: 0

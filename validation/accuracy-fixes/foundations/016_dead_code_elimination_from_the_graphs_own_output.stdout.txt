@@ -1,0 +1,26 @@
+=== Section 9.2: deadCodeEliminationPass(), dropping a node nothing depends on ===
+
+Graph with one dead node ('junk'):
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1)
+  %3 = Mul(t2)
+  %4 = ReLU(t3)
+  %5 = Add(junk)
+  %6 = Add(out)
+
+After deadCodeEliminationPass():
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1)
+  %3 = Mul(t2)
+  %4 = ReLU(t3)
+  %5 = Add(out)
+
+self-check: exactly one node was dropped, 7 -> 6 (confirmed)
+self-check: 'junk' does not appear anywhere in the cleaned graph (confirmed)
+self-check: 't1' (2 live consumers) appears exactly once in the cleaned graph,
+and both 't2' and 't3' still correctly reference that ONE copy (confirmed)
+
+self-check: a graph with NO dead nodes comes back the same size, 6 -> 6
+(DCE does not misfire on already-clean input) (confirmed)

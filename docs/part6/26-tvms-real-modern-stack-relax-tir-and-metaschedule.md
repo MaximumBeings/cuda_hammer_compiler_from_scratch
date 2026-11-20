@@ -1,5 +1,14 @@
 # Chapter 26: TVM's Real Modern Stack -- Relax, TIR, and MetaSchedule
 
+<!-- hammer:figure:opener-26:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![TVM's Real Modern Stack -- Relax, TIR, and MetaSchedule](../images/openers/26.svg?v=c11ac9147202)](../images/openers/26.svg?v=c11ac9147202)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-26:end -->
+
 Chapter 25 studied XLA by installing the real thing (`pip install jax`)
 and asking it, live, what it actually does. This chapter does the same
 for TVM -- and the first real finding arrives before a single line of
@@ -44,6 +53,15 @@ on `Schedule` staying named `Schedule`.
 ```
 
 ## 26.1 TIR's Own Real Schedule Primitives
+
+<!-- hammer:figure:26.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![TIR separates a computation from its schedule](../images/concepts/26-01.svg?v=699c8097536b)](../images/concepts/26-01.svg?v=699c8097536b)
+
+<figcaption>Use the pinned TVM API version in the example.</figcaption>
+</figure>
+<!-- hammer:figure:26.1:end -->
 
 TVM has scheduled tensor computations since before Relay or Ansor
 existed, through a layer this book's own earlier citations called TIR
@@ -712,6 +730,15 @@ bit-exact match: False
 
 ## 26.2 Relax: Relay's Real Successor, and Its Own Fusion Boundary
 
+<!-- hammer:figure:26.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Graph and loop IR have different responsibilities](../images/concepts/26-02.svg?v=a6e019b19412)](../images/concepts/26-02.svg?v=a6e019b19412)
+
+<figcaption>A graph fusion group still needs a valid low-level implementation.</figcaption>
+</figure>
+<!-- hammer:figure:26.2:end -->
+
 File 067 runs the exact same diamond graph File 063 (Chapter 25) built
 in JAX -- `t1 = a + b` feeding two consumers, `t2 = t1 * c` and `t3 =
 relu(t1)`, joining at `out = t2 + t3` -- through Relax, TVM's own
@@ -974,6 +1001,15 @@ recovered trace matches the original schedule's own trace: True
 
 
 ## 26.3 MetaSchedule: the Real Successor to Both AutoTVM and Ansor
+
+<!-- hammer:figure:26.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A tuning database stores contextual results](../images/concepts/26-03.svg?v=a6ca95d0e8d5)](../images/concepts/26-03.svg?v=a6ca95d0e8d5)
+
+<figcaption>A database lookup is valid only under its matching rules.</figcaption>
+</figure>
+<!-- hammer:figure:26.3:end -->
 
 `tvm.autotvm` and `tvm.auto_scheduler` do not exist in this real,
 installed release -- `tvm.s_tir.meta_schedule` does, and its own real

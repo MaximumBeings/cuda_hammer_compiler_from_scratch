@@ -1,5 +1,14 @@
 # Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain
 
+<!-- hammer:figure:appendix-A:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Installation and Setup -- Building CUDA Hammer's Toolchain](../images/openers/appendix-a.svg?v=d5a9ba5494f6)](../images/openers/appendix-a.svg?v=d5a9ba5494f6)
+
+<figcaption>Appendix roadmap.</figcaption>
+</figure>
+<!-- hammer:figure:appendix-A:end -->
+
 This appendix closes the loop on a claim this book has repeated,
 unquestioned, in every one of its 34 chapters: `-std=c++17`, printed
 at the top of getting-started.md's own compile-line conventions and
@@ -46,6 +55,15 @@ code, not by asserting a requirement.
 ```
 
 ## A.1 -- How much of C++17 does CUDA Hammer actually need?
+
+<!-- hammer:figure:A.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![How much of C++17 does CUDA Hammer actually need?](../images/concepts/a-01.svg?v=f0d53c882467)](../images/concepts/a-01.svg?v=f0d53c882467)
+
+<figcaption>Compilation and device execution are different validation steps.</figcaption>
+</figure>
+<!-- hammer:figure:A.1:end -->
 
 Before touching the toolchain at all, this section asks the honest
 question directly: across this book's own 71 real `.cpp` files
@@ -275,6 +293,15 @@ real result: this file compiled and ran under this standard.
 
 ## A.2 -- Detecting your real vector ISA before Chapter 19
 
+<!-- hammer:figure:A.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Detecting your real vector ISA before Chapter 19](../images/concepts/a-02.svg?v=3d4c3c68c135)](../images/concepts/a-02.svg?v=3d4c3c68c135)
+
+<figcaption>Compilation and device execution are different validation steps.</figcaption>
+</figure>
+<!-- hammer:figure:A.2:end -->
+
 Chapter 19's own real vectorized-CPU code generator picks its target
 instruction set once, at the top of its own `main()`, using only a
 compile-time architecture macro:
@@ -400,6 +427,10 @@ int main() {
     printf("compile-time architecture macro: __x86_64__ defined\n");
     printf("-> Chapter 19's own generator will pick Isa::Avx2 for this machine.\n\n");
     std::vector<std::string> flags = readRealCpuFlags();
+    if (flags.empty()) {
+        printf("/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.\n");
+        return 0;
+    }
     bool hasAvx2 = hasFlag(flags, "avx2");
     bool hasFma  = hasFlag(flags, "fma");
     printf("real /proc/cpuinfo check: avx2 flag %s, fma flag %s\n",
@@ -412,12 +443,17 @@ int main() {
         printf("self-check: MISMATCH -- this CPU is x86_64 but its own real flags do not\n");
         printf("advertise both avx2 and fma. Chapter 19's -mavx2 -mfma build would fail to\n");
         printf("run correctly here (illegal-instruction risk) even though it would compile.\n");
-        printf("Use Chapter 19's own scalar fallback path, or an older -msse4.2-only build.\n");
+        printf("Use the scalar backend from Chapter17/18; Chapter19 has no SSE generator or CPU-feature dispatch.\n");
     }
 #elif defined(__aarch64__)
     printf("compile-time architecture macro: __aarch64__ defined\n");
     printf("-> Chapter 19's own generator will pick Isa::Neon for this machine.\n\n");
     std::vector<std::string> flags = readRealCpuFlags();
+    if (flags.empty()) {
+        printf("/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.\n");
+        printf("Architecture macros identify the compilation target, not a measured CPU feature list.\n");
+        return 0;
+    }
     bool hasAsimd = hasFlag(flags, "asimd");
     printf("real /proc/cpuinfo check: asimd flag %s\n", hasAsimd ? "PRESENT" : "ABSENT");
     if (hasAsimd) {
@@ -489,6 +525,15 @@ from the compile-time architecture macro alone.
 
 
 ## A.3 -- Verifying an optional CUDA toolkit install
+
+<!-- hammer:figure:A.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Verifying an optional CUDA toolkit install](../images/concepts/a-03.svg?v=00c8ee4bec96)](../images/concepts/a-03.svg?v=00c8ee4bec96)
+
+<figcaption>Compilation and device execution are different validation steps.</figcaption>
+</figure>
+<!-- hammer:figure:A.3:end -->
 
 Chapter 18 onward needs a real CUDA toolkit (`nvcc`) to compile CUDA
 Hammer's own generated `.cu` programs, but -- stated directly in
@@ -644,6 +689,15 @@ Chapter 18+ .cu file in this book already follows.
 
 ## A.4 -- The capstone: one combined toolchain report
 
+<!-- hammer:figure:A.4:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![The capstone: one combined toolchain report](../images/concepts/a-04.svg?v=5dd0433eabc0)](../images/concepts/a-04.svg?v=5dd0433eabc0)
+
+<figcaption>Compilation and device execution are different validation steps.</figcaption>
+</figure>
+<!-- hammer:figure:A.4:end -->
+
 Sections A.1 and A.2 each checked one real, machine-portable piece of
 this book's own toolchain (the real minimum C++ standard, the real
 vector ISA); Section A.3's own check is CUDA-linked and so stays
@@ -749,8 +803,11 @@ int main() {
 #elif defined(__aarch64__)
     printf("[A.2] compile-time architecture: __aarch64__ -- Chapter 19 targets Isa::Neon here\n");
     std::vector<std::string> flags = readRealCpuFlags();
+    if (flags.empty()) {
+        printf("      /proc/cpuinfo unavailable: runtime flags UNKNOWN, not absent.\n");
+    }
     bool asimd = hasFlag(flags, "asimd");
-    printf("      real /proc/cpuinfo: asimd=%s\n", asimd ? "yes" : "no");
+    printf("      real /proc/cpuinfo: asimd=%s\n", flags.empty() ? "unknown" : (asimd ? "yes" : "no"));
 #else
     printf("[A.2] neither __x86_64__ nor __aarch64__ -- outside Chapter 19's own two real targets\n");
 #endif
@@ -839,3 +896,14 @@ cross-machine-verified treatment every numbered chapter has had.
 
 Appendix B (a Practice Quiz) is the next candidate in the current
 Appendices list, still PLANNED and not yet written.
+
+### Native macOS feature-file availability
+
+Fresh arm64 macOS execution of File094 reports:
+
+```text
+/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.
+Architecture macros identify the compilation target, not a measured CPU feature list.
+```
+
+This is an unavailable Linux interface, not a CPU-feature mismatch. The historical Linux transcripts above describe their original environments, not this native macOS run.

@@ -1,5 +1,14 @@
 # Chapter 29: Flash Attention as a Cross-System Fusion Case Study
 
+<!-- hammer:figure:opener-29:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Flash Attention as a Cross-System Fusion Case Study](../images/openers/29.svg?v=f0dc392554fe)](../images/openers/29.svg?v=f0dc392554fe)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-29:end -->
+
 Chapters 25-28 each installed and studied one independent real compiler
 in isolation. This chapter studies one real ALGORITHM -- Flash Attention
 -- across systems this Part has already installed: pure NumPy (no new
@@ -49,6 +58,15 @@ running max increases, whatever was already accumulated gets rescaled by
 ```
 
 ## 29.1 The Online-Softmax Algorithm, Proven Against Naive Attention
+
+<!-- hammer:figure:29.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Online softmax carries stable partial state](../images/concepts/29-01.svg?v=59fa1044086d)](../images/concepts/29-01.svg?v=59fa1044086d)
+
+<figcaption>Compare with a numerically independent dense reference.</figcaption>
+</figure>
+<!-- hammer:figure:29.1:end -->
 
 Naive attention computes `scores = (Q @ K.T) / sqrt(d)`, a full
 `(N, M)` matrix, then a row-wise softmax, then `output = probs @ V`.
@@ -228,9 +246,11 @@ if __name__ == "__main__":
         (flash_out, flash_max, flash_sum,
          num_blocks, peak_block_bytes) = flash_attention(q, k, v, block_size_kv)
         max_abs_diff = np.abs(naive_out - flash_out).max()
-        match = np.allclose(naive_out, flash_out, atol=1e-10)
-        max_match = np.allclose(naive_max, flash_max, atol=1e-12)
-        sum_match = np.allclose(naive_sum, flash_sum, atol=1e-10)
+        match = np.allclose(naive_out, flash_out, atol=1e-10, rtol=0.0)
+        assert match and np.isfinite(flash_out).all()
+        max_match = np.allclose(naive_max, flash_max, atol=1e-12, rtol=0.0)
+        sum_match = np.allclose(naive_sum, flash_sum, atol=1e-10, rtol=0.0)
+        assert max_match and sum_match
         print(f"block_size_kv={block_size_kv:2d}: {num_blocks} real KV "
               f"block(s) (last block size "
               f"{m - block_size_kv * (num_blocks - 1)}), peak per-block "
@@ -314,14 +334,38 @@ File 075's own real, printed output confirms the algorithm is correct
 regardless of how the KV dimension gets tiled -- `block_size_kv=4` (a
 real tail block of exactly 1), `block_size_kv=5` (a tail of 3), and
 `block_size_kv=13` (one block, no tiling at all, the degenerate case that
-should reduce to naive attention exactly) all report an EXACT output
-match against `naive_attention()`, differing only by float64 rounding at
+should reduce to naive attention exactly) all pass an absolute-tolerance comparison (not bitwise equality)
+against `naive_attention()`, differing only by float64 rounding at
 the `1e-16` level -- and the real, concrete memory argument at a
 realistic scale (`N=M=1024`, `d=64`, `block_size_kv=128`) shows an 8x
 reduction in peak score-tile memory at that one block size alone, purely
 from never holding the full row.
 
 ## 29.2 The Same Algorithm as One Real Triton Kernel
+
+<!-- hammer:figure:29.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Masked tiles must guard every tail load](../images/concepts/29-02.svg?v=15f519124bfe)](../images/concepts/29-02.svg?v=15f519124bfe)
+
+<figcaption>Aligned test shapes cannot expose all tail errors.</figcaption>
+</figure>
+<!-- hammer:figure:29.2:end -->
+
+**Corrected kernel contract (current source):** one program handles exactly
+`BLOCK_M` query rows with power-of-two `D`. Key/value tail loads are masked,
+and padded scores are negative infinity before softmax. Both `tl.dot` calls
+request `input_precision="ieee"`; Triton's float32 default can otherwise use
+TF32 on NVIDIA Tensor Cores. This is scaled, noncausal attention, not a full
+masked/batched attention implementation. Historical compiler IR below predates
+these safety/precision edits and has not been recaptured. A fresh offline
+compile and real-device checks in `validation/accuracy-fixes/gpu_case_validation.py`
+were subsequently completed on an A100: all six attention shapes and all six
+int8-dot cases passed, including under memcheck (zero errors). Evidence is in
+`validation/accuracy-fixes/a100-case-studies/`; compiling alone still proves no
+numerical GPU result.
+See [Triton dot precision](https://triton-lang.org/main/python-api/generated/triton.language.dot.html).
+
 
 Chapter 27 found that fusion in Triton is a PROGRAMMER'S language-level
 choice: whatever one `@triton.jit` function body contains becomes one
@@ -380,24 +424,21 @@ absolute-path-length artifact Chapter 27 already traced to Triton's own
 `#locN = loc(...)` debug table.
 
 ```python
-# Chapter 29, File 076: File 075's own online-softmax algorithm, written as
-# a real block-level Triton kernel and compiled through the same
-# explicit-`target=` AOT path Chapter 27 established (no physical GPU
-# needed to reach real TTIR/TTGIR/LLIR/PTX).
+# Chapter 29, File 076: File 075's online-softmax algorithm as a Triton kernel.
+# Historical evidence for this file is offline AOT compilation, not GPU execution.
+# File 075 numerically compares its own NumPy implementations on finite cases;
+# that does not validate this Triton kernel or prove correctness for every input.
 #
-# Real toolchain note, same honest limitation as every Triton file since
-# Chapter 27: no physical GPU here, so this file is scoped to real
-# COMPILATION only, never execution -- File 075's own pure-NumPy version
-# is what actually proves the algorithm correct; this file proves the
-# SAME algorithm is expressible as one real Triton kernel body, at the
-# block level Chapter 27 studied, and inspects what it genuinely compiles
-# to. One deliberate scope reduction from File 075: `SEQ_LEN_KV` is a
-# `tl.constexpr` here (a fixed 48, divisible by `BLOCK_N=16`, so no
-# boundary mask is needed inside the KV loop) rather than a runtime
-# value with a genuine tail block -- Chapter 27's own File 069 already
-# demonstrated real Triton boundary masking (`mask=offsets < n_elements`)
-# for a non-divisible size, so this file does not need to repeat that
-# mechanism to stay honest about what it covers.
+# Current source masks incomplete key/value tiles and excludes their scores
+# from softmax. SEQ_LEN_KV remains a positive compile-time constant, including
+# non-divisible lengths; the example AOT invocation still uses 48 keys / tile 16.
+# One program handles exactly BLOCK_M query rows, with power-of-two D; no
+# query-row tail, causal mask, batching or production model integration is supplied.
+# Both float32 dot operations request IEEE precision explicitly.
+#
+# Changed masked/precision code needs a fresh compile and real-device numerical
+# and memory checks. See validation/accuracy-fixes/gpu_case_validation.py.
+# Historical compiler dumps predate these edits and are not current-run evidence.
 #
 # Compiled with:   python3 "076_a_real_triton_flash_attention_kernel_compiled_with_no_gpu.py"
 
@@ -414,6 +455,8 @@ def flash_attention_kernel(q_ptr, k_ptr, v_ptr, out_ptr,
     # WHOLE sequence -- Chapter 27's own block-level model, applied here to
     # a genuinely two-dimensional block (BLOCK_M, D) rather than the flat
     # 1-D blocks File 069's own vector_add_kernel used.
+    # Contract: one program, exactly BLOCK_M query rows and power-of-two D.
+    # Positive KV lengths need not be multiples of BLOCK_N. No causal mask.
     row_offsets = tl.arange(0, BLOCK_M)
     d_offsets = tl.arange(0, D)
     q = tl.load(q_ptr + row_offsets[:, None] * D + d_offsets[None, :])
@@ -435,17 +478,20 @@ def flash_attention_kernel(q_ptr, k_ptr, v_ptr, out_ptr,
     # printed TTIR below, not merely assumed from the source text.
     for start_n in range(0, SEQ_LEN_KV, BLOCK_N):
         col_offsets = start_n + tl.arange(0, BLOCK_N)
-        k_block = tl.load(k_ptr + col_offsets[:, None] * D + d_offsets[None, :])
-        v_block = tl.load(v_ptr + col_offsets[:, None] * D + d_offsets[None, :])
+        k_block = tl.load(k_ptr + col_offsets[:, None] * D + d_offsets[None, :],
+                          mask=col_offsets[:, None] < SEQ_LEN_KV, other=0.0)
+        v_block = tl.load(v_ptr + col_offsets[:, None] * D + d_offsets[None, :],
+                          mask=col_offsets[:, None] < SEQ_LEN_KV, other=0.0)
 
         # tt.dot #1: Q @ K_block^T -- one real block-level matmul per KV
         # block, exactly File 075's own `q @ k_block.T`.
-        scores = tl.dot(q, tl.trans(k_block)) * scale
+        scores = tl.dot(q, tl.trans(k_block), input_precision="ieee") * scale
+        scores = tl.where(col_offsets[None, :] < SEQ_LEN_KV, scores, float("-inf"))
         block_max = tl.max(scores, axis=1)
         new_max = tl.maximum(running_max, block_max)
 
-        # The same online-softmax rescaling step File 075 already proved
-        # correct against naive full-materialization softmax.
+        # The same recurrence that File 075 numerically checks in NumPy;
+        # this device implementation requires its own GPU validation.
         correction = tl.exp(running_max - new_max)
         p = tl.exp(scores - new_max[:, None])
         block_sum = tl.sum(p, axis=1)
@@ -454,7 +500,7 @@ def flash_attention_kernel(q_ptr, k_ptr, v_ptr, out_ptr,
         # tt.dot #2: P_block @ V_block -- the second real block-level matmul
         # per KV block, exactly File 075's own `p_block @ v_block`.
         running_out = (running_out * correction[:, None]
-                       + tl.dot(p.to(tl.float32), v_block))
+                       + tl.dot(p.to(tl.float32), v_block, input_precision="ieee"))
         running_max = new_max
 
     out = running_out / running_sum[:, None]
@@ -575,6 +621,15 @@ Real scf.for count in TTIR: 1 (the KV loop, lowered to one genuine MLIR loop con
 
 ## 29.3 Real PyTorch Flash Attention, and Why Inductor Never Regenerates It
 
+<!-- hammer:figure:29.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Attention dispatch uses available implementations](../images/concepts/29-03.svg?v=04d458152b08)](../images/concepts/29-03.svg?v=04d458152b08)
+
+<figcaption>A high-level call alone does not prove a particular backend ran.</figcaption>
+</figure>
+<!-- hammer:figure:29.3:end -->
+
 Files 075 and 076 built and compiled the online-softmax algorithm by
 hand, in NumPy and then as a Triton kernel. This closing section asks
 what a real, independent, production implementation of the same
@@ -680,11 +735,11 @@ if __name__ == "__main__":
     print(f"math_sdp_enabled(): {cuda_backend.math_sdp_enabled()}")
     import torch.nn.attention as attn_mod
     print(f"list_flash_attention_impls(): "
-          f"{attn_mod.list_flash_attention_impls()}")
+          f"{attn_mod.list_flash_attention_impls() if hasattr(attn_mod, 'list_flash_attention_impls') else 'unavailable in this torch version'}")
     print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
-    print("(every one of these reports real flash-attention support with "
-          "zero physical GPU present -- this is a genuine CPU code path, "
-          "not a GPU-gated feature this sandbox happens to see stubbed out)")
+    print("(CUDA feature/configuration flags do not establish CPU execution. "
+          "The following CPU tensors, operator schema and numerical comparison "
+          "identify the CPU code path independently of host GPU availability.)")
 
     print()
     print("=== Part 2: real execution, MATH backend vs. FLASH_ATTENTION "
@@ -700,8 +755,8 @@ if __name__ == "__main__":
           f"{torch.allclose(out_math, out_flash, atol=1e-5)} "
           f"(max abs diff {max_abs_diff:.3e}) -- two independently "
           f"implemented real kernels inside the SAME torch build agree, "
-          f"the same cross-implementation agreement Files 075 and 076 "
-          f"already established between pure NumPy and compiled Triton")
+          f"a CPU numerical comparison. File 075 checks NumPy; File 076 "
+          f"was only offline-compiled, not numerically validated on a GPU")
 
     print()
     print("=== Part 3: the real op's own schema -- why FLASH_ATTENTION "
@@ -740,21 +795,12 @@ if __name__ == "__main__":
           f"aten._scaled_dot_product_flash_attention_for_cpu: "
           f"{dispatches_to_real_flash_op}")
     print()
-    print("This is the chapter's own closing, cross-system finding: "
-          "TorchInductor's real automatic whole-graph fusion (Ch28.1), "
-          "XLA's real kind=kLoop fusion (Ch25), and Relax's real "
-          "FuseOps/FuseTIR (Ch26) all fuse ORDINARY elementwise/reduction "
-          "graphs automatically, inventing nothing about the ALGORITHM "
-          "itself -- but none of them re-derives Flash Attention's own "
-          "online-softmax rescaling trick from primitives. Inductor "
-          "dispatches straight to a hand-written, pre-existing fused "
-          "kernel instead of decomposing scaled_dot_product_attention "
-          "into ops it could fuse itself. Flash Attention needed a new "
-          "ALGORITHM (Milakov & Gimelshein's 2018 online-softmax "
-          "identity), not just a new fusion boundary -- and every real "
-          "system this Part studied treats that as a hand-written kernel "
-          "provided to the compiler, never a boundary the compiler's own "
-          "fusion pass discovers on its own.")
+    print("Observed scope: this installed CPU build dispatched this SDPA shape "
+          "to an existing aten implementation. This does not establish GPU "
+          "behavior or that all compilers must use opaque calls. FlexAttention "
+          "uses torch.compile to generate specialized attention kernels; XLA "
+          "also has Triton codegen and library-selection paths. Compiler "
+          "capabilities depend on version, backend, graph and shape.")
 ```
 
 ```bash
@@ -775,7 +821,7 @@ torch.cuda.is_available(): False
 === Part 2: real execution, MATH backend vs. FLASH_ATTENTION backend, same real inputs ===
 MATH backend output shape: (1, 2, 8, 4)
 FLASH_ATTENTION backend output shape: (1, 2, 8, 4)
-Real correctness check: MATH vs. FLASH_ATTENTION match = True (max abs diff 4.768e-07) -- two independently implemented real kernels inside the SAME torch build agree, the same cross-implementation agreement Files 075 and 076 already established between pure NumPy and compiled Triton
+Real correctness check: MATH vs. FLASH_ATTENTION match = True (max abs diff 4.768e-07) -- two independently implemented real kernels inside the SAME torch build agree, a CPU numerical comparison; File 076 was only offline-compiled and was not numerically validated on a GPU
 
 === Part 3: the real op's own schema -- why FLASH_ATTENTION works with no GPU ===
 Real schema: aten::_scaled_dot_product_flash_attention_for_cpu(Tensor query, Tensor key, Tensor value, float dropout_p=0., bool is_causal=False, *, Tensor? attn_mask=None, float? scale=None) -> (Tensor output, Tensor logsumexp)
@@ -787,11 +833,18 @@ Real correctness check: torch.compile'd vs. eager match = True
 Real generated cpp_fused kernel count: 0 (Chapter 28.1's own diamond graph -- 4 ordinary elementwise ops -- got its own generated cpp_fused_add_mul_relu_0 kernel here this same way; scaled_dot_product_attention gets 0)
 Real generated code calls straight through to aten._scaled_dot_product_flash_attention_for_cpu: True
 
-This is the chapter's own closing, cross-system finding: TorchInductor's real automatic whole-graph fusion (Ch28.1), XLA's real kind=kLoop fusion (Ch25), and Relax's real FuseOps/FuseTIR (Ch26) all fuse ORDINARY elementwise/reduction graphs automatically, inventing nothing about the ALGORITHM itself -- but none of them re-derives Flash Attention's own online-softmax rescaling trick from primitives. Inductor dispatches straight to a hand-written, pre-existing fused kernel instead of decomposing scaled_dot_product_attention into ops it could fuse itself. Flash Attention needed a new ALGORITHM (Milakov & Gimelshein's 2018 online-softmax identity), not just a new fusion boundary -- and every real system this Part studied treats that as a hand-written kernel provided to the compiler, never a boundary the compiler's own fusion pass discovers on its own.
+[Historical overgeneralized closing statement omitted; current source limits the observation to this CPU build and graph.]
 ```
 
-*Three independent real implementations (NumPy, compiled Triton, and now two real PyTorch backends) agree numerically, and Inductor's own real captured output confirms it dispatches straight through to the real flash-attention op rather than regenerating it.*
+*Evidence boundary: NumPy naive/streaming implementations were compared numerically, and the recorded PyTorch CPU run compared its CPU backends. The offline-compiled Triton kernel was not executed, so no Triton-versus-NumPy numerical agreement was established by those historical runs.*
 
 *One correction to Part 1's own printed parenthetical: `is_flash_attention_available()` and `flash_sdp_enabled()` report this torch build's own CUDA-related configuration and a global enablement toggle, not, by themselves, evidence of a CPU-executed code path -- it is specifically Part 3's own schema, `_scaled_dot_product_flash_attention_for_cpu`, together with Part 2's own real executed MATH-vs-FLASH_ATTENTION comparison with `torch.cuda.is_available()` False, that is the actual evidence a genuine CPU flash-attention kernel ran here, not a GPU-gated feature merely reporting itself as present.*
 
-*One scope caveat on this file's own closing print statement: only Inductor's real dispatch behavior for `scaled_dot_product_attention` was directly tested here (this file's whole point). XLA (Ch25) and Relax (Ch26) were never run against this specific op in this book, and neither one ships a built-in flash-attention kernel for a fusion pass to dispatch to the way Inductor's own `aten` op library does -- so "every real system this Part studied treats that as a hand-written kernel" is this chapter's reasoned expectation, extended from how XLA and Relax are known to handle ordinary graphs, not a directly observed finding for all three systems the way it is for Inductor.*
+**Compiler scope correction:** the captured CPU SDPA dispatch is one result
+for one installed build and shape. It does not establish a universal limit on
+compiler fusion or code generation. [FlexAttention](https://pytorch.org/blog/flexattention/)
+uses `torch.compile` to generate specialized attention kernels; [XLA:GPU](https://openxla.org/xla/gpu_architecture)
+combines native/Triton emitters with library selection. XLA and Relax were not
+experimentally tested on this attention graph here. Older closing statements
+inside recorded transcripts must be read with this correction; current source
+prints the narrower conclusion.

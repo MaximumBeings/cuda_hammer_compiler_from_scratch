@@ -1,5 +1,14 @@
 # Chapter 25: XLA -- Fusion and Autotuning in a Real Production Compiler
 
+<!-- hammer:figure:opener-25:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![XLA -- Fusion and Autotuning in a Real Production Compiler](../images/openers/25.svg?v=c9b1fdfa3ad9)](../images/openers/25.svg?v=c9b1fdfa3ad9)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-25:end -->
+
 Chapter 3 surveyed three real ML compilers -- XLA, TVM, and Triton -- as
 citations, to ground this book's own design decisions in what production
 systems actually do. Every chapter since Chapter 4 has instead built CUDA
@@ -62,6 +71,15 @@ implicit.
 ```
 
 ## 25.1 A Production IR Meets CUDA Hammer's Own Diamond Graph
+
+<!-- hammer:figure:25.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Inspect the actual production IR](../images/concepts/25-01.svg?v=68f8ac243dc7)](../images/concepts/25-01.svg?v=68f8ac243dc7)
+
+<figcaption>HLO shape and fusion decisions are version- and target-dependent.</figcaption>
+</figure>
+<!-- hammer:figure:25.1:end -->
 
 Every fusion pass this book has built since Chapter 13 has been tested on
 the same shape first: a shared value with two consumers that rejoin
@@ -789,6 +807,15 @@ ENTRY %main.18 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8]) -> f32[] {
 
 ## 25.2 Reductions: A Boundary Chapter 14 Drew Unconditionally, XLA Draws Contextually
 
+<!-- hammer:figure:25.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Reduction fusion depends on backend rules](../images/concepts/25-02.svg?v=c6709f80ed35)](../images/concepts/25-02.svg?v=c6709f80ed35)
+
+<figcaption>Do not infer GPU behavior from a CPU-only compiler run.</figcaption>
+</figure>
+<!-- hammer:figure:25.2:end -->
+
 Chapter 14's own `reductionFusionPass()` has one rule with no exceptions:
 "a Sum node's output is ALWAYS external, any consumer count." A
 reduction's result always gets written to memory and read back, even if
@@ -1034,6 +1061,15 @@ XLA's own real AutotuningLog context fields (xla/autotuning.proto):
 
 ## 25.3 A Real Production Autotuner's Own Tuning-Knob and Cache-Key Records
 
+<!-- hammer:figure:25.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Production tuning records differ from schedules](../images/concepts/25-03.svg?v=fd3e1fa232a6)](../images/concepts/25-03.svg?v=fd3e1fa232a6)
+
+<figcaption>Inspect real records before claiming a measured result.</figcaption>
+</figure>
+<!-- hammer:figure:25.3:end -->
+
 Chapter 3 already cited TVM's own AutoTVM tuning logs as the precedent
 behind Chapter 24's own `TuningCache`. XLA runs a real autotuner of its
 own, for a different but closely related reason: choosing among real
@@ -1101,3 +1137,5 @@ weakness unique to XLA; it is the same honest gap Chapter 23.3's own
 hybrid autotuner reported against its own exhaustive search on both real
 machines -- a production compiler's own real fusion and autotuning close
 most of the distance to hand-tuned code, not all of it.
+
+**Record-scope note:** the `AutotuningLog` context-field illustration uses placeholder values. Log fields are not a complete specification or execution test of XLA cache-key construction. The CPU HLO observations do not determine GPU fusion boundaries or benchmark GPU autotuning.

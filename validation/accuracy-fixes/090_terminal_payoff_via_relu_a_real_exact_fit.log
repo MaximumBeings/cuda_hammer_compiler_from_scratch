@@ -1,0 +1,45 @@
+$ clang++ -std=c++17 -Wall -Wextra -O2 /Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/090_terminal_payoff_via_relu_a_real_exact_fit.cpp -o /tmp/cuda-hammer-case-runs/090_terminal_payoff_via_relu_a_real_exact_fit/driver
+
+$ /tmp/cuda-hammer-case-runs/090_terminal_payoff_via_relu_a_real_exact_fit/driver
+=== Chapter 34 (Part 7): Section 34.1 -- terminal payoff via ReLU, a real exact fit ===
+
+real CRR (Cox, Ross, Rubinstein 1979) tree parameters, quoted verbatim (AnalystPrep FRM
+study notes):
+
+  "u=size of the up move factor=e^(sigma*sqrt(t)), and
+   d=size of the down move factor=e^(-sigma*sqrt(t))=1/(e^(sigma*sqrt(t)))=1/u"
+  "pi=probability of an up move=(e^(r*t)-d)/(u-d)"
+
+this IR has no exp and no sqrt (the same real gap Section 32.1 already named for
+LayerNorm's own variance/sqrt/divide half), so u, d, and the risk-neutral probability are
+computed HOST-SIDE with plain std::exp/std::sqrt, then fed into the graph as real Const
+values -- unchanged from Section 31.1's own "measure/compute host-side, bake in as Const"
+pattern.
+
+S0=100.0 K=100.0 r=0.05 sigma=0.20 T=1.0 N=4 steps, dt=0.2500
+real computed: u=1.105171 d=0.904837 p=0.537809 disc=0.987578 (1-p=0.462191)
+
+self-check: the real risk-neutral probability p is strictly between 0 and 1, a required
+no-arbitrage condition for this real CRR tree (confirmed)
+
+real terminal stock prices S_T[j] = S0 * u^j * d^(N-j), j=0..4:
+   67.0320   81.8731  100.0000  122.1403  149.1825
+
+real CUDA Hammer graph, PUT payoff  = ReLU(K - S_T)  :   32.9680   18.1269    0.0000    0.0000    0.0000
+real CUDA Hammer graph, CALL payoff = ReLU(S_T - K)  :    0.0000    0.0000    0.0000   22.1403   49.1825
+
+self-check: the graph's own PUT payoff matches an independent std::max(K-S,0) reference
+exactly at every node (confirmed)
+self-check: the graph's own CALL payoff matches an independent std::max(S-K,0) reference
+exactly at every node (confirmed)
+
+--- what this section actually shows ---
+
+no workaround was needed for this part at all. `max(x, 0)` IS `ReLU(x)`, exactly -- an op
+this book built in Chapter 4 for neural-net activations turns out to be a real, exact fit
+for a real option's own payoff function, with nothing approximated and nothing left out.
+Section 34.2 continues with the harder part: the tree's own backward induction.
+
+=== Section 34.1 complete: all self-checks confirmed ===
+
+EXIT=0

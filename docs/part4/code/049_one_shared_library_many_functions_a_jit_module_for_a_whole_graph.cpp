@@ -618,7 +618,7 @@ int main() {
             }
             bool matches = (buf[name].size() == expected.at(name).size());
             if (matches) for (size_t i = 0; i < buf[name].size(); ++i)
-                if (std::fabs(buf[name][i] - expected.at(name)[i]) > 1e-3f) matches = false;
+                if (!(std::fabs(buf[name][i] - expected.at(name)[i]) <= 1e-3f)) matches = false;
             allMatch = allMatch && matches;
             printf("compute_%-3s (called as a real function pointer): ", name.c_str());
             for (float v : buf[name]) printf("%.6f ", v);

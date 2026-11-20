@@ -1,5 +1,14 @@
 # 21. The Search Space: Tile Sizes, Loop Orders, and Unrolling
 
+<!-- hammer:figure:opener-21:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![The Search Space: Tile Sizes, Loop Orders, and Unrolling](../images/openers/21.svg?v=052c9c3e3cca)](../images/openers/21.svg?v=052c9c3e3cca)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-21:end -->
+
 **What you will understand:** `enumerateTileSizeCandidates()`, a heuristic candidate list -- powers of two plus the loop's own full extent -- that trades search COMPLETENESS for TRACTABILITY, the same heuristic real autotuning systems actually use; `LoopOrder` and `enumerateLoopOrders()`, every permutation of a `LoopNest`'s own loops, and a real proof, by direct enumeration rather than assertion, that an ELEMENTWISE loop nest computes the exact same answer under every one of them; a concrete, measured fact -- float32 addition is not associative -- demonstrated with 17 real numbers where two equally valid summation orders differ by exactly 16.0, and why that makes a REDUCTION's own summation order the one schedule dimension in this chapter that can change the floating-point ANSWER, not just its speed; `unrollFactorCandidates()` and a real unrolled loop, the software analogue of Chapter 19's own SIMD width -- the exact same "main loop plus scalar tail" shape, this time a free software choice instead of a fixed hardware width; and `Schedule`, which ties tile size, loop order, and unroll factor into one CARTESIAN-PRODUCT search space, enumerated for real over a concrete `LoopNest`, closing the chapter on the combinatorial-explosion problem Chapters 22 and 23 both exist to solve.
 
 **What you need to know first:** Chapter 15's own `Loop`/`LoopNest`/`TiledLoop`/`tileLoop()`/`actualInnerExtent()` (reused verbatim throughout this chapter); Chapter 6's own `broadcastShapes()`/`inferShapes()` (the reason a real `LoopNest` can have more than one loop in the first place); the array-comparison tolerance (`1e-3f`, `1e-2f`) every chapter since 17 has used when checking generated code against `evaluateArrays()` (explained concretely, for the first time, in Section 21.2); and Chapter 19's own vector-width "main loop plus scalar tail" shape (reused and generalized in Section 21.3).
@@ -44,6 +53,15 @@ without measuring every one; Chapter 23 builds the actual search.
 ```
 
 ## 21.1 One Loop's Own Search Space: Tile Size Candidates
+
+<!-- hammer:figure:21.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Tile size defines candidate loop partitions](../images/concepts/21-01.svg?v=b77ca0bb2948)](../images/concepts/21-01.svg?v=b77ca0bb2948)
+
+<figcaption>Candidates must preserve coverage, including tails.</figcaption>
+</figure>
+<!-- hammer:figure:21.1:end -->
 
 ### Intuition
 
@@ -290,6 +308,15 @@ those 5 candidates was just individually proven correct above, not merely assume
     A tile size equal to the loop's own full extent means `tileLoop()` produces exactly one tile, covering the whole loop in a single pass -- the schedule this book's own Chapters 17 through 20 have implicitly used every single time, since none of them ever called `tileLoop()` at all. Leaving that choice out of the candidate list would silently exclude the one schedule this book has already proven correct and fast enough to write an entire four-chapter Part around; `enumerateTileSizeCandidates()` always appends it explicitly rather than relying on it to already be a power of two.
 
 ## 21.2 Loop Order: What It Changes, and What It Doesn't
+
+<!-- hammer:figure:21.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Loop order changes memory traversal](../images/concepts/21-02.svg?v=6b8104393d43)](../images/concepts/21-02.svg?v=6b8104393d43)
+
+<figcaption>Equal arithmetic does not imply equal locality.</figcaption>
+</figure>
+<!-- hammer:figure:21.2:end -->
 
 ### Intuition
 
@@ -578,6 +605,15 @@ chapter that can change the actual floating-point ANSWER, not just how fast it a
     It is tempting to assume loop order only ever affects cache locality -- true for every elementwise kernel this book has generated since Chapter 13, and true for most of the code in this chapter's own capstone. But the moment a loop nest includes a REDUCTION accumulator, "just try every order, they all give the same answer" stops being true in the strict, bit-for-bit sense: this section measured a real 16.0 difference between two valid summation orders of the same 17 numbers. A later cost model (Chapter 22) or autotuner (Chapter 23) that treats loop order as free to reorder for reductions needs to account for this -- not because either order is wrong, but because they are not IDENTICAL, and this book's own tolerance-based comparisons exist because of exactly this fact.
 
 ## 21.3 Unrolling, and the Full Schedule Search Space
+
+<!-- hammer:figure:21.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A schedule combines several decisions](../images/concepts/21-03.svg?v=192131001f19)](../images/concepts/21-03.svg?v=192131001f19)
+
+<figcaption>Search-space size grows as decisions are combined.</figcaption>
+</figure>
+<!-- hammer:figure:21.3:end -->
 
 ### Intuition
 

@@ -1,0 +1,52 @@
+SOURCE: docs/part3/code/029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part3/code/029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp', '-o', '/tmp/hammer-host-gk9jnlqb/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 13.3: elementwiseFusionPass() through Chapter 8's own runPasses() ===
+
+--- before any pass (6 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 t1 = Add(%0, %1)
+  %3 t2 = Mul(%2, %0)
+  %4 t3 = ReLU(%2)
+  %5 out = Add(%3, %4)
+
+--- after pass 'elementwiseFusionPass' (4 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 t1 = Add(%0, %1)
+  %3 out = FusedElementwise(external inputs: ext0=%2, ext1=%0)
+      step0 = Mul(ext0, ext1)
+      step1 = ReLU(ext0)
+      step2 = Add(step0, step1)  <- this node's own output
+
+self-check: runPasses() accepted elementwiseFusionTransform with ZERO changes to
+Chapter 8's own PassManager -- the fifth real OPTIMIZATION pass (after constant
+folding, dead code elimination, CSE, and algebraic simplification) to plug into
+this same infrastructure unmodified (confirmed)
+
+=== Real bytes moved: before vs. after, against Chapter 12's two bounds ===
+
+Bytes moved, BEFORE fusion (4 separate kernels -- t1, t2, t3, out):     496
+Bytes moved, AFTER elementwiseFusionPass() (t1 stays a boundary,
+             t2/t3/out fuse into one kernel):                          256
+
+Chapter 12's own two bounds for this exact graph (Section 12.3, computed by
+formula, never by an actual pass):
+  fully UNFUSED (4 kernels):                          496 bytes  (matches 'BEFORE' above)
+  IDEALIZED single kernel for the WHOLE graph at once: 112 bytes  (never actually built)
+
+self-check: bytes moved before fusion exactly matches Chapter 12's own 496-byte
+unfused figure for this graph (confirmed)
+self-check: bytes moved after this REAL pass (256) is strictly BETWEEN Chapter 12's
+idealized 112-byte bound and its 496-byte unfused figure -- real, substantial
+savings, honestly short of an ideal that never had to respect t1's own sharing (confirmed)
+
+AI_before = 48 / 496 bytes = 0.096774 FLOPs/byte
+AI_after  = 48 / 256 bytes = 0.187500 FLOPs/byte
+self-check: arithmetic intensity strictly improved from a REAL pass run, not just a
+formula (confirmed)
+
+self-check: evaluate(original, a=4,b=9).out = 65, evaluate(fused, ...).out = 65 (confirmed)

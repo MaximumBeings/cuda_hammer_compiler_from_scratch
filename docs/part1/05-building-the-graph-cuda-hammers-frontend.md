@@ -1,5 +1,14 @@
 # 5. Building the Graph: CUDA Hammer's Frontend
 
+<!-- hammer:figure:opener-5:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Building the Graph: CUDA Hammer's Frontend](../images/openers/05.svg?v=7c08fb9dc235)](../images/openers/05.svg?v=7c08fb9dc235)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-5:end -->
+
 **What you will understand:** a minimal text format for describing a tensor computation, and how CUDA Hammer's own frontend parses it straight into the `Value`/`Node`/`Graph` structures Chapter 4 built -- with no AST stage in between at all. This is a real, defensible architecture choice, not a shortcut: whether a frontend needs a tree stage depends on whether its *source grammar* is recursive, and this chapter's grammar deliberately is not.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph` classes (reused here unchanged) and Chapter 2's vocabulary (lexer, parser, symbol resolution).
@@ -15,6 +24,15 @@ CHAPTER 5's FRONTEND (a flat, already-named grammar needs no tree at all):
 ```
 
 ## 5.1 A Minimal Text Format for Describing a Graph
+
+<!-- hammer:figure:5.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Text describes a graph](../images/concepts/05-01.svg?v=0b48d2e94103)](../images/concepts/05-01.svg?v=0b48d2e94103)
+
+<figcaption>The supported grammar is deliberately small.</figcaption>
+</figure>
+<!-- hammer:figure:5.1:end -->
 
 ### Intuition
 
@@ -69,6 +87,15 @@ Six kinds of token is all this format ever needs: `Ident` (a name, whether it's 
     It's tempting to think every real compiler frontend needs a tree stage, since Chapter 2's did. Whether a tree is needed depends entirely on whether the *source grammar itself* is recursive -- Chapter 2's arithmetic expressions are (an expression contains sub-expressions), so a recursive-descent parser naturally builds a tree while discovering that nesting. This chapter's own grammar is flat by design: every statement names its own inputs directly, by an already-assigned name, so there is no nesting to discover in the first place. This is not unique to a toy book format either -- LLVM's own real IR text format works exactly this way, one flat, already-named instruction per line, parsed directly into LLVM's real IR with no separate tree stage. A flat grammar is not a "simpler, lesser" kind of frontend; it is a real, legitimate design a real production compiler's own text format actually uses.
 
 ## 5.2 Parsing Directly Into a Graph, No AST Required
+
+<!-- hammer:figure:5.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Names resolve to existing values](../images/concepts/05-02.svg?v=534697236c72)](../images/concepts/05-02.svg?v=534697236c72)
+
+<figcaption>A resolved operand is a dependency, not copied computation.</figcaption>
+</figure>
+<!-- hammer:figure:5.2:end -->
 
 ### Intuition
 
@@ -158,6 +185,8 @@ Because every lookup this way is a single, immediate map access -- never a searc
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 007_text_frontend_builds_graph_directly.cpp -o 007_text_frontend_builds_graph_directly
 // Run:     ./007_text_frontend_builds_graph_directly
 #include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -251,11 +280,15 @@ static std::vector<Token> lexLine(const std::string& line) {
             toks.push_back({TokKind::Ident, line.substr(start, i - start), 0.0f});
             continue;
         }
-        if (isdigit(static_cast<unsigned char>(c)) || c == '.') {
-            size_t start = i;
-            while (i < line.size() && (isdigit(static_cast<unsigned char>(line[i])) || line[i] == '.')) ++i;
-            std::string text = line.substr(start, i - start);
-            toks.push_back({TokKind::Number, text, std::stof(text)});
+        if (isdigit(static_cast<unsigned char>(c)) || c == '.' || c == '-' || c == '+') {
+            const char* start = line.c_str() + i;
+            char* end = nullptr;
+            float value = std::strtof(start, &end);
+            if (end == start || !std::isfinite(value))
+                throw std::runtime_error("lex: invalid or nonfinite numeric literal");
+            size_t count = static_cast<size_t>(end - start);
+            toks.push_back({TokKind::Number, line.substr(i, count), value});
+            i += count;
             continue;
         }
         switch (c) {
@@ -500,6 +533,15 @@ self-check: the symbol table resolves 'out' to node %5 (confirmed)
 
 ## 5.3 Symbol Table Errors: Catching a Broken Program Before It Runs
 
+<!-- hammer:figure:5.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Reject invalid names early](../images/concepts/05-03.svg?v=90afd7d59218)](../images/concepts/05-03.svg?v=90afd7d59218)
+
+<figcaption>Do not continue code generation after a frontend error.</figcaption>
+</figure>
+<!-- hammer:figure:5.3:end -->
+
 ### Intuition
 
 A form with a required field left blank, or the same reference number filled in twice by mistake, is caught by whoever processes it *before* it gets filed -- not after, when tracing the mistake back would mean unwinding everything that was built on top of it. CUDA Hammer's own frontend applies the same discipline: an undefined name, a redefined name, or the wrong number of arguments for an operation is caught the moment the offending statement is parsed, before a single wrong node is ever added to the graph -- never discovered later by some downstream pass tripping over a graph that was already built wrong.
@@ -564,6 +606,8 @@ Each of these is a different KIND of mistake -- a bad reference, a bad name, a b
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 008_frontend_error_handling.cpp -o 008_frontend_error_handling
 // Run:     ./008_frontend_error_handling
 #include <cstdio>
+#include <cstdlib>
+#include <cmath>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -640,11 +684,15 @@ static std::vector<Token> lexLine(const std::string& line) {
             toks.push_back({TokKind::Ident, line.substr(start, i - start), 0.0f});
             continue;
         }
-        if (isdigit(static_cast<unsigned char>(c)) || c == '.') {
-            size_t start = i;
-            while (i < line.size() && (isdigit(static_cast<unsigned char>(line[i])) || line[i] == '.')) ++i;
-            std::string text = line.substr(start, i - start);
-            toks.push_back({TokKind::Number, text, std::stof(text)});
+        if (isdigit(static_cast<unsigned char>(c)) || c == '.' || c == '-' || c == '+') {
+            const char* start = line.c_str() + i;
+            char* end = nullptr;
+            float value = std::strtof(start, &end);
+            if (end == start || !std::isfinite(value))
+                throw std::runtime_error("lex: invalid or nonfinite numeric literal");
+            size_t count = static_cast<size_t>(end - start);
+            toks.push_back({TokKind::Number, line.substr(i, count), value});
+            i += count;
             continue;
         }
         switch (c) {

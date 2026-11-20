@@ -77,9 +77,9 @@ static double estimateLoopOrderCost(const LoopNest& nest, const LoopOrder& order
 // row-major (a[i*N + j]), walked either row-major (dim0 outer, dim1
 // inner -- order {0,1}) or column-major (dim1 outer, dim0 inner -- order
 // {1,0}). N is chosen deliberately large enough (4096 x 4096 floats =
-// 64 MB per array) that the whole array cannot fit in any real cache, so
-// the effect measured is genuinely about memory traffic, not an artifact
-// of a dataset small enough to sit in cache either way.
+// 64 MB per array). This may exceed some caches, but modern LLCs can be larger;
+// inspect the actual target hierarchy before attributing timings to DRAM.
+// The measured order effect can involve caches, TLBs and prefetching too.
 static void computeOrdered(const std::vector<float>& a, std::vector<float>& out, long long N, const LoopOrder& order) {
     if (order == LoopOrder{0, 1}) {          // row-major: i outer, j inner (contiguous)
         for (long long i = 0; i < N; ++i)

@@ -1,0 +1,26 @@
+SOURCE: docs/part1/code/009_shape_inference_by_topological_walk.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part1/code/009_shape_inference_by_topological_walk.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-5lio09bi/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 6.1: the broadcasting rule, tested on its own ===
+
+  [3, 4] broadcast [3, 4] -> [3, 4]  (expected [3, 4], confirmed)
+  [3, 4] broadcast [4] -> [3, 4]  (expected [3, 4], confirmed)
+  [3, 1] broadcast [1, 4] -> [3, 4]  (expected [3, 4], confirmed)
+  [5] broadcast [1] -> [5]  (expected [5], confirmed)
+  [2, 3, 4] broadcast [4] -> [2, 3, 4]  (expected [2, 3, 4], confirmed)
+
+self-check: every broadcasting case matches its hand-computed expected shape (confirmed)
+
+=== Section 6.2: inferring every node's shape over Chapter 4's diamond graph ===
+
+  %0 = Input(a): shape [3, 4]
+  %1 = Input(b): shape [4]
+  %2 = Add(t1): shape [3, 4]
+  %3 = Mul(t2): shape [3, 4]
+  %4 = ReLU(t3): shape [3, 4]
+  %5 = Add(out): shape [3, 4]
+
+self-check: 'out' -- reached through two broadcasts (t1) and one shape-preserving
+ReLU (t3) -- correctly infers to [3, 4] (confirmed)

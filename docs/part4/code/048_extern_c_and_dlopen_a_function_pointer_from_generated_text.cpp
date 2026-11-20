@@ -555,7 +555,7 @@ int main() {
         // subprocess launch and not a line of printed text to parse back.
         fn(ext, extCounts, out1.data(), n);
         matches = (out1.size() == expected.at("out").size());
-        if (matches) for (size_t i = 0; i < out1.size(); ++i) if (std::fabs(out1[i] - expected.at("out")[i]) > 1e-3f) matches = false;
+        if (matches) for (size_t i = 0; i < out1.size(); ++i) if (!(std::fabs(out1[i] - expected.at("out")[i]) <= 1e-3f)) matches = false;
     }  // module's own destructor runs HERE, dlclose()-ing the shared library
 
     printf("dlopen/dlsym succeeded (%s). compute_out(...), called as a real function pointer:\n", loadedOk ? "confirmed" : "MISMATCH");

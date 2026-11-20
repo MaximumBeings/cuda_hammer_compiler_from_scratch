@@ -1,5 +1,14 @@
 # Appendix C: LLVM and MLIR -- The Compiler Infrastructure You Get for Free
 
+<!-- hammer:figure:appendix-C:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![LLVM and MLIR -- The Compiler Infrastructure You Get for Free](../images/openers/appendix-c.svg?v=0854d16c149f)](../images/openers/appendix-c.svg?v=0854d16c149f)
+
+<figcaption>Appendix roadmap.</figcaption>
+</figure>
+<!-- hammer:figure:appendix-C:end -->
+
 Every pass and every backend CUDA Hammer has since Chapter 8 was
 hand-written for this book's own `OpKind` enum and `Graph`/`Node`
 types: `constantFoldPass()` and `deadCodeEliminationPass()` (Chapter
@@ -87,6 +96,15 @@ dropping the device.
 
 ## C.1 -- Hand-Written LLVM IR for CUDA Hammer's Diamond Graph
 
+<!-- hammer:figure:C.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Hand-Written LLVM IR for CUDA Hammer's Diamond Graph](../images/concepts/c-01.svg?v=602f3ed3a3b7)](../images/concepts/c-01.svg?v=602f3ed3a3b7)
+
+<figcaption>External tools remain optional and version-dependent.</figcaption>
+</figure>
+<!-- hammer:figure:C.1:end -->
+
 Chapter 4's own diamond graph, reused in every chapter since, is five
 nodes built through `Graph::addInput`/`addBinary`/`addUnary`:
 
@@ -108,6 +126,7 @@ Chapter 34's own `max(a,b) = b + ReLU(a-b)` identity already used at
 the C++ source level, one level higher.
 
 ```llvm
+; 097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll
 ; Appendix C.1 -- CUDA Hammer's own Chapter 4 diamond graph, hand-written
 ; directly as real LLVM IR text instead of built through Graph::addInput/
 ; addBinary/addUnary. The same five nodes File 005 built by hand:
@@ -120,9 +139,9 @@ the C++ source level, one level higher.
 ;
 ; with a = 3.0, b = 4.0, giving t1=7, t2=21, t3=7, out=28 by hand.
 ;
-; ReLU(t1) is expressed the only way LLVM IR has to express a
-; conditional-select over an SSA value: a real fcmp (compare t1 to 0.0)
-; feeding a real select. This is not a simplification chosen for this
+; ReLU(t1) is expressed here using fcmp (compare t1 to 0.0)
+; feeding select. This is one encoding, not the only one: control-flow
+; branches/phi or suitable floating-point intrinsics are alternatives. This is not a simplification chosen for this
 ; book -- it is the same fcmp+select shape Chapter 34's own
 ; max(a,b)=b+ReLU(a-b) identity already used at the C++ source level;
 ; here it appears one level lower, in the compiler's own IR.
@@ -265,6 +284,15 @@ CUDA Hammer's own diamond graph, discovering the same identity Chapter
 34 wrote into CUDA Hammer's own C++ source by hand.
 
 ## C.2 -- What LLVM's Own Optimizer Does To It, For Free
+
+<!-- hammer:figure:C.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![What LLVM's Own Optimizer Does To It, For Free](../images/concepts/c-02.svg?v=2e5592778e11)](../images/concepts/c-02.svg?v=2e5592778e11)
+
+<figcaption>External tools remain optional and version-dependent.</figcaption>
+</figure>
+<!-- hammer:figure:C.2:end -->
 
 Chapter 9 hand-wrote `constantFoldPass()` and
 `deadCodeEliminationPass()` specifically for CUDA Hammer's own
@@ -410,6 +438,15 @@ hand-translated computation using four passes it ships with, none of
 which have ever seen a tensor graph.
 
 ## C.3 -- MLIR's linalg.generic and Progressive Lowering
+
+<!-- hammer:figure:C.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![MLIR's linalg.generic and Progressive Lowering](../images/concepts/c-03.svg?v=81cf43ae0208)](../images/concepts/c-03.svg?v=81cf43ae0208)
+
+<figcaption>External tools remain optional and version-dependent.</figcaption>
+</figure>
+<!-- hammer:figure:C.3:end -->
 
 Chapter 15 hand-wrote `LoopNest` and `tileLoop()` --
 CUDA Hammer's own way of expressing "iterate over these dimensions,
@@ -622,6 +659,15 @@ is a general MLIR conversion pass that would lower any other
 `linalg.generic` body the same way.
 
 ## C.4 -- Capstone: CUTLASS and the Real Im2col-Aware GEMM Behind Chapter 31's Citation
+
+<!-- hammer:figure:C.4:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Capstone: CUTLASS and the Real Im2col-Aware GEMM Behind Chapter 31's Citation](../images/concepts/c-04.svg?v=0a21be943cd3)](../images/concepts/c-04.svg?v=0a21be943cd3)
+
+<figcaption>External tools remain optional and version-dependent.</figcaption>
+</figure>
+<!-- hammer:figure:C.4:end -->
 
 Chapter 31.2 cited NVIDIA CUTLASS's own documentation
 for the real im2col-based implicit-GEMM technique behind convolution

@@ -1,0 +1,34 @@
+==============================================================================
+PART 1: the tuning-knob record itself
+==============================================================================
+CudaHammerSchedule (Ch21, this book's own struct):
+    tile_size_per_loop = [6, 8]
+    loop_order = [0, 1]
+    unroll_factor = 4
+    -- 3 fields
+
+NOTE: the field NAMES below are real (xla/autotuning.proto); the VALUES are representative placeholders, not a measured result -- this sandbox has no GPU for XLA's real autotuner to search on.
+XlaTritonGemmKey (real field names, xla/autotuning.proto):
+    block_m = 128
+    block_n = 128
+    block_k = 32
+    num_stages = 3
+    num_warps = 4
+    num_ctas = 1
+    is_tma_allowed = False
+    -- 7 fields
+
+-- both records answer the exact same question for their own system: how should ONE loop nest / GEMM be tiled and launched. CUDA Hammer's Schedule generalizes over ANY LoopNest shape (Ch21's own enumerateSchedules()); XLA's TritonGemmKey is specific to one matmul-shaped Triton kernel template -- CUDA Hammer's toy IR never grew a matmul op (Ch4's own scope, unchanged through Ch24).
+
+==============================================================================
+PART 2: the (workload, target) cache key shape
+==============================================================================
+CUDA Hammer's own Ch24.3 key: 'dim0:6,dim1:8@aarch64'
+NOTE: again, real field names, placeholder values -- no GPU here to read real ones from.
+XLA's own real AutotuningLog context fields (xla/autotuning.proto):
+    cudnn_version = '9.x'
+    compute_capability = 'sm_90'
+    device_pci_bus_id = '0000:00:00.0'
+
+-- Ch24.3's own loopNestKeyForTarget() was built by direct measurement on two real machines (a cloud sandbox and a real device disagreeing on the fastest schedule for the identical LoopNest shape) BEFORE this chapter ever looked at XLA's own source. XLA's own AutotuningLog arrives at the same shape -- a winning config is only valid for the (workload, target) pair that produced it -- at production scale, with three real target fields where Ch24.3's own key used one string.
+EXIT=0

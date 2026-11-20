@@ -1,5 +1,18 @@
 # 15. Loop Fusion and Tiling
 
+<!-- hammer:figure:opener-15:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Loop Fusion and Tiling](../images/openers/15.svg?v=688a018d640c)](../images/openers/15.svg?v=688a018d640c)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-15:end -->
+
+!!! note "Loop compatibility is only a candidate test"
+    Matching ordered loop extents is necessary for this simple shared-iteration candidate, not a proof of legal loop fusion. A real scheduler must also check RAW/WAR/WAW dependences, reductions, aliasing, side effects, synchronization and iteration/access mappings. TVM schedule.fuse merges adjacent iteration axes; compute_at/reverse_compute_at concern producer/consumer placement. This chapter does not implement general dependence analysis.
+
+
 **What you will understand:** `LoopNest`, the first explicit representation of actual ITERATION this book's IR has ever needed -- built entirely from information Chapters 6 and 14 already computed (`Shape`, `reduceElementCount`), not new data the graph has to carry; `tileLoop()`, which splits one loop into an outer/inner pair while correctly handling the boundary tile that doesn't divide evenly; and `loopNestsCompatibleForFusion()`, a second, independent axis of fusion -- separate from Chapters 13-14's own operator-fusion question -- that asks whether two nodes' own loops could still merge at codegen time even when their FusedStep programs stayed apart.
 
 **What you need to know first:** Chapter 6's `Shape`/`inferShapes()`/`numElements()`, Chapter 13's entire fusion IR and `elementwiseFusionPass()`, and Chapter 14's `OpKind::Sum`/`FusedReduction`/`reductionFusionPass()` -- this chapter builds a new VIEW on top of all of it rather than changing any of it.
@@ -34,6 +47,15 @@ WHAT LOOP-LEVEL REASONING ADDS ON TOP OF OPERATOR FUSION:
 ```
 
 ## 15.1 From Shapes to Loop Nests: Giving Every Computed Node Real Iteration Bounds
+
+<!-- hammer:figure:15.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Lower tensor work to iteration bounds](../images/concepts/15-01.svg?v=8e666ac7d8f9)](../images/concepts/15-01.svg?v=8e666ac7d8f9)
+
+<figcaption>Each output coordinate must be visited as intended.</figcaption>
+</figure>
+<!-- hammer:figure:15.1:end -->
 
 ### Intuition
 
@@ -87,6 +109,7 @@ A NODE'S OWN LOOP NEST, BUILT FROM INFORMATION THE IR ALREADY HAS:
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 033_from_shapes_to_loop_nests_giving_fused_nodes_real_iteration_bounds.cpp -o 033_from_shapes_to_loop_nests_giving_fused_nodes_real_iteration_bounds
 // Run:     ./033_from_shapes_to_loop_nests_giving_fused_nodes_real_iteration_bounds
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -215,7 +238,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
@@ -645,6 +673,15 @@ reduction needs -- the loop nest itself is invariant across the fusion boundary 
 
 ## 15.2 Tiling a Loop: Splitting One Loop Into Two, Correctly at the Boundary
 
+<!-- hammer:figure:15.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Tile boundaries need a tail guard](../images/concepts/15-02.svg?v=4eee1d68a6b2)](../images/concepts/15-02.svg?v=4eee1d68a6b2)
+
+<figcaption>The last tile may be shorter than the nominal tile size.</figcaption>
+</figure>
+<!-- hammer:figure:15.2:end -->
+
 ### Intuition
 
 A `LoopNest` says how many total iterations a computation needs; it says nothing about how much of a tensor's own data one PASS through the hardware should touch before moving on -- the real, practical question behind cache blocking and shared-memory staging, and one of the exact knobs Part 5's own autotuner will eventually search over rather than hand-pick. Tiling is the mechanical operation underneath that knob: take one loop of extent N, and run it instead as an OUTER loop over "which tile" and an INNER loop over "which element within that tile." When the tile size happens to divide N evenly, this is nothing more than bookkeeping. It almost never divides evenly in practice, and that is where a careless implementation goes wrong: the LAST tile is shorter than every tile before it, and a tiling scheme that doesn't account for that either silently drops real elements or reads past the end of real memory -- not a diagram-level nicety, but the exact kind of off-by-one a real compiler cannot afford to ship.
@@ -686,7 +723,7 @@ TILING A LOOP OF EXTENT 13 BY A TILE SIZE OF 4 (the boundary case):
 // tile size.
 //
 // The one genuine subtlety, and the one this section spends most of its
-// own code proving rather than asserting: tiling is only a clean, even
+// own code checking on explicit cases: tiling is only a clean, even
 // split when the tile size happens to divide the original extent evenly.
 // It usually doesn't. The LAST tile is then partial -- shorter than every
 // tile before it -- and a tiling scheme that doesn't account for that
@@ -749,7 +786,8 @@ static TiledLoop tileLoop(const Loop& loop, long long tileSize) {
     // Ceiling division -- the number of tiles needed to cover originalExtent
     // elements at tileSize elements per tile, rounding UP: a partial final
     // tile still needs a full extra outer iteration to reach it at all.
-    long long outerExtent = (loop.extent + tileSize - 1) / tileSize;
+    if (loop.extent < 0) throw std::runtime_error("tileLoop: extent must be nonnegative");
+    long long outerExtent = loop.extent / tileSize + (loop.extent % tileSize != 0);
     return TiledLoop{loop.dimName, loop.extent, tileSize, outerExtent};
 }
 
@@ -760,6 +798,8 @@ static TiledLoop tileLoop(const Loop& loop, long long tileSize) {
 // tiles before it already covered -- which is tileSize only when
 // tileSize evenly divides originalExtent, and strictly less otherwise.
 static long long actualInnerExtent(const TiledLoop& tl, long long outerIndex) {
+    if (outerIndex < 0 || outerIndex >= tl.outerExtent)
+        throw std::out_of_range("tile index outside loop");
     long long alreadyCovered = outerIndex * tl.tileSize;
     long long remaining = tl.originalExtent - alreadyCovered;
     return std::min(tl.tileSize, remaining);
@@ -817,7 +857,7 @@ int main() {
     // Three full tiles (4, 4, 4) cover indices 0..11 -- 12 elements -- and
     // the FOURTH tile covers only what's left: 13 - 12 = 1 element. A
     // tiling scheme that used a fixed inner extent of 4 for every outer
-    // index would read index 12, 13, 14 -- three indices past the real
+    // index would visit 12, 13, 14, 15 -- with 13, 14, 15 past the real
     // data. actualInnerExtent() is exactly the function that prevents that.
     {
         Loop loop{"i", 13};
@@ -945,6 +985,15 @@ the pairs visited by the original 2-loop form -- 12 points, none missing, none r
 
 ## 15.3 Loop Fusion Across Nodes: A Second, Independent Axis From Operator Fusion
 
+<!-- hammer:figure:15.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Loop fusion and operator fusion differ](../images/concepts/15-03.svg?v=0be11536d058)](../images/concepts/15-03.svg?v=0be11536d058)
+
+<figcaption>A shared loop does not by itself remove every temporary array.</figcaption>
+</figure>
+<!-- hammer:figure:15.3:end -->
+
 ### Intuition
 
 Chapters 13 and 14 already answered a hard question correctly: which VALUES are safe to compute inside the same node's own internal program. That question has a real cost when the answer is no -- Chapter 14's own Graph B fused nothing at all, for two independent reasons at once, and the chapter framed that honestly as the correct output for a graph whose structure offered no safe fusion. But "operator fusion says no" and "these two computations' own LOOPS are incompatible" are not the same claim. A node that stays structurally separate because it's SHARED, or because it's a REDUCTION, can still have a loop that happens to run exactly as many times, over exactly the same range, as some other separate node's own loop -- and if so, a later codegen stage could still choose to interleave them into one shared loop, without operator fusion ever needing to agree. Real compilers build exactly this separation on purpose: Chapter 3 already cited TVM's own `fuse` schedule primitive as its own distinct operation, layered on top of whatever earlier decision grouped computations into stages at all.
@@ -996,6 +1045,7 @@ GRAPH B (Chapter 14's own example) -- OPERATOR FUSION already said no, twice:
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion.cpp -o 035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion
 // Run:     ./035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1122,7 +1172,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {

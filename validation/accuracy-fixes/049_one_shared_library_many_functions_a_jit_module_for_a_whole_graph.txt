@@ -1,0 +1,31 @@
+Fresh Apple Clang arm64 run
+
+EXECUTION:
+=== Section 20.2: one shared library, many functions -- a JIT module for a whole graph ===
+
+fused graph: a b t2(FE,2st) s(FR,1st) y(FE,2st) 
+
+generateJitProgramForGraph(): 3 extern "C" functions in ONE source file:
+  compute_t2 (elementwise)
+  compute_s (reduction)
+  compute_y (elementwise)
+
+--- g++ -shared -fPIC compile (whole graph, ONE invocation) ---
+
+(no output -- clean compile)
+
+self-check: this whole graph's own 3 non-leaf nodes needed exactly 1 g++ invocation(s)
+to compile -- Chapter 17/18's own harness would have shelled out once PER GENERATED
+PROGRAM; this section shells out once PER GRAPH (confirmed)
+
+compute_t2  (called as a real function pointer): 2.000000 0.000000 6.000000 0.000000 10.000000 0.000000  -- matches evaluateArrays() (confirmed)
+compute_s   (called as a real function pointer): 18.000000  -- matches evaluateArrays() (confirmed)
+compute_y   (called as a real function pointer): 22.000000 20.000000 26.000000 20.000000 30.000000 20.000000  -- matches evaluateArrays() (confirmed)
+
+self-check: 3 real dlsym() calls against ONE dlopen()'d handle, chained through
+the SAME std::map<string,vector<float>> buffer convention Chapter 18's own CPU
+driver used, produced every buffer evaluateArrays() reports for this fused
+graph -- reduction and elementwise functions dispatched correctly, from the
+SAME compiled shared library (confirmed)
+
+EXIT: 0

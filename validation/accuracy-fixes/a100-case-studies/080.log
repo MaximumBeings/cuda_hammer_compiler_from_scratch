@@ -1,0 +1,22 @@
+=== Part 1: the real legacy quantized-tensor API is deprecated ===
+Real deprecation warning on torch.quantize_per_tensor(): "(none)..."
+This legacy path still works today (int_repr = [9, 33, 10, -5]), but real, current PyTorch is already telling real users to move off it -- the real, low-level illustration this file uses is a pair of plain torch.ops.aten GEMM primitives on ordinary int8 tensors, no special quantized dtype at all.
+
+=== Part 2: real full-int8 GEMM, torch.ops.aten._int_mm ===
+Real schema: aten::_int_mm(Tensor self, Tensor mat2) -> Tensor
+Real output dtype: torch.int32 (int8 x int8 -> int32, the SAME accumulator-widening principle Files 078 and 079 both confirmed is structurally necessary -- though this real op is a compiled, opaque C++/CUDA kernel with no IR this file can inspect the way File 079 read Triton's own real arith.extsi/tt.reduce ops directly; its OWN correctness is the only evidence available here, honestly, not its internal structure)
+Real correctness check: _int_mm vs. manual int32 matmul = True
+
+=== Part 3: real weight-only quantized GEMM, torch.ops.aten._weight_int8pack_mm -- a DIFFERENT real quantization scheme ===
+Real schema: aten::_weight_int8pack_mm(Tensor self, Tensor mat2, Tensor scales) -> Tensor
+Real correctness check: _weight_int8pack_mm vs. manual dequantize-then-matmul = True
+Real, honest scope note: Files 078 and 079 both built the FULL-int8 scheme (Part 2's own _int_mm) by hand. This real op confirms production systems support a genuinely SEPARATE quantization shape neither of those files implements -- real quantization-aware codegen is not one fixed recipe.
+
+=== Part 4 (Part 6's own closing synthesis): does Inductor fuse a quantized GEMM from primitives, or dispatch to it? ===
+Real correctness check: torch.compile'd vs. eager match = True
+Real generated cpp_fused kernel count: 0 (Chapter 28.1's own diamond graph got its own generated kernel here this same way; Chapter 29.3's flash attention got 0; this real quantized GEMM gets 0)
+Real generated code calls straight through to extern_kernels._int_mm: True
+Real, additional evidence: real, current Inductor ships a NAMED config field, torch._inductor.config.force_fuse_int_mm_with_mul (default False), existing purely to let a user opt INTO fusing _int_mm with a following multiply -- real, direct evidence Inductor's own developers treat that one specific combination as a hand-written SPECIAL CASE worth naming and gating, not something generic automatic fusion discovers on its own.
+
+Observed scope: this CPU build and integer-matmul graph used an external kernel. This single result does not establish a universal limit on compiler-generated integer accumulation or fusion. Backend, operator, dtype, shape and compiler version matter.
+EXIT=0

@@ -63,6 +63,10 @@ int main() {
     printf("compile-time architecture macro: __x86_64__ defined\n");
     printf("-> Chapter 19's own generator will pick Isa::Avx2 for this machine.\n\n");
     std::vector<std::string> flags = readRealCpuFlags();
+    if (flags.empty()) {
+        printf("/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.\n");
+        return 0;
+    }
     bool hasAvx2 = hasFlag(flags, "avx2");
     bool hasFma  = hasFlag(flags, "fma");
     printf("real /proc/cpuinfo check: avx2 flag %s, fma flag %s\n",
@@ -75,12 +79,17 @@ int main() {
         printf("self-check: MISMATCH -- this CPU is x86_64 but its own real flags do not\n");
         printf("advertise both avx2 and fma. Chapter 19's -mavx2 -mfma build would fail to\n");
         printf("run correctly here (illegal-instruction risk) even though it would compile.\n");
-        printf("Use Chapter 19's own scalar fallback path, or an older -msse4.2-only build.\n");
+        printf("Use the scalar backend from Chapter17/18; Chapter19 has no SSE generator or CPU-feature dispatch.\n");
     }
 #elif defined(__aarch64__)
     printf("compile-time architecture macro: __aarch64__ defined\n");
     printf("-> Chapter 19's own generator will pick Isa::Neon for this machine.\n\n");
     std::vector<std::string> flags = readRealCpuFlags();
+    if (flags.empty()) {
+        printf("/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.\n");
+        printf("Architecture macros identify the compilation target, not a measured CPU feature list.\n");
+        return 0;
+    }
     bool hasAsimd = hasFlag(flags, "asimd");
     printf("real /proc/cpuinfo check: asimd flag %s\n", hasAsimd ? "PRESENT" : "ABSENT");
     if (hasAsimd) {

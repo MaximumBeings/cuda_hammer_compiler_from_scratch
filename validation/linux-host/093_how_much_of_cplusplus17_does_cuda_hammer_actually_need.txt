@@ -1,0 +1,9 @@
+SOURCE: docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp', '-o', '/tmp/hammer-host-_zzmq10n/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+__cplusplus = 201703L
+nodes allocated via std::make_unique: 3 (checksum of ids: 3)
+digit-separator literal elementCount = 1000000
+real result: this file compiled and ran under this standard.

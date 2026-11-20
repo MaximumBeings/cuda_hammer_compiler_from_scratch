@@ -1,5 +1,14 @@
 # Chapter 30: Quantization-Aware Codegen
 
+<!-- hammer:figure:opener-30:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Quantization-Aware Codegen](../images/openers/30.svg?v=ba5e420ac758)](../images/openers/30.svg?v=ba5e420ac758)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-30:end -->
+
 Every op this book's own IR has ever generated code for, since Chapter
 4's own `Value`, has been float-in/float-out, with no change of bit
 width between an operation's inputs and its output. Quantization breaks
@@ -32,13 +41,43 @@ installed `torch`).
 +------------------------------------------------------------------+
 ```
 
+**Accuracy and execution scope:** calibration now includes zero for one-sided
+ranges and handles zero/constant, empty and non-finite inputs explicitly.
+The half-step error bound applies only without clipping. Integer zero-point
+rounding does not map both observed extrema exactly. NumPy's dot demonstration
+now explicitly sums in int32 (the 64-element input is safely within range).
+The Triton dot uses zero-point-zero int8 inputs, a power-of-two extent and an
+int32 accumulator; sufficiently large reductions still need an overflow bound.
+Its offline compilation is not a hardware correctness test. Subsequent A100
+execution passed six random/extreme dot cases (N=32/64/128), alongside six
+attention cases, and memcheck reported zero errors; actual logs and source
+hashes are in `validation/accuracy-fixes/a100-case-studies/`. Existing historical
+NumPy captures below predate the added regressions; current rerun output is in
+`validation/accuracy-fixes/078-quantization.log`.
+
+CPU `_int_mm` dispatch for one graph does not prove a universal limitation on
+compiler-generated quantized kernels. Library calls, templates, pattern-based
+rewrites and fusion depend on backend/version/shape; historical closing claims
+that algorithms are *always* external kernels overgeneralize the observation.
+
+
 ## 30.1 Affine Quantization, and Why Codegen Needs a Wider Accumulator
+
+<!-- hammer:figure:30.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Affine quantization needs a representable zero](../images/concepts/30-01.svg?v=f877926a188f)](../images/concepts/30-01.svg?v=f877926a188f)
+
+<figcaption>Handle one-sided, constant and invalid ranges explicitly.</figcaption>
+</figure>
+<!-- hammer:figure:30.1:end -->
 
 Affine (linear) quantization maps a real-valued array onto narrow
 integers with two real numbers: a `scale` (the real value one integer
 step represents) and a `zero_point` (which integer represents 0.0).
 Quantizing rounds and clips; dequantizing recovers an approximation,
-bounded by `scale/2` in the worst case -- this is ordinary, bounded
+bounded by `scale/2` when no clipping occurs; saturation can cause much
+larger error. This is ordinary, bounded
 imprecision, the same kind of rounding error Chapter 21's own float32
 non-associativity finding already introduced this book to. The real
 danger is not imprecision; it's what happens during the ARITHMETIC a
@@ -97,6 +136,12 @@ def quantize(x, scale, zero_point, qmin=-128, qmax=127):
     """Real affine (linear) quantization: map a real-valued array to
     narrow integers, given a real scale (float, quantization step size)
     and zero_point (integer, which quantized value represents 0.0)."""
+    if not np.isfinite(scale) or scale <= 0:
+        raise ValueError("scale must be finite and positive")
+    if not (-128 <= qmin < qmax <= 127) or not (qmin <= zero_point <= qmax):
+        raise ValueError("signed-int8 range and in-range zero point required")
+    if not np.isfinite(x).all():
+        raise ValueError("quantization requires finite data")
     q = np.round(x / scale) + zero_point
     q = np.clip(q, qmin, qmax)
     return q.astype(np.int8)
@@ -106,20 +151,26 @@ def dequantize(q, scale, zero_point):
     """The inverse: recover an approximate real value from a quantized
     integer. Exact only when the original real value landed exactly on
     a representable quantization step -- otherwise this is where the
-    real, bounded rounding error (at most scale/2) comes from."""
+    rounding error (at most scale/2 for values that are not clipped) comes from."""
     return (q.astype(np.float64) - zero_point) * scale
 
 
 def choose_scale_zero_point(x, qmin=-128, qmax=127):
-    """A real, minimal calibration routine: pick scale/zero_point so the
-    real observed [min(x), max(x)] range maps exactly onto
-    [qmin, qmax] -- the same affine-mapping idea every real quantization
-    library (including PyTorch's own, inspected in File 080) calibrates
-    from real observed activation/weight ranges."""
-    x_min, x_max = float(x.min()), float(x.max())
+    """Minimal signed-int8 calibration, including zero in the observed range.
+
+    Rounded integer zero points need not map both extrema exactly. The
+    scale/2 round-trip bound applies only without saturation/clipping.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    if x.size == 0 or not np.isfinite(x).all():
+        raise ValueError("calibration requires nonempty finite data")
+    if not (-128 <= qmin < qmax <= 127):
+        raise ValueError("this example emits signed int8 only")
+    x_min, x_max = min(float(x.min()), 0.0), max(float(x.max()), 0.0)
+    if x_min == x_max:  # all zeros: avoid division by zero
+        return 1.0, 0
     scale = (x_max - x_min) / (qmax - qmin)
-    zero_point = qmin - round(x_min / scale)
-    zero_point = int(np.clip(zero_point, qmin, qmax))
+    zero_point = int(np.clip(qmin - round(x_min / scale), qmin, qmax))
     return scale, zero_point
 
 
@@ -140,6 +191,22 @@ if __name__ == "__main__":
     print(f"Real mean abs round-trip error: {abs_error.mean():.6f}")
     print(f"Quantized int8 range actually used: "
           f"[{q.min()}, {q.max()}] out of the legal [-128, 127]")
+
+    # Regression coverage: one-sided and constant ranges must not clip
+    # simply because zero cannot be represented by the selected offset.
+    for samples in ([1., 2.], [-2., -1.], [0., 0.], [3., 3.], [-3., -3.]):
+        a_test = np.asarray(samples)
+        s_test, z_test = choose_scale_zero_point(a_test)
+        recovered = dequantize(quantize(a_test, s_test, z_test), s_test, z_test)
+        assert np.max(np.abs(recovered - a_test)) <= s_test / 2 + 1e-12
+    for samples in ([], [np.nan], [np.inf]):
+        try:
+            choose_scale_zero_point(np.asarray(samples))
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid calibration input accepted")
+    print("Calibration regressions: one-sided, constant, zero, empty and non-finite inputs PASS")
 
     print()
     print("=== Part 2: the real reason quantization-aware codegen is a "
@@ -167,7 +234,8 @@ if __name__ == "__main__":
     # real systems make: widen the accumulator's own TYPE, not just its
     # value.
     correct_products = a.astype(np.int32) * b.astype(np.int32)
-    correct_sum = correct_products.sum()
+    correct_sum = correct_products.sum(dtype=np.int32)
+    assert int(correct_sum) == int(np.sum(a.astype(np.int64) * b.astype(np.int64)))
 
     overflowed_terms = int(np.sum(
         wrong_products.astype(np.int32) != correct_products))
@@ -287,24 +355,76 @@ from theory.
 python3 "078_affine_quantization_math_and_why_codegen_needs_a_wider_accumulator.py"
 ```
 
+## 30.2 The Same Shape as One Real Triton Kernel
+
+<!-- hammer:figure:30.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Quantized products need sufficient accumulation width](../images/concepts/30-02.svg?v=680870316472)](../images/concepts/30-02.svg?v=680870316472)
+
+<figcaption>Accumulator overflow bounds depend on the reduction length.</figcaption>
+</figure>
+<!-- hammer:figure:30.2:end -->
+
+File 078 argued, by hand, that a quantized dot product's own generated
+code has to widen before multiplying. File 079 writes that same
+computation as one real `@triton.jit` kernel -- ordinary Triton syntax,
+`.to(tl.int32)`, with no manual overflow bookkeeping -- and compiles it
+through the same explicit `target=GPUTarget(...)` technique Chapter 27
+established (no physical GPU needed, real AOT compilation only).
+
+```text
+  quantized_dot_kernel (one @triton.jit function):
+
+  load a, b            (tt.load, real int8 block-level tensors)
+  a32 = a.to(int32)     -- Triton's own compiler must insert a REAL,
+  b32 = b.to(int32)        SEPARATE widening instruction here
+  products = a32 * b32  -- now a real int32 multiply, no overflow risk
+  acc = sum(products)   -- a real int32 block-level REDUCTION
+  dequant = float(acc) * (scale_a * scale_b)
+  store dequant
+```
+
+File 079's own real, printed TTIR confirms the claim directly, not by
+assumption: `arith.extsi` (a real MLIR sign-extend instruction) appears
+exactly TWICE -- once per real int8 input -- immediately before the real
+`arith.muli` that multiplies the now-widened values, and a real
+`tt.reduce` block performs the int32 accumulation with `arith.addi`
+inside it. Triton's own compiler inserts this widening step
+automatically from nothing more than the source text's own plain
+`.to(tl.int32)` call; the block-level PROGRAMMER never has to write a
+manual overflow check the way File 078's own hand-argued case implied
+one might need to. Real, verified structural finding (the same
+comparison every Triton file in this book has made): every real IR
+excerpt and op count is byte-identical between the cloud sandbox and the
+device, with only the raw ttir/ttgir/llir/ptx character COUNTS differing
+from the same embedded absolute-path-length artifact Chapter 27 already
+traced.
+
+```bash
+python3 "079_a_real_triton_quantized_dot_kernel_compiled_with_no_gpu.py"
+```
+
+
 ```python
-# Chapter 30, File 079: File 078's own hand-argued claim -- that a
-# quantized dot product needs its accumulator's own TYPE widened, not
-# just a wider value -- confirmed as real, automatically-inserted
-# compiler behavior, by writing the same computation as one real Triton
-# kernel and reading what its own compiler actually emits.
+# Chapter 30, File 079: explicit widening in a zero-point-zero int8 dot.
+# The programmer requests int32 conversion before multiplication; the compiler
+# lowers those explicit casts. This is not automatic inference of a quantized
+# accumulator policy from arbitrary primitive graphs.
 #
-# Real toolchain note, same honest limitation as every Triton file since
-# Chapter 27: no physical GPU here, so this file is real AOT COMPILATION
-# only, never execution -- File 078's own pure-NumPy version already
-# proved the arithmetic correct; this file proves the SAME accumulator-
-# widening step is something Triton's own compiler inserts automatically
-# from ordinary Python type-conversion syntax (`.to(tl.int32)`), not
-# something the block-level programmer has to hand-encode as a separate
-# instruction.
+# Historical evidence is offline AOT compilation, not GPU execution. File 078
+# checks its own NumPy arithmetic; it does not validate this Triton kernel.
+# Current source bounds positive power-of-two N to <=65536 so worst-case
+# signed-int8 accumulation fits int32. Finite input scales and matching allocated
+# extents are caller requirements; asymmetric zero-point correction is absent.
+#
+# A fresh compile and real-device checks are required after source changes.
+# See validation/accuracy-fixes/gpu_case_validation.py. Historical IR excerpts
+# show the former N=64 compile and are not current GPU runtime evidence.
 #
 # Compiled with:   python3 "079_a_real_triton_quantized_dot_kernel_compiled_with_no_gpu.py"
 
+import re
 import triton
 import triton.language as tl
 from triton.backends.compiler import GPUTarget
@@ -313,6 +433,8 @@ from triton.backends.compiler import GPUTarget
 @triton.jit
 def quantized_dot_kernel(a_ptr, b_ptr, out_ptr, scale_a, scale_b,
                           N: tl.constexpr):
+    tl.static_assert(N > 0 and (N & (N - 1)) == 0, "N must be a positive power of two")
+    tl.static_assert(N <= 65536, "int8 worst-case accumulation must fit int32")
     # a, b load as real int8 BLOCK-level tensors -- Chapter 27's own
     # block-level model, applied here to narrow integer data for the
     # first time in this book.
@@ -325,7 +447,7 @@ def quantized_dot_kernel(a_ptr, b_ptr, out_ptr, scale_a, scale_b,
     # `.to(tl.int32)` -- with no manual overflow bookkeeping.
     a32 = a.to(tl.int32)
     b32 = b.to(tl.int32)
-    products = a32 * b32          # real int32 * int32, no overflow risk
+    products = a32 * b32          # int8-range products fit int32; N is bounded above
     acc = tl.sum(products, axis=0)  # real int32 accumulate (a genuine
     # Triton block-level REDUCTION, tl.sum, over the whole loaded block --
     # not a running total threaded through a loop the way File 076's own
@@ -362,7 +484,9 @@ def strip_source_locations(ir_text):
 
 
 def count_ops(ir_text, op_name):
-    return sum(1 for line in ir_text.splitlines() if op_name in line)
+    # Count the operation name, not e.g. its tt.reduce.return terminator.
+    pattern = r"\b" + re.escape(op_name) + r"(?![\w.])"
+    return sum(1 for line in ir_text.splitlines() if re.search(pattern, line))
 
 
 if __name__ == "__main__":
@@ -398,7 +522,7 @@ if __name__ == "__main__":
     print("=== Real TTIR excerpt: load through widen through multiply "
           "(path-normalized) ===")
     lines = ttir.splitlines()
-    load_idx = next(i for i, l in enumerate(lines) if "b_3 = tt.load" in l)
+    load_idx = next(i for i, l in enumerate(lines) if "tt.load" in l)
     for line in lines[load_idx:load_idx + 4]:
         print(line.strip())
 
@@ -470,46 +594,22 @@ tt.reduce.return %acc_7 : i32 loc(#loc32)
 *Every real op count and IR excerpt agrees between the two machines -- only the raw ttir/ttgir/llir/ptx character COUNTS differ, from the same embedded absolute-path-length artifact Chapter 27 already traced and explained.*
 
 
-## 30.2 The Same Shape as One Real Triton Kernel
+## 30.3 PyTorch Quantized GEMM and Compiler Dispatch
 
-File 078 argued, by hand, that a quantized dot product's own generated
-code has to widen before multiplying. File 079 writes that same
-computation as one real `@triton.jit` kernel -- ordinary Triton syntax,
-`.to(tl.int32)`, with no manual overflow bookkeeping -- and compiles it
-through the same explicit `target=GPUTarget(...)` technique Chapter 27
-established (no physical GPU needed, real AOT compilation only).
+<!-- hammer:figure:30.3:start -->
+<figure class="chapter-figure" markdown="1">
 
-```text
-  quantized_dot_kernel (one @triton.jit function):
+[![Container storage and kernel arithmetic differ](../images/concepts/30-03.svg?v=31bfd70a98a9)](../images/concepts/30-03.svg?v=31bfd70a98a9)
 
-  load a, b            (tt.load, real int8 block-level tensors)
-  a32 = a.to(int32)     -- Triton's own compiler must insert a REAL,
-  b32 = b.to(int32)        SEPARATE widening instruction here
-  products = a32 * b32  -- now a real int32 multiply, no overflow risk
-  acc = sum(products)   -- a real int32 block-level REDUCTION
-  dequant = float(acc) * (scale_a * scale_b)
-  store dequant
-```
+<figcaption>Backend-specific support must be checked for the pinned version.</figcaption>
+</figure>
+<!-- hammer:figure:30.3:end -->
 
-File 079's own real, printed TTIR confirms the claim directly, not by
-assumption: `arith.extsi` (a real MLIR sign-extend instruction) appears
-exactly TWICE -- once per real int8 input -- immediately before the real
-`arith.muli` that multiplies the now-widened values, and a real
-`tt.reduce` block performs the int32 accumulation with `arith.addi`
-inside it. Triton's own compiler inserts this widening step
-automatically from nothing more than the source text's own plain
-`.to(tl.int32)` call; the block-level PROGRAMMER never has to write a
-manual overflow check the way File 078's own hand-argued case implied
-one might need to. Real, verified structural finding (the same
-comparison every Triton file in this book has made): every real IR
-excerpt and op count is byte-identical between the cloud sandbox and the
-device, with only the raw ttir/ttgir/llir/ptx character COUNTS differing
-from the same embedded absolute-path-length artifact Chapter 27 already
-traced.
-
-```bash
-python3 "079_a_real_triton_quantized_dot_kernel_compiled_with_no_gpu.py"
-```
+The following capstone inspects low-level internal aten operators. They are
+not a complete or stable public migration API. The supported direction is
+plain dtypes with explicit quantization metadata and [TorchAO](https://github.com/pytorch/ao);
+see [PyTorch's migration guidance](https://docs.pytorch.org/docs/2.14/quantization.html).
+Underscore-prefixed aten operators can change across releases.
 
 ```python
 # Chapter 30, File 080 (capstone, closes Part 6): real PyTorch's own
@@ -529,8 +629,8 @@ python3 "079_a_real_triton_quantized_dot_kernel_compiled_with_no_gpu.py"
 # the whole `torch.qint8`/`torch.quint8`/`torch.qint32` quantized-dtype
 # family are REAL, currently DEPRECATED -- a real warning naming a real
 # GitHub issue (pytorch/pytorch#184982), "will be removed in a future
-# PyTorch release." The real, still-supported replacement is a pair of
-# plain `torch.ops.aten` GEMM primitives operating on ordinary int8
+# PyTorch release." This illustration inspects two low-level, internal aten
+# GEMM primitives operating on ordinary int8
 # tensors (no special quantized dtype at all): `_int_mm` (full int8 x
 # int8 -> int32 GEMM) and `_weight_int8pack_mm` (weight-only quantized
 # GEMM: float activations, int8 weights, a real per-output-channel
@@ -599,7 +699,7 @@ if __name__ == "__main__":
     print(f"This legacy path still works today (int_repr = "
           f"{legacy_q.int_repr().tolist()}), but real, current PyTorch "
           f"is already telling real users to move off it -- the real, "
-          f"still-supported replacement this file uses instead is a "
+          f"low-level illustration this file uses is a "
           f"pair of plain torch.ops.aten GEMM primitives on ordinary "
           f"int8 tensors, no special quantized dtype at all.")
 
@@ -684,20 +784,10 @@ if __name__ == "__main__":
           f"something generic automatic fusion discovers on its own.")
 
     print()
-    print("Part 6's own closing finding, confirmed a second time by a "
-          "second, unrelated real algorithm: Chapter 29 found Inductor "
-          "dispatches to a hand-written Flash Attention kernel rather "
-          "than decomposing and re-fusing it; this file finds the exact "
-          "same shape for quantized GEMM -- zero generated kernels, a "
-          "direct call to a real, separately implemented aten op, and "
-          "even a real NAMED config knob for the one specific fusion "
-          "(with a following multiply) its own authors judged worth "
-          "hand-coding. Across every real system this Part studied -- "
-          "XLA, Relax, Triton, Inductor -- automatic fusion covers "
-          "ORDINARY elementwise and reduction graphs; algorithms whose "
-          "own numeric behavior genuinely differs (a streaming softmax, "
-          "an integer accumulator) are handled by real, separately "
-          "written kernels every time, never invented by a fusion pass.")
+    print("Observed scope: this CPU build and integer-matmul graph used an "
+          "external kernel. This single result does not establish a universal "
+          "limit on compiler-generated integer accumulation or fusion. "
+          "Backend, operator, dtype, shape and compiler version matter.")
 ```
 
 ```bash
@@ -709,7 +799,7 @@ python3 "080_real_pytorch_quantized_gemm_kernels_and_the_part_6_synthesis.py"
 ```text
 === Part 1: the real legacy quantized-tensor API is deprecated ===
 Real deprecation warning on torch.quantize_per_tensor(): "torch.quantize_per_tensor, torch.quantize_per_channel and other quantized tensor creation functions that produce tensors with dtype torch.quint8, torch.qint8, and torch.qint32 are deprecated and will ..."
-This legacy path still works today (int_repr = [9, 33, 10, -5]), but real, current PyTorch is already telling real users to move off it -- the real, still-supported replacement this file uses instead is a pair of plain torch.ops.aten GEMM primitives on ordinary int8 tensors, no special quantized dtype at all.
+This legacy path still works today (int_repr = [9, 33, 10, -5]), but real, current PyTorch is already telling real users to move off it -- this historical example uses two low-level internal torch.ops.aten GEMM primitives on ordinary int8 tensors, no special quantized dtype at all.
 
 === Part 2: real full-int8 GEMM, torch.ops.aten._int_mm ===
 Real schema: aten::_int_mm(Tensor self, Tensor mat2) -> Tensor
@@ -727,7 +817,7 @@ Real generated cpp_fused kernel count: 0 (Chapter 28.1's own diamond graph got i
 Real generated code calls straight through to extern_kernels._int_mm: True
 Real, additional evidence: real, current Inductor ships a NAMED config field, torch._inductor.config.force_fuse_int_mm_with_mul (default False), existing purely to let a user opt INTO fusing _int_mm with a following multiply -- real, direct evidence Inductor's own developers treat that one specific combination as a hand-written SPECIAL CASE worth naming and gating, not something generic automatic fusion discovers on its own.
 
-Part 6's own closing finding, confirmed a second time by a second, unrelated real algorithm: Chapter 29 found Inductor dispatches to a hand-written Flash Attention kernel rather than decomposing and re-fusing it; this file finds the exact same shape for quantized GEMM -- zero generated kernels, a direct call to a real, separately implemented aten op, and even a real NAMED config knob for the one specific fusion (with a following multiply) its own authors judged worth hand-coding. Across every real system this Part studied -- XLA, Relax, Triton, Inductor -- automatic fusion covers ORDINARY elementwise and reduction graphs; algorithms whose own numeric behavior genuinely differs (a streaming softmax, an integer accumulator) are handled by real, separately written kernels every time, never invented by a fusion pass.
+[Historical overgeneralized closing statement omitted; current source limits the observation to this CPU build and graph.]
 ```
 
 *The real deprecation finding, both real GEMM kernels' own real correctness checks, and the real zero-generated-kernel Inductor finding all confirmed in one real, live run.*

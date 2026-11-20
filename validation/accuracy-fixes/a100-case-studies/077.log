@@ -1,0 +1,25 @@
+=== Part 1: real backend availability, queried directly ===
+is_flash_attention_available(): True
+flash_sdp_enabled(): True
+math_sdp_enabled(): True
+list_flash_attention_impls(): unavailable in this torch version
+torch.cuda.is_available(): True
+(CUDA feature/configuration flags do not establish CPU execution. The following CPU tensors, operator schema and numerical comparison identify the CPU code path independently of host GPU availability.)
+
+=== Part 2: real execution, MATH backend vs. FLASH_ATTENTION backend, same real inputs ===
+MATH backend output shape: (1, 2, 8, 4)
+FLASH_ATTENTION backend output shape: (1, 2, 8, 4)
+Real correctness check: MATH vs. FLASH_ATTENTION match = True (max abs diff 2.384e-07) -- two independently implemented real kernels inside the SAME torch build agree, a CPU numerical comparison. File 075 checks NumPy; File 076 was only offline-compiled, not numerically validated on a GPU
+
+=== Part 3: the real op's own schema -- why FLASH_ATTENTION works with no GPU ===
+Real schema: aten::_scaled_dot_product_flash_attention_for_cpu(Tensor query, Tensor key, Tensor value, float dropout_p=0., bool is_causal=False, *, Tensor? attn_mask=None, float? scale=None) -> (Tensor output, Tensor logsumexp)
+Real logsumexp shape: (1, 2, 8) -- one real value per (batch, head, query row), exactly matching File 075's own running_max/running_sum accumulator shape (N,), confirming this real op tracks the SAME online log-sum-exp quantity Files 075 and 076 both computed by hand
+Real correctness check: this op's own output vs. MATH backend = True
+
+=== Part 4 (capstone): what TorchInductor (Ch28) does with scaled_dot_product_attention ===
+Real correctness check: torch.compile'd vs. eager match = True
+Real generated cpp_fused kernel count: 0 (Chapter 28.1's own diamond graph -- 4 ordinary elementwise ops -- got its own generated cpp_fused_add_mul_relu_0 kernel here this same way; scaled_dot_product_attention gets 0)
+Real generated code calls straight through to aten._scaled_dot_product_flash_attention_for_cpu: True
+
+Observed scope: this installed CPU build dispatched this SDPA shape to an existing aten implementation. This does not establish GPU behavior or that all compilers must use opaque calls. FlexAttention uses torch.compile to generate specialized attention kernels; XLA also has Triton codegen and library-selection paths. Compiler capabilities depend on version, backend, graph and shape.
+EXIT=0

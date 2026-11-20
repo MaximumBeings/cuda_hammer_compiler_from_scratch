@@ -1,0 +1,60 @@
+SOURCE: docs/part5/code/059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part5/code/059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp', '-o', '/tmp/hammer-host-zzyww_9d/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 23.3: the autotuner -- pruning with a cost model, then measuring for real ===
+
+LoopNest [dim0:6, dim1:8]: 128 real, legal schedules (Section 21.3's own number, confirmed again)
+
+--- Part 1: estimateScheduleCost() ranks all 128; the autotuner keeps only the cheapest 8 ---
+
+cheapest 8 predicted schedules (the autotuner's own short list):
+  predicted #1: cost=   288.0  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
+  predicted #2: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
+  predicted #3: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
+  predicted #4: cost=   328.0  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
+  predicted #5: cost=   328.0  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
+  predicted #6: cost=   368.0  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
+  predicted #7: cost=   368.0  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=4
+  predicted #8: cost=   368.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
+
+--- Part 2: HYBRID -- compile and carefully measure (best-of-9, 2,000,000 reps) only the 8 ---
+
+  [rank 1] compile= 178.4 ms  per-call= 0.0363 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
+  [rank 2] compile= 178.0 ms  per-call= 0.0244 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
+  [rank 3] compile= 168.4 ms  per-call= 0.0365 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
+  [rank 4] compile= 151.5 ms  per-call= 0.0332 us  correct=yes  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
+  [rank 5] compile= 177.7 ms  per-call= 0.0222 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
+  [rank 6] compile= 149.5 ms  per-call= 0.0298 us  correct=yes  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
+  [rank 7] compile= 192.2 ms  per-call= 0.0279 us  correct=yes  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=4
+  [rank 8] compile= 196.7 ms  per-call= 0.0223 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
+
+hybrid autotuner's own winner: tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4 (0.0222 us/call, best-of-9 over 2,000,000 reps)
+hybrid total wall-clock (compile + measure, 8 candidates): 5698.8 ms
+
+--- Part 3: EXHAUSTIVE -- compile and measure all 128, for real (lighter pass: best-of-3, 200,000 reps) ---
+
+all 128 real schedules compiled and measured. every one bit-for-bit correct: confirmed
+true best, by exhaustive real measurement: tiles=[dim0:2,dim1:8] order=dim1>dim0 unroll=1 (0.0222 us/call, best-of-3 over 200,000 reps)
+(per-call time, not raw totals, since this pass uses a different repeat count than Part 2 --
+comparing raw totals across two different repeat counts would not be a fair comparison)
+exhaustive total wall-clock (compile + measure, all 128 candidates): 26286.9 ms
+
+--- Part 4: did pruning to 8 find the true best? was it actually cheaper? ---
+
+  true best (exhaustive, all 128) in the cost model's own top-8 short list: no
+  hybrid's own winner == true best (exhaustive, all 128): no
+  hybrid wall-clock:   5698.8 ms (8 candidates, careful measurement)
+  exhaustive wall-clock:  26286.9 ms (128 candidates, lighter measurement)
+  real wall-clock ratio (exhaustive / hybrid): 4.61x
+
+The cost model's own top-8 did NOT contain the schedule real, exhaustive measurement found
+to actually be fastest -- an honest miss, not a hidden one. This is exactly the risk of pruning
+with an imperfect model, named plainly rather than smoothed over: Chapter 22 never claimed
+estimateScheduleCost() was reliable enough to guarantee the true winner survives every prune,
+only that it is cheap enough to be worth trying before paying for real measurement. A real
+autotuner facing this tradeoff has options this book leaves as an open, named direction rather
+than a settled answer: widen the short list, refine the cost model with the real mechanisms
+Chapter 22 already found it was missing, or accept a probably-very-good schedule instead of
+a provably-best one in exchange for the real time this section's own numbers show was saved.

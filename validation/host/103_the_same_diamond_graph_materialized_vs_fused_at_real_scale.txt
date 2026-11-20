@@ -1,0 +1,14 @@
+SOURCE: docs/appendix/code/103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/appendix/code/103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-qmxy0u0i/lesson']
+COMPILE:
+
+EXECUTION:
+=== Appendix E.1/E.2: the same diamond graph, materialized vs. fused, N=20000000 ===
+
+materialized.out[0]  = 40
+fused.out[0]         = 40
+materialized.out[19999999] = 3.696
+fused.out[19999999]        = 3.696
+
+self-check: materialized and fused agree bit-for-bit at all 20000000 elements (confirmed) --
+same finding as File 039's own Part B, now at real scale instead of 12 elements.

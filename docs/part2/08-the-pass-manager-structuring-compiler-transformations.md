@@ -1,5 +1,14 @@
 # 8. The Pass Manager: Structuring Compiler Transformations
 
+<!-- hammer:figure:opener-8:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![The Pass Manager: Structuring Compiler Transformations](../images/openers/08.svg?v=cedb4a89713c)](../images/openers/08.svg?v=cedb4a89713c)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-8:end -->
+
 **What you will understand:** the difference between an *analysis* pass (reads a `Graph`, produces some other result, never touches the graph) and a *transform* pass (reads a `Graph`, produces a *different* `Graph`); a real, working first transform pass; and a `PassManager` that runs a sequence of passes over a graph, printing a before/after dump of each one and checking the result is still a valid DAG after every single pass. This opens Part 2.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph` and `topologicalSort()`, Chapter 5's `graphsStructurallyEqual()`, and Chapter 7's `printGraphAsSource()` -- this chapter reuses all three completely unchanged.
@@ -27,6 +36,15 @@ TWO KINDS OF PASS, BOTH ALREADY USED IN THIS BOOK, NOW MADE PRECISE:
 ```
 
 ## 8.1 What a Pass Actually Is: Analysis Versus Transform
+
+<!-- hammer:figure:8.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Analysis observes; transforms modify](../images/concepts/08-01.svg?v=7f9f7c292c5e)](../images/concepts/08-01.svg?v=7f9f7c292c5e)
+
+<figcaption>Keep each pass's mutation contract explicit.</figcaption>
+</figure>
+<!-- hammer:figure:8.1:end -->
 
 ### Intuition
 
@@ -63,6 +81,15 @@ This is a real, deliberate architecture choice some real compiler IRs make too -
     It's tempting to think the more "obvious" fix is giving `Graph` a real node-removal method and letting a pass like dead code elimination just call it directly. That path is not free: removing a node the normal way would require finding and fixing up every OTHER node's `inputs` list that might reference it (or deciding removal is illegal while any live reference exists, which is its own bookkeeping problem), plus deciding what happens to node ids after a removal -- do they shift down, leaving gaps, or stay stable with holes in `nodes_`? The "rebuild a new graph, keep only what belongs" approach this chapter picks sidesteps every one of those questions: a node that shouldn't exist in the result is just never re-added, and the new graph's ids are simply reassigned in whatever order the pass walks the old one -- Chapter 9 will lean on exactly this simplicity.
 
 ## 8.2 A First Real Transform Pass: Canonicalizing Node Names
+
+<!-- hammer:figure:8.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Canonical names reduce incidental differences](../images/concepts/08-02.svg?v=d9566d01ca19)](../images/concepts/08-02.svg?v=d9566d01ca19)
+
+<figcaption>Renaming does not change tensor arithmetic.</figcaption>
+</figure>
+<!-- hammer:figure:8.2:end -->
 
 ### Intuition
 
@@ -450,6 +477,15 @@ canonicalizeNodeNames() read from it but never mutated it (confirmed)
 
 ## 8.3 The Pass Manager: Chaining Passes and Validating Between Them
 
+<!-- hammer:figure:8.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Validation brackets transformations](../images/concepts/08-03.svg?v=20acf0e67a4d)](../images/concepts/08-03.svg?v=20acf0e67a4d)
+
+<figcaption>Structural validity alone does not prove semantic equivalence.</figcaption>
+</figure>
+<!-- hammer:figure:8.3:end -->
+
 ### Intuition
 
 A relay team's coach does not just fire the starting gun and hope -- between every single handoff, someone is watching to confirm the baton was actually passed cleanly before the next runner is allowed to take off. If a handoff goes wrong, everyone finds out at THAT exact handoff, not three legs later when the team crosses the finish line in the wrong order and nobody can say where it went wrong. A `PassManager` plays exactly this role for a sequence of transform passes: Part 2 and beyond will eventually want to run several passes back to back (constant fold, then eliminate dead code, then simplify, then eliminate dead code again), and trusting every single one blindly -- only checking the FINAL result, if at all -- means a bug in an early pass could silently corrupt everything after it, with no way to tell which pass actually caused the problem.
@@ -653,7 +689,7 @@ static std::string printGraphAsSource(const Graph& g) {
         out += n->debugName + " = " + opKindToSourceKeyword(n->op) + "(";
         if (n->op == OpKind::Const) {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {
@@ -930,7 +966,7 @@ Part 2 now has everything it needs to start writing real optimizations: a precis
 4. Because `graphsStructurallyEqual()` compares op kind and input ids only, and explicitly never looks at `debugName` at all -- it is checking exactly the property that is supposed to be UNCHANGED (the computation itself), completely independent of the property that IS supposed to change (the names). Comparing printed text instead would conflate the two: two graphs that compute the same thing but happen to have different canonical numbering (say, because they were canonicalized starting from a different node) could have different printed text despite being structurally identical, and a printed-text comparison would incorrectly call that a mismatch.
 5. Checking only the final result cannot say WHICH pass in a multi-pass sequence actually introduced a problem -- by the time the final check runs, every later pass has already executed on top of whatever the earlier, buggy pass produced, and any of them could have further transformed (or obscured) the original mistake. Checking after every pass catches a problem at the exact pass that caused it, before any later pass ever gets a chance to run on already-broken input, which is exactly the difference File 014's own "what a PassManager that only checked the final result would risk" diagram makes concrete.
 6. Running `canonicalizeNodeNames()` alone would only prove the manager can execute a SINGLE pass correctly -- it says nothing about whether the manager correctly takes one pass's OUTPUT and feeds it in as the NEXT pass's INPUT, which is the entire point of chaining passes at all. Running two passes in sequence, and confirming three genuinely distinct printed states (before any pass, after the first, after the second), is the minimum needed to demonstrate the hand-off between passes actually works, not just that a single pass in isolation does.
-7. Every one of those four methods can only ever take a `Value` that some EARLIER call already returned -- there is no way to construct a `Value` referring to a node that doesn't exist yet in the graph being built. That means any node built only through this API always has inputs with strictly smaller ids than its own, which makes a cycle structurally impossible to construct through the normal API alone -- the identical cycle-freedom-by-construction argument Chapter 4 first proved for `Graph` itself.
+7. For callers that use only Values returned by earlier calls on the same Graph, each producer has a smaller id. Value itself is a public aggregate, so forged ids or Values from another Graph are possible and are not prevented by the type system. That means any node built only through this API always has inputs with strictly smaller ids than its own, which makes a cycle structurally impossible to construct through the normal API alone -- the identical cycle-freedom-by-construction argument Chapter 4 first proved for `Graph` itself.
 8. A real `remove()` method would need to find and fix up every OTHER node in the graph whose own `inputs` list might reference the node being removed (or explicitly forbid removing a node any other node still depends on, which is its own separate check to get right) -- and it would also need to decide what happens to node ids afterward: do surviving nodes' ids shift down to close the gap, or does the removed id simply become a permanent hole in the graph? The "rebuild a new graph, keep only what belongs" approach never has to answer either question: a dropped node is just never re-added, and the new graph's ids are freely reassigned as the pass walks the old one, with no fix-up step and no decision about gaps ever required.
 
 ---

@@ -1,0 +1,40 @@
+Fresh Apple Clang arm64 run
+
+EXECUTION:
+=== Section 24.3: caching across machines -- why the key needs a target too ===
+
+this program's own real target (compile-time, via predefined macros): aarch64
+
+--- Part 1: Chapter 23.3's own real winners, both measured for real on THIS machine ---
+
+  cloud sandbox's own real winner (Section 23.3):  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
+  device's own real winner        (Section 23.3):  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
+
+  measured HERE, on this program's own real machine (aarch64):
+    cloud sandbox's schedule:  0.0104 us/call
+    device's schedule:         0.0101 us/call
+
+self-check: both schedules produce the exact correct answer on this machine, exactly as Section
+24.2 already proved a shape-appropriate schedule always must -- a schedule found on a DIFFERENT
+real machine is never a correctness risk. This machine's OWN real winner measures 0.0101 us/call
+here; the OTHER real machine's own winner measures 0.0104 us/call here -- a real, measured
+difference this program's own clock actually recorded, not a hypothetical one.
+
+--- Part 2: loopNestKeyForTarget() -- two real entries in ONE shared cache file, no collision ---
+
+  wrote 2 real entries to one shared file: "dim0:6,dim1:8@x86_64" and "dim0:6,dim1:8@aarch64"
+  this machine (target="aarch64") looks up its OWN key "dim0:6,dim1:8@aarch64" in the shared file: HIT, entry matches
+  this machine's own real winner exactly: yes
+
+  the OTHER real machine's own entry, key "dim0:6,dim1:8@x86_64", is still present in the SAME shared file: yes, untouched
+
+self-check: one shared cache FILE, two real (workload, target) entries, keyed by
+loopNestKeyForTarget() -- extending Section 24.1's own loopNestKey() with exactly the target
+identifier this section's own Part 1 measurement just showed matters. Each machine reads back
+its OWN real winner (confirmed) without ever colliding with, or overwriting, the other machine's own
+entry in the identical file (confirmed). This is precisely the (workload, target) pairing TVM's own
+AutoTVM tuning logs already use in real production (Chapter 3's own survey) -- this section's own
+real, measured cross-machine gap in Part 1 is exactly the reason that design decision is
+necessary, not merely a convention this book is choosing to follow without evidence.
+
+EXIT: 0

@@ -1,5 +1,14 @@
 # 13. Elementwise Fusion
 
+<!-- hammer:figure:opener-13:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Elementwise Fusion](../images/openers/13.svg?v=d2776020d73f)](../images/openers/13.svg?v=d2776020d73f)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-13:end -->
+
 **What you will understand:** `elementwiseFusionPass()`, Part 3's first real fusion pass and the fifth real optimization pass to share Chapter 8's exact `TransformPass` signature unmodified -- how it represents several operations as ONE node's own internal program (a genuinely new IR idea, `OpKind::FusedElementwise`), how a value with more than one consumer forces a real fusion boundary that a straight-line chain never has to face, and how much a real, correctness-preserving pass actually saves, measured against the two bounds Chapter 12 could only compute by formula.
 
 **What you need to know first:** Chapter 4's `Value`/`Node`/`Graph`, `topologicalSort()`, and consumer-counting idiom (`consumerCounts()`), Chapter 6's `Shape`/`inferShapes()`, Chapter 8's `TransformPass` and `runPasses()`, Chapter 9's `evaluate()` and its "last node is the output" convention, and Chapter 12's arithmetic-intensity byte-counting for the exact same diamond graph this chapter reuses.
@@ -26,6 +35,15 @@ WHAT THIS CHAPTER ADDS TO PART 2's OWN PASS LINEAGE:
 ```
 
 ## 13.1 A New Node Kind for a Fused Kernel Body
+
+<!-- hammer:figure:13.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A fused node contains a local program](../images/concepts/13-01.svg?v=4d918ddad179)](../images/concepts/13-01.svg?v=4d918ddad179)
+
+<figcaption>Local step references must preserve dependencies.</figcaption>
+</figure>
+<!-- hammer:figure:13.1:end -->
 
 ### Intuition
 
@@ -371,7 +389,7 @@ static void printGraph(const Graph& g) {
         if (n->op != OpKind::FusedElementwise) {
             printf("  %%%d %s = %s(", n->id, n->debugName.c_str(), opKindStr(n->op).c_str());
             if (n->op == OpKind::Const) {
-                printf("%g", n->constValue);
+                printf("%.9g", n->constValue);
             } else {
                 for (size_t i = 0; i < n->inputs.size(); ++i) {
                     if (i) printf(", ");
@@ -546,6 +564,15 @@ self-check: evaluate(original, x=1).t3 = 0, evaluate(fused, x=1).t3 = 0 (confirm
     `consumers[id]` counts EDGES, not distinct consumer nodes -- if some node were written as `Mul(t1, t1)`, `t1` would be counted as having 2 consumers (it appears twice in one node's own `inputs`), even though only ONE node actually reads it. The pass would conservatively materialize `t1` as its own separate node rather than inlining it, missing a real fusion opportunity. This is a genuine, stated limitation -- safe (never wrong), just not maximally aggressive -- in the same spirit as Chapter 10's own `add(a,b)` vs. `add(b,a)` conservatism. None of this chapter's own test graphs happen to exercise it.
 
 ## 13.2 Fusion Boundaries: What a Shared Value Forces
+
+<!-- hammer:figure:13.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A shared value constrains duplication](../images/concepts/13-02.svg?v=00bac5232b8f)](../images/concepts/13-02.svg?v=00bac5232b8f)
+
+<figcaption>One consumer cannot discard work still needed by another.</figcaption>
+</figure>
+<!-- hammer:figure:13.2:end -->
 
 ### Intuition
 
@@ -1038,6 +1065,15 @@ self-check: evaluate(original, a=4,b=9).out = 52, evaluate(fused, ...).out = 52 
 
 ## 13.3 Measuring a Real Fusion Pass Against Chapter 12's Two Bounds
 
+<!-- hammer:figure:13.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Count what the fusion pass changes](../images/concepts/13-03.svg?v=b8aa27c2b43a)](../images/concepts/13-03.svg?v=b8aa27c2b43a)
+
+<figcaption>Keep analytical savings separate from device measurements.</figcaption>
+</figure>
+<!-- hammer:figure:13.3:end -->
+
 ### Intuition
 
 Chapter 12 computed two numbers by formula for this exact diamond graph and never had to justify either one against a real algorithm: 496 bytes for the fully unfused version (four separate kernels), and an idealized 112 bytes for a single kernel covering the *entire* graph at once -- a number that quietly assumed away `t1`'s own sharing, since a formula doesn't have to worry about whether merging everything into one kernel would actually stay correct. This section runs the actual pass and measures what it actually produces, landing somewhere real between those two numbers -- less savings than the idealized bound promised, because a real pass has to keep the answer right.
@@ -1089,6 +1125,7 @@ BEFORE vs. AFTER, ON CHAPTER 4's DIAMOND (Chapter 12's own graph, Section 12.3):
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp -o 029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds
 // Run:     ./029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1357,7 +1394,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {

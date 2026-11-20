@@ -1,4 +1,13 @@
-# Appendix E: Profiling and Benchmarking -- What Real Hardware Counters Show That a Clock Alone Can't
+# Appendix E: Profiling and Benchmarking -- What Simulated Counters Add to Wall-Clock Timing
+
+<!-- hammer:figure:appendix-E:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Profiling and Benchmarking -- What Simulated Counters Add to Wall-Clock Timing](../images/openers/appendix-e.svg?v=716e45ca7969)](../images/openers/appendix-e.svg?v=716e45ca7969)
+
+<figcaption>Appendix roadmap.</figcaption>
+</figure>
+<!-- hammer:figure:appendix-E:end -->
 
 Chapter 22 built two real cost models -- one for loop overhead, one for
 memory-access stride -- and, in both cases, measured them honestly
@@ -17,7 +26,7 @@ correctness (bit-for-bit agreement, no clock involved at all) or
 wall-clock timing (a real but indirect signal: it tells you THAT
 something is slower, never WHY).
 
-This appendix asks what a real hardware-counting profiler shows when
+This appendix asks what instruction instrumentation and simulated cache counters show when
 pointed at CUDA Hammer's own code. Linux `perf`, this book's first
 real choice, turns out not to be usable in the sandbox this book was
 built in -- confirmed directly, not assumed: `linux-tools-generic` and
@@ -30,9 +39,10 @@ are REAL, deterministic simulators -- not sampling profilers -- that
 re-execute a program's every instruction through a modeled cache
 hierarchy (Cachegrind) or a modeled cache hierarchy plus a real
 per-line, per-function call graph (Callgrind), and report exact,
-repeatable counts instead of statistical estimates. Every number in
-this appendix is exactly reproducible on the same machine, unlike a
-wall-clock measurement, which is precisely what makes it a good
+repeatable counts instead of statistical estimates. For a fixed binary, tool configuration and deterministic execution, these
+counts can be reproducible; runtime/library initialization, address layout,
+threads and tool versions can still change results. Unlike
+wall-clock timing, which is precisely what makes it a good
 complement to Chapter 22's own honest, noisy, real-clock numbers
 rather than a replacement for them.
 
@@ -84,6 +94,15 @@ because Valgrind itself is the one piece missing on the device, not
 the code it profiles.
 
 ## E.1 -- Cachegrind: What Fusion Actually Saves
+
+<!-- hammer:figure:E.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Cachegrind: What Fusion Actually Saves](../images/concepts/e-01.svg?v=d756efc27281)](../images/concepts/e-01.svg?v=d756efc27281)
+
+<figcaption>Instrumentation overhead and target conditions belong in the record.</figcaption>
+</figure>
+<!-- hammer:figure:E.1:end -->
 
 File 039's own `main()` (Chapter 17) built the diamond
 graph from Chapter 6 -- `t1=a+b`, `t2=t1*a`, `t3=relu(t1)`,
@@ -393,6 +412,15 @@ simulated cache model and counting exactly what happened.
 
 ## E.2 -- Callgrind: Where the Extra Instructions Actually Go
 
+<!-- hammer:figure:E.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Callgrind: Where the Extra Instructions Actually Go](../images/concepts/e-02.svg?v=de852f88319b)](../images/concepts/e-02.svg?v=de852f88319b)
+
+<figcaption>Instrumentation overhead and target conditions belong in the record.</figcaption>
+</figure>
+<!-- hammer:figure:E.2:end -->
+
 Cachegrind's own per-function totals already show THAT
 `materialized()` costs more; they do not show WHERE, inside
 `materialized()`, that extra cost actually comes from -- naive
@@ -509,6 +537,15 @@ pass exists to eliminate, now visible as an exact, real, per-line
 instruction count instead of an assumed one.
 
 ## E.3 -- Capstone: Testing Chapter 22's Own Explanation
+
+<!-- hammer:figure:E.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Capstone: Testing Chapter 22's Own Explanation](../images/concepts/e-03.svg?v=727335098eda)](../images/concepts/e-03.svg?v=727335098eda)
+
+<figcaption>Instrumentation overhead and target conditions belong in the record.</figcaption>
+</figure>
+<!-- hammer:figure:E.3:end -->
 
 Chapter 22's own File 054 measured `computeUnrolled()`
 -- `out[i] = a[i]*2+1`, processed in chunks of `unrollFactor` -- at
@@ -823,3 +860,5 @@ measured results. What Cachegrind and Callgrind add is a real
 explanation UNDERNEATH the clock: deterministic, exactly reproducible,
 and, twice in this appendix alone, able to correct a plausible-
 sounding guess with a specific, measured, genuinely different answer.
+
+> **Interpretation:** Cachegrind/Callgrind cache misses and branch events are simulated estimates, not physical PMU measurements. Dynamic instruction counts describe instrumented executed code; they do not measure hardware cycles, prefetching, out-of-order effects or DRAM transactions. They support hypotheses about the modeled workload and cannot alone prove instruction-cache pressure is the physical bottleneck. Validate such claims with supported hardware counters on the target. See the [Cachegrind manual](https://valgrind.org/docs/manual/cg-manual.html).

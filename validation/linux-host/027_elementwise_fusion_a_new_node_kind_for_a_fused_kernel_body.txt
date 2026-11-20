@@ -1,0 +1,31 @@
+SOURCE: docs/part3/code/027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body.cpp
+COMMAND: ['/usr/bin/g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '/tmp/cuda-hammer-audit/docs/part3/code/027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body.cpp', '-o', '/tmp/hammer-host-3scxxnp_/lesson', '-ldl']
+COMPILE:
+
+EXECUTION:
+=== Section 13.1: elementwiseFusionPass(), a straight single-consumer chain ===
+
+Original graph (6 nodes):
+  %0 x = Input()
+  %1 c2 = Const(2)
+  %2 cN3 = Const(-3)
+  %3 t1 = Mul(%0, %1)
+  %4 t2 = Add(%3, %2)
+  %5 t3 = ReLU(%4)
+
+After elementwiseFusionPass() (4 nodes):
+  %0 x = Input()
+  %1 c2 = Const(2)
+  %2 cN3 = Const(-3)
+  %3 t3 = FusedElementwise(external inputs: ext0=%0, ext1=%1, ext2=%2)
+      step0 = Mul(ext0, ext1)
+      step1 = Add(step0, ext2)
+      step2 = ReLU(step1)  <- this node's own output
+
+self-check: node count dropped from 6 to 4 -- x/c2/cN3 stay leaves, t1/t2/t3
+collapse into ONE FusedElementwise node (confirmed)
+self-check: exactly one FusedElementwise node was created (confirmed)
+self-check: it has 3 external inputs (x, c2, cN3) and 3 internal steps (mul, add, relu) (confirmed)
+
+self-check: evaluate(original, x=5).t3 = 7, evaluate(fused, x=5).t3 = 7 (confirmed)
+self-check: evaluate(original, x=1).t3 = 0, evaluate(fused, x=1).t3 = 0 (confirmed)

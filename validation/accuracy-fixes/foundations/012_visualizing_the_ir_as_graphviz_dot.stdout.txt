@@ -1,0 +1,25 @@
+=== Section 7.3: exporting the graph as real Graphviz DOT ===
+
+Generated DOT source:
+digraph IR {
+  node [shape=box, fontname="monospace"];
+  n0 [label="a\nInput\n[3, 4]"];
+  n1 [label="b\nInput\n[4]"];
+  n2 [label="t1\nAdd\n[3, 4]"];
+  n3 [label="t2\nMul\n[3, 4]"];
+  n4 [label="t3\nReLU\n[3, 4]"];
+  n5 [label="out\nAdd\n[3, 4]"];
+
+  n0 -> n2;
+  n1 -> n2;
+  n2 -> n3;
+  n0 -> n3;
+  n2 -> n4;
+  n3 -> n5;
+  n4 -> n5;
+}
+
+self-check: 6 node statements emitted, matching the graph's 6 nodes (confirmed)
+self-check: 7 edge statements emitted, matching the graph's 7 real input edges (confirmed)
+self-check: 'out' (n5) has exactly 2 incoming edges in the DOT text (confirmed)
+(`dot` not found on this machine -- skipping the real-Graphviz validation step)

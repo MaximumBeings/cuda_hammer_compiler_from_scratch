@@ -30,6 +30,8 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 022_multiplicative_identity_absorbing_zero_and_relu_idempotence.cpp -o 022_multiplicative_identity_absorbing_zero_and_relu_idempotence
 // Run:     ./022_multiplicative_identity_absorbing_zero_and_relu_idempotence
 #include <cstdio>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -167,7 +169,9 @@ static const Node* findNodeByName(const Graph& g, const std::string& name) {
 
 using TransformPass = std::function<Graph(const Graph&)>;
 
-static Graph algebraicSimplificationPass(const Graph& g) {
+static Graph algebraicSimplificationPass(const Graph& g, bool relaxedMath = false) {
+    // relaxedMath permits ignoring NaN/infinity and the sign of zero.
+    // Strict mode retains Add-by-zero and Mul-by-zero operations.
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("algebraicSimplificationPass: input graph is not acyclic");
 
@@ -201,12 +205,12 @@ static Graph algebraicSimplificationPass(const Graph& g) {
             bool rhsIsOne  = (rhsNode->op == OpKind::Const && rhsNode->constValue == 1.0f);
 
             if (n->op == OpKind::Add) {
-                if (lhsIsZero) newValue = rhs;
-                else if (rhsIsZero) newValue = lhs;
+                if (relaxedMath && lhsIsZero) newValue = rhs;
+                else if (relaxedMath && rhsIsZero) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Add, lhs, rhs, n->debugName);
             } else { // Mul
-                if (lhsIsZero) newValue = lhs;
-                else if (rhsIsZero) newValue = rhs;
+                if (relaxedMath && lhsIsZero) newValue = lhs;
+                else if (relaxedMath && rhsIsZero) newValue = rhs;
                 else if (lhsIsOne) newValue = rhs;
                 else if (rhsIsOne) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Mul, lhs, rhs, n->debugName);
@@ -250,7 +254,7 @@ int main() {
     printf("Graph exercising every identity this pass knows, with three cascade levels:\n");
     printGraph(g);
 
-    Graph simplified = algebraicSimplificationPass(g);
+    Graph simplified = algebraicSimplificationPass(g, true);
     printf("\nAfter algebraicSimplificationPass():\n");
     printGraph(simplified);
 

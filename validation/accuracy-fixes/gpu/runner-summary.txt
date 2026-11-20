@@ -1,0 +1,1 @@
+Chapter18 GPU runtime checks passed; inspect logs for device-specific results.

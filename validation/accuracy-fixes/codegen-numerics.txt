@@ -1,0 +1,1 @@
+finite comparison regression: matching fixtures accepted; NaNs and mismatches rejected

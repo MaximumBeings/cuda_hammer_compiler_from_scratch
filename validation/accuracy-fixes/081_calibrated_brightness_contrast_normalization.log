@@ -1,0 +1,28 @@
+$ clang++ -std=c++17 -Wall -Wextra -O2 /Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/081_calibrated_brightness_contrast_normalization.cpp -o /tmp/cuda-hammer-case-runs/081_calibrated_brightness_contrast_normalization/driver
+
+$ /tmp/cuda-hammer-case-runs/081_calibrated_brightness_contrast_normalization/driver
+=== Chapter 31 (Part 7): Section 31.1 -- calibrated brightness/contrast normalization ===
+
+8x8 step image (row-major, 64 pixels): left 4 columns = 10, right 4 columns = 200
+
+--- Pass 1: measuring the image's own real mean with CUDA Hammer's Sum op ---
+
+measured mean (Sum(img) * 1/64, run for real through evaluateArrays()) = 105.0000
+self-check: matches the hand-computed mean (4*10 + 4*200)/8 = 105.0 exactly (confirmed)
+
+--- Pass 2: a fresh calibration graph, using Pass 1's measured mean as a Const ---
+
+gain = 1.20 (stated design choice), target = 128.00 (mid-gray), bias = target - mean*gain = 2.0000
+
+normalized[0] (dark pixel, input=10.0) = 14.0000, normalized[7] (bright pixel, input=200.0) = 242.0000
+self-check: dark pixel -> 14.0000 (expected 14.0000, confirmed), bright pixel -> 242.0000 (expected 242.0000, confirmed)
+
+--- Pass 3: re-measuring the OUTPUT's own mean, to check a real invariant ---
+
+mean(normalized), measured by CUDA Hammer's own Sum op a second time = 128.0000
+self-check: mean(normalized) == target (128.00) exactly, by construction, for ANY input
+image -- this is the invariant an affine calibration is supposed to guarantee (confirmed)
+
+=== Section 31.1 complete: all self-checks confirmed ===
+
+EXIT=0

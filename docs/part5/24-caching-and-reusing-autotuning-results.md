@@ -1,8 +1,19 @@
 # 24. Caching and Reusing Autotuning Results
 
+<!-- hammer:figure:opener-24:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Caching and Reusing Autotuning Results](../images/openers/24.svg?v=ea49a5990250)](../images/openers/24.svg?v=ea49a5990250)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-24:end -->
+
 **What you will understand:** `TuningCache`, a real, file-backed key/value store -- one plain-text line per entry, `loopNestKey(nest)=serializeSchedule(schedule)` -- that persists an already-found `Schedule` past the lifetime of the process that found it, so a genuinely new program run, starting with an empty in-memory map, can `load()` an earlier run's own real result back from disk; `getOrAutotune()`, which checks the cache FIRST and only pays Chapter 23's own real hybrid-autotuning cost on an actual miss, demonstrated end to end with a real cache MISS followed by a real cache HIT from a completely different `TuningCache` object; the two real risks a cache key can carry -- a shape mismatch, which Chapter 23.2's own `generateScheduleFunction()` structurally cannot let corrupt correctness but which can still cost real, measured performance, and a COARSE key, which can silently collide two genuinely different `LoopNest` shapes into one cache entry with nothing in the cache's own interface able to reveal the mistake; and `loopNestKeyForTarget()`, which closes Part 5 by extending the cache key with a real compile-time architecture identifier, demonstrated on real measurements showing Chapter 23.3's own two real, different hybrid-autotuner winners (cloud sandbox vs. device) do not transfer cleanly across machines -- exactly the (workload, target) pairing TVM's own real AutoTVM tuning logs already use in production, Chapter 3's own survey material made concrete for the first time.
 
 **What you need to know first:** Chapter 20's own `JitModule`/`compileToSharedLibrary()`; Chapter 21's own `Loop`/`LoopNest`/`Schedule`/`enumerateSchedules()`/`scheduleStr()`; Chapter 22's own `estimateScheduleCost()`; Chapter 23.2's own `generateScheduleFunction()` (the load-bearing fact this whole chapter leans on: it always derives its own loop bounds from the real `LoopNest` it is given, never from the `Schedule`'s own cached tile sizes); and Chapter 23.3's own real, measured hybrid-autotuner winners -- `tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4` on the cloud sandbox, `tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2` on the device -- for the identical `LoopNest [dim0:6, dim1:8]`, which this chapter's own capstone measures directly rather than merely restating.
+
+ > **Cache scope:** The example's `x86_64`/`aarch64` key separates architectures only. It does not identify a CPU model, cache hierarchy, enabled ISA extensions, compiler version/flags, generator revision or numerical policy. Two different machines of the same architecture still collide. Production performance-cache keys should record those properties, plus workload/operator/dtype/layout, and remeasure stale entries. This text cache contains trusted schedule fixtures, is not an executable-code cache and is not a concurrent transactional database.
 
 ---
 
@@ -54,6 +65,15 @@ actually ran the code.
 
 ## 24.1 A Persistent Tuning Cache
 
+<!-- hammer:figure:24.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Persist a verified tuning result](../images/concepts/24-01.svg?v=460389b90cf0)](../images/concepts/24-01.svg?v=460389b90cf0)
+
+<figcaption>A cached result needs a validity policy and version.</figcaption>
+</figure>
+<!-- hammer:figure:24.1:end -->
+
 ### Intuition
 
 A cache is only useful across the boundary that matters -- a NEW program run, a genuinely different process that shares nothing in memory with whichever run found the answer the first time. An in-memory-only map, no matter how convenient inside one process, provides no benefit at all the next time the program starts from scratch, which is exactly when the real cost of autotuning gets paid again. `TuningCache` is built around that constraint directly: it is a real file on disk, written by `save()` and read back by `load()`, and this section proves the distinction is not academic by demonstrating a cache HIT from an object that never saw the original `put()` call -- only the real file the first object actually wrote.
@@ -88,67 +108,6 @@ Chapter 23's own real autotuning cost); the second, loading from the
 exact file the first one wrote, finds a real HIT -- the identical
 schedule, returned almost instantly, with no compilation or
 measurement paid a second time.
-```
-
-## 24.2 What a Cache Key Must Capture
-
-### Intuition
-
-Section 24.1's own `loopNestKey()` captures a `LoopNest`'s FULL per-dimension shape without needing to argue for that choice -- it was simply what "the shape" meant. This section makes the argument directly, by building the alternative and testing it for real: what actually goes wrong if a cache key captures less than the full shape? The honest answer turns out to have two separate parts, and conflating them would understate one risk and overstate the other.
-
-### Background
-
-The first part is a genuine, structural guarantee, not a coincidence of this section's own test cases: `generateScheduleFunction()` (Chapter 23.2) always computes its own loop bounds -- `outerExtent`, `innerExtent`, and every `std::min()`-clamped block boundary -- from the real `LoopNest` it is given, and never reads the `Schedule`'s own tile sizes as anything other than a STEP size. A tile size larger than the real extent it is stepping through simply produces one block covering the whole extent; an unroll factor larger than a tile's own real size simply means the main unrolled loop never executes and every element falls through to the scalar tail. Nothing about applying a schedule found for one shape to a genuinely different shape (with the same number of loops) can read or write outside the real, correct bounds -- which this section's own code demonstrates directly, not by argument: a schedule autotuned for a tiny `2x2` shape, applied unmodified to a real `6x8` shape, produces the exact bit-for-bit correct answer.
-
-The second part is where the real risk actually lives. Correctness surviving a shape mismatch says nothing about PERFORMANCE -- a schedule's own tile sizes and unroll factor were chosen, by Chapter 23's own cost model and real measurement, for a DIFFERENT problem's own real memory-access pattern and loop-overhead tradeoff, and nothing guarantees they transfer well. This section measures that gap directly rather than asserting a direction, because the honest answer is that it is not consistent -- a genuinely useful finding in itself, since it means a cache serving a foreign schedule is not merely "somewhat suboptimal," it is UNPREDICTABLE, which is a worse property for a real system to have silently. That unpredictability is exactly why a COARSE cache key is dangerous in a way a shape mismatch alone is not: this section builds `coarseKey()`, which reduces a `LoopNest` to nothing but its own total element count, and shows it directly colliding two genuinely different real shapes -- `[dim0:4, dim1:8]` and `[dim0:8, dim1:4]`, both 32 elements, different per-dimension extents, different legal tile candidates, different memory-stride behavior (Chapter 22.2) -- into one cache entry. A `TuningCache` keyed that way reports a confident HIT for the second shape the moment the first has ever been tuned, and -- because correctness is never at risk, per this section's own first finding -- nothing about the program's own output would ever reveal that the schedule being served was never actually tuned for the shape being computed.
-
-```text
-Two separate real risks, not one:
-
-  SHAPE MISMATCH (a schedule tuned for shape A, applied to shape B)
-    correctness:  SAFE, by construction (generateScheduleFunction always
-                  trusts the real LoopNest's own extents)
-    performance:  AT RISK, unpredictably -- sometimes close, sometimes
-                  not, with no way to know in advance which
-
-  COARSE KEY (a cache key that cannot distinguish shape A from shape B)
-    the cache's own interface: reports a confident HIT for the WRONG
-    shape, with nothing about that HIT revealing the mistake -- silent,
-    not merely suboptimal
-
-Section 24.1's own loopNestKey(), keyed on the FULL per-dimension
-shape, is what keeps two real, different LoopNests from ever
-colliding into one entry in the first place.
-```
-
-## 24.3 Caching Across Machines: Why the Key Needs a Target Too
-
-### Intuition
-
-Chapter 23.3's own real, honest finding -- reported at the time as a machine-specific result, not yet named as a caching problem -- is the premise this capstone makes concrete: the hybrid autotuner found a DIFFERENT winning schedule on the cloud sandbox than on the device, for the identical `LoopNest [dim0:6, dim1:8]`. A cache keyed only by shape, exactly as Section 24.1 built it, cannot represent that difference at all -- it has exactly one slot for `dim0:6,dim1:8`, and whichever real machine happens to populate it first silently becomes the answer every OTHER machine reads back, with nothing in the cache's own interface distinguishing "tuned for you" from "tuned for someone else."
-
-### Background
-
-This section does not merely restate Chapter 23.3's own two numbers -- it takes both of that section's own real winning `Schedule` values, embedded here as literals cited directly to Section 23.3, and measures them AGAINST EACH OTHER for real, on whichever real machine actually runs this section's own code. Whichever machine that is, one of the two schedules is that machine's own real winner and the other is the other machine's real winner, and the section reports, honestly, which one this machine's own clock finds faster -- not assuming the answer transfers, testing it directly. `targetId()` names the real architecture this program is actually compiled for using the same predefined compiler macros (`__aarch64__`, `__x86_64__`) a real build system would check, resolved at compile time rather than guessed at runtime, because the target is a fact about the machine, not something that needs detecting.
-
-`loopNestKeyForTarget()` closes the chapter by extending Section 24.1's own `loopNestKey()` with exactly that target string, joined by a separator that can never appear inside either half. The section's own real demonstration writes two entries -- one keyed to `x86_64`, one to `aarch64` -- into a SINGLE shared cache file, exactly as two real machines sharing one tuning-log file in a real deployment would, and shows both surviving together: whichever machine loads that shared file finds its OWN real entry under its OWN key, and the OTHER machine's own entry remains untouched, present, and available the next time THAT machine runs. This is not a design this book is adopting on convention -- it is the same (workload, target) pairing TVM's own AutoTVM tuning logs already use in real production, cited since Chapter 3's own survey, now arrived at here by this book's own direct, real, cross-machine measurement rather than only by citation.
-
-```text
-loopNestKeyForTarget(nest, target) = loopNestKey(nest) + "@" + target
-
-  ONE shared cache file:
-    "dim0:6,dim1:8@x86_64"  -> cloud sandbox's own real winner
-    "dim0:6,dim1:8@aarch64" -> device's own real winner
-
-  Whichever machine actually loads this file:
-    looks up ITS OWN key (targetId(), resolved at compile time)
-    finds its OWN real entry -- never the other machine's
-    the OTHER machine's own entry survives, untouched, in the SAME file
-
-The identical LoopNest shape, two real machines, two real winning
-schedules, one real shared file -- exactly TVM's own real (workload,
-target) tuning-log design (Chapter 3), motivated here by this book's
-own direct measurement of what happens without it.
 ```
 
 ```cpp
@@ -762,6 +721,15 @@ in a real production compiler.
     It would have been easy to demonstrate `getOrAutotune()`'s own benefit with two calls inside ONE process, sharing one `TuningCache` object in memory the whole time -- and that demonstration would have proven nothing about what this chapter actually needs, since an in-memory map already provides that benefit for free, with no file I/O at all. The real test this section's own code performs -- a SECOND, genuinely different `TuningCache` object, constructed fresh and loading from the exact file the first object wrote -- is the only test that actually exercises the boundary a real autotuning cache has to survive: a brand new program run, a brand new process, with nothing left over from the run that did the real work the first time.
 
 ## 24.2 What a Cache Key Must Capture
+
+<!-- hammer:figure:24.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A key must capture relevant assumptions](../images/concepts/24-02.svg?v=b3bc5755e317)](../images/concepts/24-02.svg?v=b3bc5755e317)
+
+<figcaption>An incomplete key can reuse an unsuitable schedule.</figcaption>
+</figure>
+<!-- hammer:figure:24.2:end -->
 
 ### Intuition
 
@@ -1399,6 +1367,15 @@ keyed on the full per-dimension shape, keeps these two real problems apart.
 
 ## 24.3 Caching Across Machines: Why the Key Needs a Target Too
 
+<!-- hammer:figure:24.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Cross-machine reuse requires compatibility](../images/concepts/24-03.svg?v=51dec3b5ccad)](../images/concepts/24-03.svg?v=51dec3b5ccad)
+
+<figcaption>Architecture name alone does not identify a complete machine.</figcaption>
+</figure>
+<!-- hammer:figure:24.3:end -->
+
 ### Intuition
 
 Chapter 23.3's own real, honest finding -- reported at the time as a machine-specific result, not yet named as a caching problem -- is the premise this capstone makes concrete: the hybrid autotuner found a DIFFERENT winning schedule on the cloud sandbox than on the device, for the identical `LoopNest [dim0:6, dim1:8]`. A cache keyed only by shape, exactly as Section 24.1 built it, cannot represent that difference at all -- it has exactly one slot for `dim0:6,dim1:8`, and whichever real machine happens to populate it first silently becomes the answer every OTHER machine reads back, with nothing in the cache's own interface distinguishing "tuned for you" from "tuned for someone else."
@@ -1666,6 +1643,8 @@ private:
 
 // ==================== Section 24.3: caching across machines ====================
 
+// Coarse teaching key only: CPU model, compiler/flags, generator revision,
+// dtype/layout and numerical policy need additional production key fields.
 // targetId() names the real architecture this program is actually
 // compiled for, using the same predefined compiler macros a real build
 // system would check -- no runtime detection needed, because the target

@@ -83,11 +83,11 @@ if __name__ == "__main__":
     print(f"math_sdp_enabled(): {cuda_backend.math_sdp_enabled()}")
     import torch.nn.attention as attn_mod
     print(f"list_flash_attention_impls(): "
-          f"{attn_mod.list_flash_attention_impls()}")
+          f"{attn_mod.list_flash_attention_impls() if hasattr(attn_mod, 'list_flash_attention_impls') else 'unavailable in this torch version'}")
     print(f"torch.cuda.is_available(): {torch.cuda.is_available()}")
-    print("(every one of these reports real flash-attention support with "
-          "zero physical GPU present -- this is a genuine CPU code path, "
-          "not a GPU-gated feature this sandbox happens to see stubbed out)")
+    print("(CUDA feature/configuration flags do not establish CPU execution. "
+          "The following CPU tensors, operator schema and numerical comparison "
+          "identify the CPU code path independently of host GPU availability.)")
 
     print()
     print("=== Part 2: real execution, MATH backend vs. FLASH_ATTENTION "
@@ -103,8 +103,8 @@ if __name__ == "__main__":
           f"{torch.allclose(out_math, out_flash, atol=1e-5)} "
           f"(max abs diff {max_abs_diff:.3e}) -- two independently "
           f"implemented real kernels inside the SAME torch build agree, "
-          f"the same cross-implementation agreement Files 075 and 076 "
-          f"already established between pure NumPy and compiled Triton")
+          f"a CPU numerical comparison. File 075 checks NumPy; File 076 "
+          f"was only offline-compiled, not numerically validated on a GPU")
 
     print()
     print("=== Part 3: the real op's own schema -- why FLASH_ATTENTION "
@@ -143,18 +143,9 @@ if __name__ == "__main__":
           f"aten._scaled_dot_product_flash_attention_for_cpu: "
           f"{dispatches_to_real_flash_op}")
     print()
-    print("This is the chapter's own closing, cross-system finding: "
-          "TorchInductor's real automatic whole-graph fusion (Ch28.1), "
-          "XLA's real kind=kLoop fusion (Ch25), and Relax's real "
-          "FuseOps/FuseTIR (Ch26) all fuse ORDINARY elementwise/reduction "
-          "graphs automatically, inventing nothing about the ALGORITHM "
-          "itself -- but none of them re-derives Flash Attention's own "
-          "online-softmax rescaling trick from primitives. Inductor "
-          "dispatches straight to a hand-written, pre-existing fused "
-          "kernel instead of decomposing scaled_dot_product_attention "
-          "into ops it could fuse itself. Flash Attention needed a new "
-          "ALGORITHM (Milakov & Gimelshein's 2018 online-softmax "
-          "identity), not just a new fusion boundary -- and every real "
-          "system this Part studied treats that as a hand-written kernel "
-          "provided to the compiler, never a boundary the compiler's own "
-          "fusion pass discovers on its own.")
+    print("Observed scope: this installed CPU build dispatched this SDPA shape "
+          "to an existing aten implementation. This does not establish GPU "
+          "behavior or that all compilers must use opaque calls. FlexAttention "
+          "uses torch.compile to generate specialized attention kernels; XLA "
+          "also has Triton codegen and library-selection paths. Compiler "
+          "capabilities depend on version, backend, graph and shape.")

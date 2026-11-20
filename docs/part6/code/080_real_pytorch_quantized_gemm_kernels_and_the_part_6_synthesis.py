@@ -15,8 +15,8 @@
 # the whole `torch.qint8`/`torch.quint8`/`torch.qint32` quantized-dtype
 # family are REAL, currently DEPRECATED -- a real warning naming a real
 # GitHub issue (pytorch/pytorch#184982), "will be removed in a future
-# PyTorch release." The real, still-supported replacement is a pair of
-# plain `torch.ops.aten` GEMM primitives operating on ordinary int8
+# PyTorch release." This illustration inspects two low-level, internal aten
+# GEMM primitives operating on ordinary int8
 # tensors (no special quantized dtype at all): `_int_mm` (full int8 x
 # int8 -> int32 GEMM) and `_weight_int8pack_mm` (weight-only quantized
 # GEMM: float activations, int8 weights, a real per-output-channel
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     print(f"This legacy path still works today (int_repr = "
           f"{legacy_q.int_repr().tolist()}), but real, current PyTorch "
           f"is already telling real users to move off it -- the real, "
-          f"still-supported replacement this file uses instead is a "
+          f"low-level illustration this file uses is a "
           f"pair of plain torch.ops.aten GEMM primitives on ordinary "
           f"int8 tensors, no special quantized dtype at all.")
 
@@ -170,17 +170,7 @@ if __name__ == "__main__":
           f"something generic automatic fusion discovers on its own.")
 
     print()
-    print("Part 6's own closing finding, confirmed a second time by a "
-          "second, unrelated real algorithm: Chapter 29 found Inductor "
-          "dispatches to a hand-written Flash Attention kernel rather "
-          "than decomposing and re-fusing it; this file finds the exact "
-          "same shape for quantized GEMM -- zero generated kernels, a "
-          "direct call to a real, separately implemented aten op, and "
-          "even a real NAMED config knob for the one specific fusion "
-          "(with a following multiply) its own authors judged worth "
-          "hand-coding. Across every real system this Part studied -- "
-          "XLA, Relax, Triton, Inductor -- automatic fusion covers "
-          "ORDINARY elementwise and reduction graphs; algorithms whose "
-          "own numeric behavior genuinely differs (a streaming softmax, "
-          "an integer accumulator) are handled by real, separately "
-          "written kernels every time, never invented by a fusion pass.")
+    print("Observed scope: this CPU build and integer-matmul graph used an "
+          "external kernel. This single result does not establish a universal "
+          "limit on compiler-generated integer accumulation or fusion. "
+          "Backend, operator, dtype, shape and compiler version matter.")

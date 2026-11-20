@@ -1,0 +1,23 @@
+Real compiled pipeline stages: ['ttir', 'ttgir', 'llir', 'ptx', 'cubin']
+  ttir: 4171 real chars
+  ttgir: 4547 real chars
+  llir: 5616 real chars
+  ptx: 10108 real chars
+
+Real arith.extsi (sign-extend int8->int32) count: 2 -- ONE PER real int8 input (a and b), confirming Triton's own compiler inserts a real, SEPARATE widening instruction automatically from the source text's own plain `.to(tl.int32)` call, exactly the codegen step File 078 argued was structurally necessary
+Real arith.muli (the widened int32 multiply) count: 1
+Real tt.reduce (the int32 accumulate) count: 1
+Real arith.sitofp (signed-int-to-float, for dequantization) count: 1
+
+=== Real TTIR excerpt: load through widen through multiply (path-normalized) ===
+%3 = tt.load %2 : tensor<64x!tt.ptr<i8>> loc(#loc3)
+%4 = tt.splat %arg1 : !tt.ptr<i8> -> tensor<64x!tt.ptr<i8>> loc(#loc4)
+%5 = tt.addptr %4, %0 : tensor<64x!tt.ptr<i8>>, tensor<64xi32> loc(#loc4)
+%6 = tt.load %5 : tensor<64x!tt.ptr<i8>> loc(#loc5)
+
+=== Real TTIR excerpt: the int32 reduction (path-normalized) ===
+%10 = "tt.reduce"(%9) <{axis = 0 : i32}> ({
+^bb0(%arg5: i32 loc(callsite(#loc11 at #loc10)), %arg6: i32 loc(callsite(#loc11 at #loc10))):
+%14 = arith.addi %arg5, %arg6 : i32 loc(#loc21)
+tt.reduce.return %14 : i32 loc(#loc18)
+EXIT=0

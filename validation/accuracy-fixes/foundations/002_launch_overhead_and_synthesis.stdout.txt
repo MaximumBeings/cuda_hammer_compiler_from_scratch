@@ -1,0 +1,36 @@
+=== Section 1.2: cited synchronized per-kernel latency, multiplied by chain length ===
+
+NVIDIA's own cited figure (CUDA Graphs blog post): 9.6 us per synchronized kernel,
+measured end to end with per-kernel host synchronization -- a worst-case
+reference pattern; eager submission need not host-synchronize per operation.
+The cited 9.6 us INCLUDES 2.9 us of GPU kernel execution; it is not pure launch overhead.
+This illustrative model assumes unchanged per-kernel latency, not a fusion speed prediction.
+A fused kernel replaces the whole chain with exactly ONE launch, regardless
+of how many operations were fused into it.
+
+num_ops  eager_model_us           one_kernel_model_us      reduction_x 
+1        9.60                     9.60                     1.00        
+2        19.20                    9.60                     2.00        
+3        28.80                    9.60                     3.00        
+4        38.40                    9.60                     4.00        
+5        48.00                    9.60                     5.00        
+6        57.60                    9.60                     6.00        
+7        67.20                    9.60                     7.00        
+8        76.80                    9.60                     8.00        
+
+=== Synthesis: a concrete 4-operation chain on a 1,000,000-element tensor ===
+
+Chain length: 4 operations. Tensor: 1000000 float32 elements (3.81 MiB).
+
+                               eager           fused          
+synchronized latency model     38.40           9.60             (us, from NVIDIA's cited synchronized-kernel figure)
+memory traffic                 30.52           7.63             (MiB, logically counted from array sizes)
+
+These two reductions are reported SEPARATELY and are not combined into a
+single predicted wall-clock speedup -- doing that would require an assumed
+memory bandwidth and an assumed relationship between overhead and traffic
+time, which this book's own standing discipline does not fabricate. What is
+real here is that a compiler that fuses this chain removes 4x of the launch
+modeled synchronized-latency cost AND 4x of logical memory traffic, from two independent mechanisms --
+self-check: synchronized-latency model ratio equals the chain length exactly (confirmed),
+memory-traffic reduction equals the chain length exactly (confirmed)

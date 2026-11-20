@@ -1,0 +1,18 @@
+========= COMPUTE-SANITIZER
+torch 2.7.0 triton 3.3.0
+GPU NVIDIA A100-PCIE-40GB capability (8, 0)
+PASS attention (16, 1, 16, 16) max_abs 0.0
+PASS attention (16, 17, 16, 16) max_abs 2.0116567611694336e-07
+PASS attention (16, 31, 16, 16) max_abs 1.4901161193847656e-07
+PASS attention (16, 48, 16, 16) max_abs 1.7881393432617188e-07
+PASS attention (32, 49, 32, 32) max_abs 2.384185791015625e-07
+PASS attention (16, 65, 64, 32) max_abs 2.384185791015625e-07
+PASS int8 dot 32 extreme False result -342.4453125
+PASS int8 dot 32 extreme True result 4096.0
+PASS int8 dot 64 extreme False result 191.4375
+PASS int8 dot 64 extreme True result 8192.0
+PASS int8 dot 128 extreme False result -212.1171875
+PASS int8 dot 128 extreme True result 16384.0
+ALL 12 GPU execution checks PASSED
+========= ERROR SUMMARY: 0 errors
+EXIT=0

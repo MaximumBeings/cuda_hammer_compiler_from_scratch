@@ -129,7 +129,7 @@ static std::string printGraphAsSource(const Graph& g) {
         out += n->debugName + " = " + opKindToSourceKeyword(n->op) + "(";
         if (n->op == OpKind::Const) {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {

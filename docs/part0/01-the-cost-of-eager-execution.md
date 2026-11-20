@@ -1,6 +1,19 @@
 # 1. The Cost of Eager Execution
 
-**What you will understand:** why running a chain of tensor operations one at a time -- the way every framework does by default -- pays two real, separate costs that have nothing to do with how fast any single operation is: a fixed cost paid once per operation launched, and a memory-traffic cost paid once per intermediate result materialized. Both costs are shown here as genuinely counted quantities (real bytes, a real cited launch-overhead figure), never as an invented timing number.
+<!-- hammer:figure:opener-1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![The Cost of Eager Execution](../images/openers/01.svg?v=b86f687b676a)](../images/openers/01.svg?v=b86f687b676a)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-1:end -->
+
+!!! note "Timing provenance"
+    The NVIDIA blog's 9.6 microseconds is end-to-end latency of a particular synchronized V100 kernel, including its 2.9-microsecond GPU execution. It is not pure launch overhead or a universal device constant. The host example scales this historical latency as an illustrative model; fused latency depends on the fused work and is not measured here. [NVIDIA source](https://developer.nvidia.com/blog/cuda-graphs/).
+
+
+**What you will understand:** eager execution can incur repeated launch overhead and logical intermediate-array traffic. The examples count logical accesses and separately scale a cited historical synchronized-kernel latency; neither is a fresh GPU performance measurement.
 
 **What you need to know first:** basic C++ (loops, `std::vector`, functions) and the idea that a tensor operation -- an elementwise add, a matrix multiply, an activation function -- reads some input data and produces some output data. No CUDA or compiler background is assumed; that starts in Chapter 3.
 
@@ -31,6 +44,15 @@ FUSED (compiled, chain length 3):
 ```
 
 ## 1.1 What Eager Execution Actually Does, Step by Step
+
+<!-- hammer:figure:1.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Eager execution materializes intermediates](../images/concepts/01-01.svg?v=eefa4fb58b25)](../images/concepts/01-01.svg?v=eefa4fb58b25)
+
+<figcaption>Each materialized stage adds logical array reads and writes.</figcaption>
+</figure>
+<!-- hammer:figure:1.1:end -->
 
 ### Intuition
 
@@ -232,6 +254,15 @@ fused outputs are bit-identical at every chain length (confirmed)
 
 ## 1.2 Why Fixed Per-Kernel-Launch Overhead Multiplies With More Operations
 
+<!-- hammer:figure:1.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Launch overhead is a per-launch cost](../images/concepts/01-02.svg?v=24a9f3b02b21)](../images/concepts/01-02.svg?v=24a9f3b02b21)
+
+<figcaption>A fixed launch-cost model is illustrative; real timings require a GPU.</figcaption>
+</figure>
+<!-- hammer:figure:1.2:end -->
+
 ### Intuition
 
 A tollbooth charges the same fixed toll no matter how much cargo is in the vehicle passing through. A truck carrying one crate and a truck carrying a hundred crates both stop, both pay, both wait for the gate. Launching a kernel -- asking the hardware to actually start executing a block of code -- has exactly this shape: a real, mostly-fixed cost paid at the moment of launch, independent of how much or how little work that kernel actually does. A chain of three small operations pays that toll three times; one fused operation covering the same work pays it once.
@@ -255,19 +286,19 @@ included, not subtracted out.)
 
 ### Background
 
-The one number in the code below that this book did not itself measure is NVIDIA's own real, cited figure for total per-kernel wall-clock time when a kernel is individually host-synchronized: **9.6 microseconds per kernel, "including overheads,"** measured with a CPU wallclock timer around per-kernel-synchronized launches, from NVIDIA's own "Getting Started with CUDA Graphs" developer blog post. That 9.6us is not pure launch overhead -- NVIDIA's own post reports the real kernel execution itself takes about 2.9us, so the fixed per-launch overhead this chapter cares about is closer to the remaining ~6.7us -- but the full 9.6us figure is what is used throughout this chapter, since it is the real, end-to-end cost actually paid once per launch. That figure is used here exactly the way this book's own sibling volume already used a real cited hardware bandwidth figure in its Appendix D: as an input to a real, stated formula, never as a re-measurement this program performs itself. Every other number below is genuine arithmetic on that cited constant.
+The timing input is NVIDIA's historical V100 result: 9.6 microseconds per individually synchronized kernel, including 2.9 microseconds of GPU execution. This is end-to-end latency, not launch overhead alone. The table scales that latency for repeated equal-cost kernels and contrasts a hypothetical one-kernel baseline; a fused kernel performs different work, so its latency must be measured independently. Eager CUDA operations can be queued asynchronously on a stream; per-operation host synchronization is a worst-case reference pattern, not a requirement of eager execution.
 
 ```cpp
 // Chapter 1: The Cost of Eager Execution
 // 002_launch_overhead_and_synthesis.cpp
 //
-// Section 1.2 -- fixed per-launch overhead multiplied by chain length --
+// Section 1.2 -- cited synchronized per-kernel latency multiplied by chain length --
 // and a closing synthesis combining it with File 1's real byte-traffic
 // model.
 //
 // This file never fabricates a timing number. The one number here that
 // is not directly counted by this program is NVIDIA's own real, cited,
-// published measurement of CUDA kernel launch overhead (9.6 microseconds
+// published end-to-end synchronized per-kernel latency (9.6 microseconds
 // per kernel, "including overheads", measured with a CPU wallclock timer
 // around per-kernel-synchronized launches) from NVIDIA's own "Getting
 // Started with CUDA Graphs" developer blog post -- used here exactly the
@@ -288,25 +319,27 @@ The one number in the code below that this book did not itself measure is NVIDIA
 #include <cstdint>
 
 int main() {
-    printf("=== Section 1.2: fixed per-launch overhead, multiplied by chain length ===\n\n");
+    printf("=== Section 1.2: cited synchronized per-kernel latency, multiplied by chain length ===\n\n");
 
     // Real, cited constant -- NOT measured by this program. See the
     // header comment above for the exact source and quote.
-    const double NVIDIA_CITED_LAUNCH_OVERHEAD_US = 9.6;
+    const double NVIDIA_CITED_SYNCHRONIZED_LATENCY_US = 9.6;
 
-    printf("NVIDIA's own cited figure (CUDA Graphs blog post): %.1f us per kernel launch,\n",
-           NVIDIA_CITED_LAUNCH_OVERHEAD_US);
-    printf("measured end to end with per-kernel host synchronization -- the same\n");
-    printf("op-at-a-time shape Section 1.1's EAGER mode models, one real launch per op.\n");
+    printf("NVIDIA's own cited figure (CUDA Graphs blog post): %.1f us per synchronized kernel,\n",
+           NVIDIA_CITED_SYNCHRONIZED_LATENCY_US);
+    printf("measured end to end with per-kernel host synchronization -- a worst-case\n");
+    printf("reference pattern; eager submission need not host-synchronize per operation.\n");
+    printf("The cited 9.6 us INCLUDES 2.9 us of GPU kernel execution; it is not pure launch overhead.\n");
+    printf("This illustrative model assumes unchanged per-kernel latency, not a fusion speed prediction.\n");
     printf("A fused kernel replaces the whole chain with exactly ONE launch, regardless\n");
     printf("of how many operations were fused into it.\n\n");
 
-    printf("%-8s %-24s %-24s %-12s\n", "num_ops", "eager_overhead_us",
-           "fused_overhead_us", "reduction_x");
+    printf("%-8s %-24s %-24s %-12s\n", "num_ops", "eager_model_us",
+           "one_kernel_model_us", "reduction_x");
 
     for (int numOps = 1; numOps <= 8; ++numOps) {
-        double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_LAUNCH_OVERHEAD_US;
-        double fusedOverheadUs = 1.0 * NVIDIA_CITED_LAUNCH_OVERHEAD_US;
+        double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
+        double fusedOverheadUs = 1.0 * NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
         double reduction = eagerOverheadUs / fusedOverheadUs;
         printf("%-8d %-24.2f %-24.2f %-12.2f\n", numOps, eagerOverheadUs, fusedOverheadUs, reduction);
     }
@@ -327,15 +360,15 @@ int main() {
 
     // Launch-overhead side: the real cited constant applied to this
     // example's own chain length.
-    double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_LAUNCH_OVERHEAD_US;
-    double fusedOverheadUs = NVIDIA_CITED_LAUNCH_OVERHEAD_US;
+    double eagerOverheadUs = static_cast<double>(numOps) * NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
+    double fusedOverheadUs = NVIDIA_CITED_SYNCHRONIZED_LATENCY_US;
 
-    printf("Chain length: %d operations. Tensor: %llu float32 elements (%.2f MB).\n\n",
+    printf("Chain length: %d operations. Tensor: %llu float32 elements (%.2f MiB).\n\n",
            numOps, (unsigned long long)numElements, arrayBytes / (1024.0 * 1024.0));
     printf("%-30s %-15s %-15s\n", "", "eager", "fused");
-    printf("%-30s %-15.2f %-15.2f  (us, from NVIDIA's cited per-launch figure)\n",
-           "kernel-launch overhead", eagerOverheadUs, fusedOverheadUs);
-    printf("%-30s %-15.2f %-15.2f  (MB, genuinely counted from array sizes)\n",
+    printf("%-30s %-15.2f %-15.2f  (us, from NVIDIA's cited synchronized-kernel figure)\n",
+           "synchronized latency model", eagerOverheadUs, fusedOverheadUs);
+    printf("%-30s %-15.2f %-15.2f  (MiB, logically counted from array sizes)\n",
            "memory traffic", eagerBytes / (1024.0 * 1024.0), fusedBytes / (1024.0 * 1024.0));
 
     printf("\nThese two reductions are reported SEPARATELY and are not combined into a\n");
@@ -344,12 +377,12 @@ int main() {
     printf("time, which this book's own standing discipline does not fabricate. What is\n");
     printf("real here is that a compiler that fuses this chain removes %dx of the launch\n",
            numOps);
-    printf("overhead AND %dx of the memory traffic, from two independent mechanisms --\n",
+    printf("modeled synchronized-latency cost AND %dx of logical memory traffic, from two independent mechanisms --\n",
            numOps);
 
     bool launchReductionCorrect = (eagerOverheadUs / fusedOverheadUs) == static_cast<double>(numOps);
     bool trafficReductionCorrect = (eagerBytes / fusedBytes) == static_cast<uint64_t>(numOps);
-    printf("self-check: launch-overhead reduction equals the chain length exactly (%s),\n",
+    printf("self-check: synchronized-latency model ratio equals the chain length exactly (%s),\n",
            launchReductionCorrect ? "confirmed" : "MISMATCH");
     printf("memory-traffic reduction equals the chain length exactly (%s)\n",
            trafficReductionCorrect ? "confirmed" : "MISMATCH");
@@ -368,15 +401,17 @@ g++ -std=c++17 -Wall -Wextra -O2 002_launch_overhead_and_synthesis.cpp -o 002_la
 **Output:**
 
 ```text
-=== Section 1.2: fixed per-launch overhead, multiplied by chain length ===
+=== Section 1.2: cited synchronized per-kernel latency, multiplied by chain length ===
 
-NVIDIA's own cited figure (CUDA Graphs blog post): 9.6 us per kernel launch,
-measured end to end with per-kernel host synchronization -- the same
-op-at-a-time shape Section 1.1's EAGER mode models, one real launch per op.
+NVIDIA's own cited figure (CUDA Graphs blog post): 9.6 us per synchronized kernel,
+measured end to end with per-kernel host synchronization -- a worst-case
+reference pattern; eager submission need not host-synchronize per operation.
+The cited 9.6 us INCLUDES 2.9 us of GPU kernel execution; it is not pure launch overhead.
+This illustrative model assumes unchanged per-kernel latency, not a fusion speed prediction.
 A fused kernel replaces the whole chain with exactly ONE launch, regardless
 of how many operations were fused into it.
 
-num_ops  eager_overhead_us        fused_overhead_us        reduction_x 
+num_ops  eager_model_us           one_kernel_model_us      reduction_x
 1        9.60                     9.60                     1.00        
 2        19.20                    9.60                     2.00        
 3        28.80                    9.60                     3.00        
@@ -388,26 +423,35 @@ num_ops  eager_overhead_us        fused_overhead_us        reduction_x
 
 === Synthesis: a concrete 4-operation chain on a 1,000,000-element tensor ===
 
-Chain length: 4 operations. Tensor: 1000000 float32 elements (3.81 MB).
+Chain length: 4 operations. Tensor: 1000000 float32 elements (3.81 MiB).
 
                                eager           fused          
-kernel-launch overhead         38.40           9.60             (us, from NVIDIA's cited per-launch figure)
-memory traffic                 30.52           7.63             (MB, genuinely counted from array sizes)
+synchronized latency model     38.40           9.60             (us, from NVIDIA's cited synchronized-kernel figure)
+memory traffic                 30.52           7.63             (MiB, logically counted from array sizes)
 
 These two reductions are reported SEPARATELY and are not combined into a
 single predicted wall-clock speedup -- doing that would require an assumed
 memory bandwidth and an assumed relationship between overhead and traffic
 time, which this book's own standing discipline does not fabricate. What is
 real here is that a compiler that fuses this chain removes 4x of the launch
-overhead AND 4x of the memory traffic, from two independent mechanisms --
-self-check: launch-overhead reduction equals the chain length exactly (confirmed),
+modeled synchronized-latency cost AND 4x of logical memory traffic, from two independent mechanisms --
+self-check: synchronized-latency model ratio equals the chain length exactly (confirmed),
 memory-traffic reduction equals the chain length exactly (confirmed)
 ```
 
 !!! warning "[COMMON TRAP] Treating launch overhead as negligible because it's a few microseconds"
-    A few microseconds genuinely is negligible next to a single large operation -- a big matrix multiply that takes milliseconds does not care about a 9.6us launch cost. It stops being negligible the moment a chain has many small operations, which is exactly the normal shape of a real model: a single transformer layer issues dozens of small elementwise and normalization operations around its large matrix multiplies. Multiply 9.6us by a few dozen, per layer, per forward pass, and the "negligible" cost becomes a real, measurable fraction of total time -- this is precisely the motivation NVIDIA's own CUDA Graphs blog post gives for batching launches together.
+    Launch overhead can matter for sequences of short kernels. The cited 9.6-microsecond figure includes execution and synchronization, so multiplying it counts that entire historical latency, not isolated launch overhead. Async stream submission, CUDA Graphs, fusion, kernel work, and device characteristics change the result; the table is an illustration, not a predicted speedup.
 
 ## 1.3 Memory Traffic Is the Dominant Cost for Memory-Bound Chains
+
+<!-- hammer:figure:1.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Fusion removes intermediate traffic](../images/concepts/01-03.svg?v=481e8513ef2d)](../images/concepts/01-03.svg?v=481e8513ef2d)
+
+<figcaption>Logical traffic savings are not a measured speedup.</figcaption>
+</figure>
+<!-- hammer:figure:1.3:end -->
 
 ### Intuition
 
@@ -432,7 +476,7 @@ Section 1.1's own File 1 already contains this section's real code and real, loc
 
 ## Chapter Summary
 
-Eager execution -- running a chain of tensor operations one at a time, materializing every intermediate result in full -- pays two real, independently-caused costs. The first is a fixed per-kernel cost, genuinely measured by NVIDIA at 9.6 microseconds of total wall-clock time per kernel when synchronized after every launch -- of which NVIDIA's own figures show roughly 2.9 microseconds is real kernel execution and the rest is overhead -- paid once per operation in the chain rather than once for the whole chain. The second is memory traffic: every intermediate array is a real full-array write followed by a real full-array read by the next operation, so a chain of N operations moves N times as many bytes as the same computation would need if intermediates never left registers. Both costs were shown here as genuinely counted or genuinely cited quantities, growing linearly with chain length N, while a fused version of the same chain pays each cost exactly once regardless of N. Neither cost was combined into a single fabricated wall-clock speedup number -- that would require assuming a memory bandwidth and a relationship between the two mechanisms that this book's own discipline does not invent. What a compiler that fuses operations together actually buys is a real reduction in both of these countable, independent quantities -- which is precisely what CUDA Hammer, starting in Part 1, is going to build.
+Eager execution can materialize intermediate arrays and issue multiple launches. The logical byte model shows how eliminating those materializations can reduce array traffic; real HBM traffic depends on caching and implementation. The separate timing illustration scales NVIDIA's historical synchronized-kernel latency, including execution. It neither measures pure launch overhead nor predicts the latency of a fused kernel. Host synchronization after each operation is not required by eager execution: operations on the same CUDA stream preserve dependencies while the CPU can enqueue work asynchronously.
 
 ## Self-Check Questions
 
@@ -455,7 +499,7 @@ Chapter 1 established two real, countable costs that eager execution pays and a 
 2. The multi-GPU book's 1-bit mismatches came from *reordering a reduction* -- summing the same values in a different grouping, which floating-point addition is not associative under. File 1 never reduces or reorders anything: both EAGER and FUSED apply the exact same sequence of elementary operations (add, multiply, max) to each element, in the exact same order, one element at a time. There is no different grouping to create a mismatch, so bit-identical output is not just expected, it is the only correct outcome -- a mismatch would indicate a real bug in one of the two implementations.
 3. It means the value lives in a CPU register (or, in the compiled binary, possibly briefly on the stack, but never in a separately heap-allocated array with its own address that the next operation has to look up and read). The `value` variable inside `runFused`'s inner loop is reused in place across all `numOps` iterations of the inner `for` loop -- it is one scalar, not N arrays.
 4. This book's own authoring environment (stated in Getting Started) has a real, complete `nvcc` toolchain on the cloud sandbox but no physical NVIDIA GPU on either of its two authoring machines. Measuring a real kernel-launch overhead number requires actually launching a kernel on real hardware and timing it; `nvcc`-compiled code can be built here, but there is no device to run it on and produce a real timing measurement.
-5. The 9.6us figure is what NVIDIA measured with the host synchronizing after every individual kernel launch -- the CPU waits for each kernel to finish before issuing the next one. That is the worst-case stall shape File 1's EAGER mode assumes: op 2 cannot even be issued until op 1's full output exists. The 3.8us figure comes from the exact same sequence of kernels, launched in the exact same order, but synchronized only once per batch rather than after each one -- with the per-kernel sync removed, the CPU can queue the next launch while the GPU is still finishing the previous kernel, so launch latency overlaps with execution instead of stalling on it. It is not that the kernels become independent of each other; synchronizing less often just lets overhead hide behind work already in flight. File 2 uses the stricter 9.6us figure because synchronizing after every single operation -- the case where overhead can never hide behind anything -- is the real worst case this chapter's EAGER model is arguing about; the friendlier 3.8us number would understate that.
+5. It is a deliberately pessimistic reference pattern with synchronization after every kernel. Eager execution does not require this: the host may queue dependent operations on one CUDA stream without synchronizing after each. NVIDIA's 3.8-microsecond result illustrates reduced exposed overhead when synchronization is less frequent. Both values include kernel execution, so neither is an isolated launch-overhead measurement.
 6. It would require an assumed memory bandwidth (to convert "MB of traffic" into a time) and an assumed relationship between how launch-overhead time and memory-traffic time actually combine on real hardware (do they overlap, or add serially, and by how much) -- neither of which this book has a real measurement for, since it has no physical GPU to measure either on.
 7. Because the memory-traffic argument's applicability depends on a ratio (arithmetic intensity: how much compute happens per byte moved), not on the mere presence of "heavier" compute. A chain could add meaningfully more compute per element and still be far below the ratio needed to become compute-bound rather than memory-bound -- "heavier" alone doesn't say where a specific chain actually lands on that ratio, which is exactly why Chapter 12 builds a real, quantitative test (the roofline model) instead of relying on a qualitative impression.
 8. `eager(20) = 20 * 2 * array_bytes` and `fused = 2 * array_bytes` regardless of N, so the reduction ratio is `eager(20) / fused = 20`. The formula (already checked against genuinely counted bytes for N = 1 through 8 in File 1's own output) predicts a 20x reduction at N = 20, with no need to rerun the program to know that.
@@ -464,4 +508,4 @@ Chapter 1 established two real, countable costs that eager execution pays and a 
 
 **Sources cited in this chapter:**
 
-- NVIDIA Technical Blog, ["Getting Started with CUDA Graphs"](https://developer.nvidia.com/blog/cuda-graphs/) -- the 9.6us (per-kernel-synchronized) and 3.8us (overlapped) per-kernel launch overhead figures used in Section 1.2 and File 2, quoted directly: "divide by NSTEP*NKERNEL which gives 9.6us per kernel (including overheads)."
+- NVIDIA Technical Blog, ["Getting Started with CUDA Graphs"](https://developer.nvidia.com/blog/cuda-graphs/) -- historical V100 end-to-end per-kernel latency with and without per-kernel synchronization; these values include GPU execution.

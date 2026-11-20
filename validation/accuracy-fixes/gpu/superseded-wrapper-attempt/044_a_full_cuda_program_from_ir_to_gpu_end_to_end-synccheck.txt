@@ -1,0 +1,37 @@
+COMMAND: ['compute-sanitizer', '--tool', 'synccheck', '--target-processes', 'all', '--error-exitcode', '99', '/tmp/cuda-hammer-audit/validation/accuracy-fixes/gpu/044_a_full_cuda_program_from_ir_to_gpu_end_to_end.bin']
+========= COMPUTE-SANITIZER
+=== Section 18.3: a full CUDA program from IR to GPU, end to end ===
+
+a = [1,-2,3,-4,5,-6,7,-8], b = [2]. evaluateArrays(original).y = 132.000000
+
+--- UNCAPPED fusion -> CUDA ---
+
+Nodes: 5 -> 3 CUDA kernels, 3 CPU functions. a b t5(FE,5st) s(FR,1st) y(FE,2st) 
+
+nvcc compile (3 kernels): clean
+GPU numeric comparison against interpreter: confirmed
+self-check: the CPU-executed version of the SAME emitSteps()-generated arithmetic
+(what every CUDA thread above would have run) matches evaluateArrays() on every
+buffer of this fused graph (confirmed)
+generated program's y = 132.000000, matches evaluateArrays(original, unfused).y = 132.000000 (confirmed)
+
+--- CAPPED (maxChainLength=3) fusion -> CUDA ---
+
+Nodes: 6 -> 4 CUDA kernels, 4 CPU functions. a b t3(FE,3st) t5(FE,2st) s(FR,1st) y(FE,2st) 
+
+nvcc compile (4 kernels): clean
+GPU numeric comparison against interpreter: confirmed
+self-check: the CPU-executed version of the SAME emitSteps()-generated arithmetic
+(what every CUDA thread above would have run) matches evaluateArrays() on every
+buffer of this fused graph (confirmed)
+generated program's y = 132.000000, matches evaluateArrays(original, unfused).y = 132.000000 (confirmed)
+
+=== Two structurally different generated CUDA programs (3 kernels vs. 4 kernels,
+different kernel signatures), same underlying arithmetic, proven equal via their real
+executed CPU counterparts ===
+
+uncapped-generated y = 132.000000
+capped-generated   y = 132.000000
+self-check: both agree exactly, extending Chapter 16 and 17's own "different fusion
+structure, same math" claim to a real CUDA target for the first time (confirmed)
+========= Error: Target application terminated before first instrumented API call

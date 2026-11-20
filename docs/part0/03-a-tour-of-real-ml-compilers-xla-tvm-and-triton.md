@@ -1,5 +1,14 @@
 # 3. A Tour of Real ML Compilers: XLA, TVM, and Triton
 
+<!-- hammer:figure:opener-3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![A Tour of Real ML Compilers: XLA, TVM, and Triton](../images/openers/03.svg?v=b158bc95699c)](../images/openers/03.svg?v=b158bc95699c)
+
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-3:end -->
+
 **What you will understand:** that the vocabulary Chapter 2 built from a toy arithmetic-expression compiler -- IR, pass, lowering, codegen -- is not a simplification invented for this book. Three real, production ML compilers (XLA, TVM, Triton) are built from exactly those same four moves, under their own names, and this chapter maps each one's real, current, cited documentation onto that vocabulary before CUDA Hammer starts building its own version of it in Part 1.
 
 **What you need to know first:** Chapter 2's vocabulary (lexer/parser/AST are not needed again here, but IR, pass, and codegen are used throughout). No prior exposure to XLA, TVM, or Triton is assumed.
@@ -20,6 +29,15 @@ transform it with passes or schedules, then generate real target code.
 ```
 
 ## 3.1 XLA: Fusing at the HLO Level
+
+<!-- hammer:figure:3.1:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![XLA optimizes a high-level graph](../images/concepts/03-01.svg?v=170a4d449ef9)](../images/concepts/03-01.svg?v=170a4d449ef9)
+
+<figcaption>Actual fusion choices depend on backend and compiler version.</figcaption>
+</figure>
+<!-- hammer:figure:3.1:end -->
 
 ### Intuition
 
@@ -46,6 +64,15 @@ The specific pass this chapter cares most about is fusion, and [XLA's GPU archit
     The phrase "operator fusion" suggests one transformation, but XLA's own architecture documentation describes fusion happening at *two* separate points in the pipeline: target-independent fusion during Phase 1 (the same for every backend) and further, backend-specific fusion during Phase 2, where "backends may perform operation fusions beneficial for their architecture." A fusion decision that helps a GPU backend (grouping ops to keep values in fast on-chip memory instead of round-tripping through HBM) is not automatically the same decision a CPU backend would make, because a CPU backend has a different memory hierarchy to reason about -- which is exactly why XLA structures fusion as (at least) two separate passes at two separate pipeline stages instead of one.
 
 ## 3.2 TVM: Separating "What" From "How" With Explicit Schedules
+
+<!-- hammer:figure:3.2:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![TVM separates computation from scheduling](../images/concepts/03-02.svg?v=3873aad76f14)](../images/concepts/03-02.svg?v=3873aad76f14)
+
+<figcaption>Scheduling APIs evolve; the examples target documented versions.</figcaption>
+</figure>
+<!-- hammer:figure:3.2:end -->
 
 ### Intuition
 
@@ -75,6 +102,15 @@ TVM's own documentation also distinguishes two different ways a schedule actuall
     Both projects use the English word "fuse," and both use it for something that reduces overhead -- but they are not the same operation, applied at different levels of the same pipeline. TVM's `fuse` primitive, per its own documentation, "can fuse two consecutive axes of one computation": it collapses two *loop axes inside a single, already-defined tensor operation* into one axis, a purely structural change to that one operation's own loop nest. XLA's operator fusion groups *multiple separate operations* (an add, an exponentiation, a matmul) into a single kernel, eliminating the HBM round-trip between them. TVM has a separate concept for that second kind of fusion too (operator-level fusion across a Relay graph, distinct from the axis-level `fuse` schedule primitive named here) -- the trap is assuming a shared name means a shared operation, when the two "fuse" operations here apply to entirely different objects (one loop nest's own axes, versus a graph of otherwise-separate operations).
 
 ## 3.3 Triton: Programming at the Block Level, Not the Thread Level
+
+<!-- hammer:figure:3.3:start -->
+<figure class="chapter-figure" markdown="1">
+
+[![Triton exposes blocks of values](../images/concepts/03-03.svg?v=32c160279c27)](../images/concepts/03-03.svg?v=32c160279c27)
+
+<figcaption>A block-level program is lowered to GPU threads and instructions.</figcaption>
+</figure>
+<!-- hammer:figure:3.3:end -->
 
 ### Intuition
 

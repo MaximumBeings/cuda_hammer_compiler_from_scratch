@@ -125,9 +125,11 @@ if __name__ == "__main__":
         (flash_out, flash_max, flash_sum,
          num_blocks, peak_block_bytes) = flash_attention(q, k, v, block_size_kv)
         max_abs_diff = np.abs(naive_out - flash_out).max()
-        match = np.allclose(naive_out, flash_out, atol=1e-10)
-        max_match = np.allclose(naive_max, flash_max, atol=1e-12)
-        sum_match = np.allclose(naive_sum, flash_sum, atol=1e-10)
+        match = np.allclose(naive_out, flash_out, atol=1e-10, rtol=0.0)
+        assert match and np.isfinite(flash_out).all()
+        max_match = np.allclose(naive_max, flash_max, atol=1e-12, rtol=0.0)
+        sum_match = np.allclose(naive_sum, flash_sum, atol=1e-10, rtol=0.0)
+        assert max_match and sum_match
         print(f"block_size_kv={block_size_kv:2d}: {num_blocks} real KV "
               f"block(s) (last block size "
               f"{m - block_size_kv * (num_blocks - 1)}), peak per-block "
