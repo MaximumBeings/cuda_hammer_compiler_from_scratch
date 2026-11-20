@@ -40,7 +40,7 @@ exact same computed Value can be handed to more than one later call):
 <!-- hammer:figure:4.1:start -->
 <figure class="chapter-figure" markdown="1">
 
-[![A DAG can represent shared work](../images/concepts/04-01.svg?v=16dca515b62a)](../images/concepts/04-01.svg?v=16dca515b62a)
+[![A DAG can represent shared work](../images/concepts/04-01.svg?v=c2e9501c53e2)](../images/concepts/04-01.svg?v=c2e9501c53e2)
 
 <figcaption>Sharing is explicit; a tree would duplicate the producer.</figcaption>
 </figure>

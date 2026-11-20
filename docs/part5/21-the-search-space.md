@@ -1055,7 +1055,7 @@ This chapter opened Part 5, Autotuning, by building and validating the SEARCH SP
 
 ## Where We Go Next
 
-Chapter 22, "Cost Models vs. Measurement-Based Autotuning," picks up exactly where this chapter's own closing number leaves off: 128 legal schedules for a toy two-loop kernel, a number this chapter explicitly declined to brute-force by compiling and running every single one. Chapter 22 builds a COST MODEL -- a way to estimate how good a schedule is likely to be without actually running it -- and honestly compares its own predictions against real measurement, the same "correct, not fastest, and honest about the difference" discipline this book has practiced since Chapter 18's own atomicAdd() discussion. Apply the Chapter 5-21 depth-level standard throughout.
+Chapter 22, "Cost Models vs. Measurement-Based Autotuning," picks up exactly where this chapter's own closing number leaves off: 128 legal schedules for a toy two-loop kernel, a number this chapter explicitly declined to brute-force by compiling and running every single one. Chapter 22 builds a COST MODEL -- a way to estimate how good a schedule is likely to be without actually running it -- and honestly compares its own predictions against real measurement, the same "correct, not fastest, and honest about the difference" discipline this book has practiced since Chapter 18's own atomicAdd() discussion.
 
 ## Worked Solutions
 

@@ -1,0 +1,32 @@
+SOURCE: docs/part7/code/085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-uu7buurh/lesson']
+COMPILE:
+
+EXECUTION:
+=== Chapter 32 (Part 7): Section 32.2 -- bag-of-embeddings averaging + a small unrolled linear classifier ===
+
+--- Part 1: the bag-of-embeddings vector (real fastText-style sentence average) ---
+
+--- Part 2: a small 3-class linear classifier over the bag vector, raw logits (no softmax --
+    that needs exp/division, which this IR does not have) ---
+
+bag vector =  -14.375 -13.875 -13.375 -12.875  12.875  13.375  13.875  14.375
+
+class0: logit0 = -54.5000
+class1: logit1 = 54.5000
+class2: logit2 = 3.0000
+
+independent host-side reference (never touches CUDA Hammer's graph): bag =  -14.375 -13.875 -13.375 -12.875  12.875  13.375  13.875  14.375
+logits = -54.5000, 54.5000, 3.0000
+
+self-check: the graph's own bag vector matches the independent reference exactly (confirmed)
+self-check: all 3 logits match the independent reference exactly (confirmed)
+
+--- a real hand-checkable symmetry, named directly ---
+
+class0's weights sum the bag's own first 4 features (the ones that came out negative
+after averaging), class1 sums the last 4 (the ones that came out positive) -- since this
+section's own token data was built symmetric around 0, logit0 = -54.5 and logit1 = +54.5
+exactly cancel, a real property of THIS data, checked above, not assumed.
+
+=== Section 32.2 complete: all self-checks confirmed ===

@@ -2927,7 +2927,7 @@ This chapter closed a gap every backend since Chapter 17 had left honestly open:
 
 ## Where We Go Next
 
-Chapter 21, "The Search Space: Tile Sizes, Loop Orders, and Unrolling," opens Part 5, Autotuning. Every backend through Part 4 -- scalar, vectorized, and now JIT-loaded -- has compiled exactly ONE fixed schedule per fused kernel: one tile size (or none at all), one loop order, no unrolling decisions ever revisited. Chapter 21 begins exploring the SPACE of valid alternate schedules for one given fused graph, the necessary groundwork before Chapter 22 can compare a cost model against real measurement and Chapter 23 can build an actual autotuner on top of both. Apply the Chapter 5-20 depth-level standard throughout.
+Chapter 21, "The Search Space: Tile Sizes, Loop Orders, and Unrolling," opens Part 5, Autotuning. Every backend through Part 4 -- scalar, vectorized, and now JIT-loaded -- has compiled exactly ONE fixed schedule per fused kernel: one tile size (or none at all), one loop order, no unrolling decisions ever revisited. Chapter 21 begins exploring the SPACE of valid alternate schedules for one given fused graph, the necessary groundwork before Chapter 22 can compare a cost model against real measurement and Chapter 23 can build an actual autotuner on top of both.
 
 ## Worked Solutions
 

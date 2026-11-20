@@ -1,0 +1,18 @@
+PASS rejected: validate_gpu.py missing book manifest
+PASS rejected: validate_host.py missing book manifest
+PASS rejected: verify_book.py missing book manifest
+PASS rejected: verify_foundations.py missing book manifest
+PASS rejected: validate_gpu.py missing docs tree
+PASS rejected: validate_host.py missing docs tree
+PASS rejected: verify_book.py missing docs tree
+PASS rejected: verify_foundations.py missing docs tree
+PASS rejected: validate_gpu.py empty docs tree
+PASS rejected: validate_host.py empty docs tree
+PASS rejected: verify_book.py empty docs tree
+PASS rejected: verify_foundations.py empty docs tree
+PASS rejected: validate_gpu.py one expected CUDA driver missing
+PASS rejected: validate_host.py one expected host lesson missing
+PASS rejected: verify_foundations.py one expected host lesson missing
+PASS rejected: verify_book.py missing required diagram manifest
+PASS rejected: verify_book.py empty diagram manifest
+17 negative coverage cases passed; real manifest counts are 78 host / 3 CUDA / 43 pages / 108 sources.

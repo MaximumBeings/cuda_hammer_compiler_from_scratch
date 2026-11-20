@@ -5,10 +5,14 @@ Source for the [published book](https://maximumbeings.github.io/cuda_hammer_comp
 ## Build and verify the documentation
 
 ```sh
-python3 -m pip install -r requirements-docs.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-docs.txt
 python3 tools/build_diagrams.py
-mkdocs build --strict
+python -m mkdocs build --strict
 python3 tools/verify_book.py --site site
+python3 tools/verify_site_links.py --site site
+python3 tests/publication_regressions.py
 python3 tests/validation_coverage.py
 python3 tools/validate_host.py --jobs 3
 python3 tools/validate_host.py --jobs 3 --sanitize --log-dir validation/host-sanitized
@@ -21,7 +25,7 @@ The sources in `docs/part*/code/` and `docs/appendix/code/` are standalone lesso
 ## GPU correctness checks
 
 ```sh
-python3 tools/validate_gpu.py --arch sm_80 --sanitize
+python3 tools/validate_gpu.py --arch sm_80 --sanitize --log-dir /tmp/hammer-gpu-check
 python3 validation/accuracy-fixes/gpu_case_validation.py
 compute-sanitizer --tool memcheck python3 validation/accuracy-fixes/gpu_case_validation.py
 ```
@@ -30,12 +34,14 @@ The first runner needs a Linux NVIDIA GPU, CUDA toolkit and Compute Sanitizer. T
 
 ## Publishing
 
-After reviewing changes and passing the applicable checks:
+Pushes to `main` run the strict publication checks, all 78 sanitized host drivers and focused regressions on Linux and macOS before deploying. This CI workflow does not run CUDA workloads. For a manual fallback after the applicable checks:
 
 ```sh
-mkdocs gh-deploy --strict
+python -m mkdocs gh-deploy --strict
 ```
 
 The diagram builder is idempotent. All illustrations share a 760-unit deep-blue canvas, accessible labels and responsive full-width embeds. They describe contracts and data flow, not fabricated performance measurements.
 
 Validation coverage is defined by `tools/book-manifest.json`. Update it deliberately when adding or removing a lesson; validators fail on missing, extra or empty input sets. This prevents a missing checkout from being reported as a successful zero-test run.
+
+For a fresh machine, follow [Getting Started](docs/getting-started.md), including separate driver/toolkit and optional framework steps. GPU validation uses a new empty log directory per run; it never overwrites the archived A100 evidence. Run one GPU validation at a time because the lesson drivers use fixed `/tmp/hammer_ch18_*` paths.

@@ -1,0 +1,27 @@
+SOURCE: docs/part3/code/034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-776b67_2/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 15.2: tileLoop() -- splitting one loop into two, correctly at the boundary ===
+
+Case 1 (even split): extent=12, tileSize=4 -> outerExtent=3
+  tile sizes actually visited: 4, 4, 4
+  self-check: outerExtent=3, every tile full (4,4,4), tiled/untiled index sets equal (confirmed)
+
+Case 2 (uneven split): extent=13, tileSize=4 -> outerExtent=4
+  tile sizes actually visited: 4, 4, 4, 1  (last tile is PARTIAL)
+  self-check: outerExtent=4, last tile is 1 element (not 4), tiled/untiled index sets
+  equal -- no index missing, none visited past the end (confirmed)
+
+Case 3 (tile larger than extent): extent=4, tileSize=8 -> outerExtent=1
+  tile size actually visited: 4 (not 8)
+  self-check: one tile, its own actual extent is 4 (the whole loop), sets equal (confirmed)
+
+=== Case 4: tiling one loop inside a real 2-D LoopNest ===
+
+original loop nest: [dim0:3, dim1:4], 12 total iterations
+tiled loop nest:     [dim0:3, dim1_outer:2, dim1_inner:2], 12 total iterations
+self-check: tiling turned a 2-loop nest into a 3-loop nest, same 12 total iterations (confirmed)
+self-check: the (dim0, dim1) index pairs visited by the tiled 3-loop form exactly match
+the pairs visited by the original 2-loop form -- 12 points, none missing, none repeated (confirmed)

@@ -75,7 +75,7 @@ implicit.
 <!-- hammer:figure:25.1:start -->
 <figure class="chapter-figure" markdown="1">
 
-[![Inspect the actual production IR](../images/concepts/25-01.svg?v=68f8ac243dc7)](../images/concepts/25-01.svg?v=68f8ac243dc7)
+[![Inspect the actual production IR](../images/concepts/25-01.svg?v=d33d80632c14)](../images/concepts/25-01.svg?v=d33d80632c14)
 
 <figcaption>HLO shape and fusion decisions are version- and target-dependent.</figcaption>
 </figure>

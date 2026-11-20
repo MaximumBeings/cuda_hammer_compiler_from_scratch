@@ -1,0 +1,30 @@
+SOURCE: docs/part1/code/012_visualizing_the_ir_as_graphviz_dot.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part1/code/012_visualizing_the_ir_as_graphviz_dot.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-qrb504g6/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 7.3: exporting the graph as real Graphviz DOT ===
+
+Generated DOT source:
+digraph IR {
+  node [shape=box, fontname="monospace"];
+  n0 [label="a\nInput\n[3, 4]"];
+  n1 [label="b\nInput\n[4]"];
+  n2 [label="t1\nAdd\n[3, 4]"];
+  n3 [label="t2\nMul\n[3, 4]"];
+  n4 [label="t3\nReLU\n[3, 4]"];
+  n5 [label="out\nAdd\n[3, 4]"];
+
+  n0 -> n2;
+  n1 -> n2;
+  n2 -> n3;
+  n0 -> n3;
+  n2 -> n4;
+  n3 -> n5;
+  n4 -> n5;
+}
+
+self-check: 6 node statements emitted, matching the graph's 6 nodes (confirmed)
+self-check: 7 edge statements emitted, matching the graph's 7 real input edges (confirmed)
+self-check: 'out' (n5) has exactly 2 incoming edges in the DOT text (confirmed)
+(`dot` not found on this machine -- skipping the real-Graphviz validation step)

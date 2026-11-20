@@ -25,6 +25,8 @@ def diamond(name,section):
  b+=text(32,88,title,29,INK,600)
  nodes=[(70,145,'input a'),(440,145,'input b'),(255,275,'t1 = a + b'),(70,420,'t2 = t1 * c'),(440,420,'t3 = ReLU(t1)'),(255,565,'out = t2 + t3')]
  for x,y,label in nodes:b+=box(x,y,250,72)+text(x+18,y+44,label,23,INK,500)
+ b+=box(70,275,150,72)+text(88,319,"input c",23,INK,500)
+ b+=' <path d="M145 350 V417" fill="none" stroke="'+ACCENT+'" stroke-width="3" marker-end="url(#arrow)"/>'
  for x1,y1,x2,y2 in [(195,220,350,272),(565,220,410,272),(320,350,195,417),(440,350,565,417),(195,495,350,562),(565,495,410,562)]:
   b+=f'<path d="M{x1} {y1} L{x2} {y2}" fill="none" stroke="{ACCENT}" stroke-width="3" marker-end="url(#arrow)"/>'
  note='t1 has two users. Preserve reuse or account for recomputation when forming fusion groups.'

@@ -1,0 +1,30 @@
+SOURCE: docs/part2/code/021_algebraic_simplification_the_additive_identity.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part2/code/021_algebraic_simplification_the_additive_identity.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-rn6p9jbg/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 11.1: algebraicSimplificationPass(), the additive identity element ===
+
+Graph with two additive-identity Adds ('t1', 't2') and one real Add ('t3'):
+  %0 = Input(x)
+  %1 = Input(y)
+  %2 = Const(zero) [value=0]
+  %3 = Add(t1)
+  %4 = Add(t2)
+  %5 = Add(t3)
+  %6 = Add(t12)
+  %7 = Add(out)
+
+After algebraicSimplificationPass():
+  %0 = Input(x)
+  %1 = Input(y)
+  %2 = Const(zero) [value=0]
+  %3 = Add(t3)
+  %4 = Add(t12)
+  %5 = Add(out)
+
+self-check: exactly two identity Adds were dropped, 8 -> 6 (confirmed)
+self-check: neither 't1' nor 't2' appears anywhere in the simplified graph (confirmed)
+self-check: 't3' (x + y, no identity applies) is still a real Add (confirmed)
+self-check: 't12' now reads the SAME node (x) as both of its own operands (confirmed)
+self-check: evaluate(original, x=4,y=9).out = 21, evaluate(simplified, ...).out = 21 (confirmed)

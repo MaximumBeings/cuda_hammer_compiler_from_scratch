@@ -1679,7 +1679,7 @@ This chapter gave CUDA Hammer its first explicit representation of actual iterat
 
 ## Where We Go Next
 
-This chapter gave every computed node real iteration bounds and a way to reason about splitting or merging loops -- but it never generated a single line of actual executable code, and it never had to decide, for a REAL graph with more than two candidate nodes, exactly which fusion opportunities to take. Chapter 16, "Fusion Boundaries: What Can't Be Fused, and Why," closes out Part 3 by cataloguing the genuine, structural reasons a fusion opportunity has to stop -- sharing (Chapter 13), shape changes (Chapter 14), and loop incompatibility (this chapter) are three of them, but not the only ones a real tensor compiler has to recognize. Apply the Chapter 5-15 depth-level standard (more prose, more diagrams before code) there too.
+This chapter gave every computed node real iteration bounds and a way to reason about splitting or merging loops -- but it never generated a single line of actual executable code, and it never had to decide, for a REAL graph with more than two candidate nodes, exactly which fusion opportunities to take. Chapter 16, "Fusion Boundaries: What Can't Be Fused, and Why," closes out Part 3 by cataloguing the genuine, structural reasons a fusion opportunity has to stop -- sharing (Chapter 13), shape changes (Chapter 14), and loop incompatibility (this chapter) are three of them, but not the only ones a real tensor compiler has to recognize.
 
 ## Worked Solutions
 

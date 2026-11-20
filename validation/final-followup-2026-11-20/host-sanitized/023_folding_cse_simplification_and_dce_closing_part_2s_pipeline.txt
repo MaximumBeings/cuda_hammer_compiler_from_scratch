@@ -1,0 +1,88 @@
+SOURCE: docs/part2/code/023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part2/code/023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-58hhuxmi/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 11.3, Part A: algebraicSimplificationPass() ALONE, before any folding ===
+
+size: 13 -> 13
+self-check: simplification alone finds NOTHING before folding runs (confirmed)
+
+=== Section 11.3, Part B: [constantFoldPass, commonSubexpressionEliminationPass, algebraicSimplificationPass, deadCodeEliminationPass] ===
+
+--- before any pass (13 nodes) ---
+c1 = const(3)
+c2 = const(-3)
+z = add(c1, c2)
+a = input()
+b = input()
+y = mul(a, b)
+waste = mul(y, z)
+x1 = input()
+x2 = input()
+sum1 = add(x1, x2)
+sum2 = add(x1, x2)
+combined = add(waste, sum1)
+out = mul(combined, sum2)
+
+--- after pass 'constantFoldPass' (13 nodes) ---
+c1 = const(3)
+c2 = const(-3)
+a = input()
+b = input()
+x1 = input()
+x2 = input()
+z = const(0)
+y = mul(a, b)
+sum1 = add(x1, x2)
+sum2 = add(x1, x2)
+waste = mul(y, z)
+combined = add(waste, sum1)
+out = mul(combined, sum2)
+
+--- after pass 'commonSubexpressionEliminationPass' (12 nodes) ---
+c1 = const(3)
+c2 = const(-3)
+a = input()
+b = input()
+x1 = input()
+x2 = input()
+z = const(0)
+y = mul(a, b)
+sum1 = add(x1, x2)
+waste = mul(y, z)
+combined = add(waste, sum1)
+out = mul(combined, sum1)
+
+--- after pass 'algebraicSimplificationPass' (10 nodes) ---
+c1 = const(3)
+c2 = const(-3)
+a = input()
+b = input()
+x1 = input()
+x2 = input()
+z = const(0)
+y = mul(a, b)
+sum1 = add(x1, x2)
+out = mul(sum1, sum1)
+
+--- after pass 'deadCodeEliminationPass' (4 nodes) ---
+x1 = input()
+x2 = input()
+sum1 = add(x1, x2)
+out = mul(sum1, sum1)
+
+self-check: the full pipeline reduced the graph from 13 nodes to 4 nodes (confirmed)
+self-check: evaluate(original, ...).out = 49, evaluate(final, ...).out = 49, both == 49 (confirmed)
+
+=== Section 11.3, Part C: when simplification elides the LITERAL last node ===
+
+Before: 3 nodes, last node is 'out'
+After:  2 nodes
+x = input()
+zero = const(0)
+
+self-check: the simplified graph's own LAST node is 'zero', not the real output (confirmed -- this IS the hazard)
+self-check: the graph shrank by exactly one node, as expected, 3 -> 2 (confirmed)
+(Part B's own graph was deliberately built so its final Mul survives un-elided,
+precisely to avoid the hazard this small graph exists purely to demonstrate.)

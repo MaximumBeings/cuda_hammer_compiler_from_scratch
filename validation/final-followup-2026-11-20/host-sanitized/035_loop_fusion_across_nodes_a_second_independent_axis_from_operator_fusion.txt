@@ -1,0 +1,46 @@
+SOURCE: docs/part3/code/035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-oje4bxd_/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 15.3: loopNestsCompatibleForFusion() -- a second, independent axis ===
+
+--- Test A: Chapter 14's Graph B -- operator fusion says no, does loop fusion agree? ---
+
+self-check: reductionFusionPass() on Graph B fuses nothing, 6 -> 6 nodes, exactly as
+Chapter 14 Section 14.2 found (confirmed)
+
+t1's own loop nest (plain ReLU node): [dim0:4]
+s's own loop nest (FusedReduction node): [reduce:4]
+
+self-check: t1's [dim0:4] and s's [reduce:4] have the same loop count (1) and the
+same extent (4) -- loopNestsCompatibleForFusion() says YES (confirmed), even though
+operator fusion (Chapters 13-14) already said no to merging their own step programs.
+This is the whole point of this section: a codegen stage could still choose to run
+t1's own loop and s's own reduction loop as ONE shared loop (computing t1[i], folding
+it into s's running sum, AND leaving it available for y2's own separate later use)
+without operator fusion ever having to say yes -- the same separation TVM's own real
+`fuse` schedule primitive (Chapter 3) keeps from its own op-fusion decisions.
+
+--- Test B: incompatible loop COUNTS (a 2-D nest vs. a 1-D nest) ---
+
+diamond's fused node loop nest (shape [3,4]): [dim0:3, dim1:4]
+s's own loop nest (from Test A, shape [] + reduce:4): [reduce:4]
+
+self-check: 2 loops vs. 1 loop -- loopNestsCompatibleForFusion() correctly says NO (confirmed)
+
+--- Test C: same loop count, different extent (a real Input of shape [5]) ---
+
+t1's own loop nest (this section's Test A, shape [4]): [dim0:4]
+a NEW node's own loop nest (shape [5]):                [dim0:5]
+
+self-check: same loop count (1), different extent (4 vs. 5) -- correctly says NO (confirmed)
+
+--- A stated limitation: order matters, even when the SET of extents is identical ---
+
+nest P: [dim0:3, dim1:4]
+nest Q: [dim0:4, dim1:3]
+
+self-check: same two extents (3 and 4), different ORDER -- loopNestsCompatibleForFusion()
+says NO (confirmed), the same conservative choice Chapter 10's own cseKey() made for
+add(a,b) vs. add(b,a): a real, honestly-stated limitation, not silently patched here.

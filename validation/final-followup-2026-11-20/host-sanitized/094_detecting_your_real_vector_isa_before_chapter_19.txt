@@ -1,0 +1,12 @@
+SOURCE: docs/appendix/code/094_detecting_your_real_vector_isa_before_chapter_19.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/appendix/code/094_detecting_your_real_vector_isa_before_chapter_19.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-h30q8w3l/lesson']
+COMPILE:
+
+EXECUTION:
+=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
+
+compile-time architecture macro: __aarch64__ defined
+-> Chapter 19's own generator will pick Isa::Neon for this machine.
+
+/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.
+Architecture macros identify the compilation target, not a measured CPU feature list.

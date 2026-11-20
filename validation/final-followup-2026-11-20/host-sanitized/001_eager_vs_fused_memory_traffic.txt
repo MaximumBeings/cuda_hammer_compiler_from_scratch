@@ -1,0 +1,22 @@
+SOURCE: docs/part0/code/001_eager_vs_fused_memory_traffic.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part0/code/001_eager_vs_fused_memory_traffic.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-gqq5wgq4/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 1.1 / 1.3: eager vs. fused execution of the same op chain ===
+
+Array size: 1000 float32 elements (4000 bytes)
+
+num_ops  eager_bytes_moved      fused_bytes_moved      reduction_x    outputs_match
+1        8000                   8000                   1.00           yes       
+2        16000                  8000                   2.00           yes       
+3        24000                  8000                   3.00           yes       
+4        32000                  8000                   4.00           yes       
+5        40000                  8000                   5.00           yes       
+6        48000                  8000                   6.00           yes       
+7        56000                  8000                   7.00           yes       
+8        64000                  8000                   8.00           yes       
+
+self-check: every row's counted bytes match the closed-form formula
+eager(N) = N * 2 * array_bytes, fused = 2 * array_bytes (confirmed); eager and
+fused outputs are bit-identical at every chain length (confirmed)

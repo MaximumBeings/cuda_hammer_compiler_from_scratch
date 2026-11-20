@@ -2,6 +2,14 @@
 
 The November 20, 2026 independent re-audit found 12 further defects after the first publication, including a constant-folding heap overflow and incorrect generated constants. All 12 have been corrected. [The second-pass correction record](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/blob/main/SECOND_PASS_CORRECTIONS.md) links implementation changes, actual results and remaining limits. Passing ordinary exit-code checks was insufficient; current checks include sanitizer and deliberate-failure regressions.
 
+## November 20 follow-up publication audit
+
+A fresh follow-up reran all **78 host lessons with sanitizers**, 21 foundations regressions, 15 local case-study acceptance/calibration checks, all 12 application safety drivers, and five C++ code-generation/JIT/numerical regression programs. All passed on native macOS. The built-site checker additionally checks relative HTML links, assets, anchor targets and duplicate IDs across all 44 generated HTML pages (43 content pages plus the 404 page).
+
+The follow-up repaired incomplete fresh-machine setup instructions, removed stray editing instructions, supplied the missing `c` input in three shared-value diagrams, and added soft wrapping for syntax-highlighted code. GPU-runner regressions now reject overwriting existing evidence and prevent sanitizer checks against stale child executables after driver failure. Those regression tests simulate process outcomes; they are not fresh device tests. A Linux/macOS workflow now gates publication on host and publication checks.
+
+The [follow-up record](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/blob/main/FINAL_REVIEW_2026-11-20.md) and [captured evidence](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/final-followup-2026-11-20) preserve the scope. No GPU instance was used or provisioned for this follow-up. The changed CUDA generators still need the fresh device rerun described below.
+
 ## Current local correction-pass checks
 
 - **78/78 standalone host C++ drivers pass** native macOS/Apple Clang builds with AddressSanitizer, UndefinedBehaviorSanitizer and float-cast-overflow instrumentation. Generated child programs are exercised but are not automatically sanitizer-instrumented by that driver sweep.

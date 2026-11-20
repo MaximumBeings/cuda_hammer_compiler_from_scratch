@@ -1,0 +1,60 @@
+SOURCE: docs/part5/code/059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part5/code/059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-p0l2r0zh/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 23.3: the autotuner -- pruning with a cost model, then measuring for real ===
+
+LoopNest [dim0:6, dim1:8]: 128 real, legal schedules (Section 21.3's own number, confirmed again)
+
+--- Part 1: estimateScheduleCost() ranks all 128; the autotuner keeps only the cheapest 8 ---
+
+cheapest 8 predicted schedules (the autotuner's own short list):
+  predicted #1: cost=   288.0  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
+  predicted #2: cost=   328.0  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
+  predicted #3: cost=   328.0  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
+  predicted #4: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
+  predicted #5: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
+  predicted #6: cost=   368.0  tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+  predicted #7: cost=   368.0  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=4
+  predicted #8: cost=   368.0  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
+
+--- Part 2: HYBRID -- compile and carefully measure (best-of-9, 2,000,000 reps) only the 8 ---
+
+  [rank 1] compile= 277.7 ms  per-call= 0.0122 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
+  [rank 2] compile= 340.9 ms  per-call= 0.0079 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
+  [rank 3] compile= 214.0 ms  per-call= 0.0082 us  correct=yes  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
+  [rank 4] compile= 224.1 ms  per-call= 0.0091 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
+  [rank 5] compile= 227.9 ms  per-call= 0.0088 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
+  [rank 6] compile= 229.1 ms  per-call= 0.0082 us  correct=yes  tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+  [rank 7] compile= 249.0 ms  per-call= 0.0153 us  correct=yes  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=4
+  [rank 8] compile= 326.1 ms  per-call= 0.0124 us  correct=yes  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
+
+hybrid autotuner's own winner: tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4 (0.0079 us/call, best-of-9 over 2,000,000 reps)
+hybrid total wall-clock (compile + measure, 8 candidates): 8389.6 ms
+
+--- Part 3: EXHAUSTIVE -- compile and measure all 128, for real (lighter pass: best-of-3, 200,000 reps) ---
+
+all 128 real schedules compiled and measured. every one bit-for-bit correct: confirmed
+true best, by exhaustive real measurement: tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=2 (0.0089 us/call, best-of-3 over 200,000 reps)
+(per-call time, not raw totals, since this pass uses a different repeat count than Part 2 --
+comparing raw totals across two different repeat counts would not be a fair comparison)
+exhaustive total wall-clock (compile + measure, all 128 candidates): 82920.3 ms
+
+--- Part 4: did pruning to 8 find the true best? was it actually cheaper? ---
+
+  true best (exhaustive, all 128) in the cost model's own top-8 short list: no
+  hybrid's own winner == true best (exhaustive, all 128): no
+  hybrid wall-clock:   8389.6 ms (8 candidates, careful measurement)
+  exhaustive wall-clock:  82920.3 ms (128 candidates, lighter measurement)
+  real wall-clock ratio (exhaustive / hybrid): 9.88x
+
+The cost model's own top-8 did NOT contain the schedule real, exhaustive measurement found
+to actually be fastest -- an honest miss, not a hidden one. This is exactly the risk of pruning
+with an imperfect model, named plainly rather than smoothed over: Chapter 22 never claimed
+estimateScheduleCost() was reliable enough to guarantee the true winner survives every prune,
+only that it is cheap enough to be worth trying before paying for real measurement. A real
+autotuner facing this tradeoff has options this book leaves as an open, named direction rather
+than a settled answer: widen the short list, refine the cost model with the real mechanisms
+Chapter 22 already found it was missing, or accept a probably-very-good schedule instead of
+a provably-best one in exchange for the real time this section's own numbers show was saved.

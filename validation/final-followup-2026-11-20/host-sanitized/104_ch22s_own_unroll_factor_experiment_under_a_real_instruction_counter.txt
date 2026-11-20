@@ -1,0 +1,10 @@
+SOURCE: docs/appendix/code/104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/appendix/code/104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-_a9xd629/lesson']
+COMPILE:
+
+EXECUTION:
+=== Appendix E.3: File 054's computeUnrolled(), unrollFactor=1, extent=10000000 ===
+
+result[0]=1  result[9999999]=1.178
+best-of-5 wall-clock: 64.392 ms
+self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)

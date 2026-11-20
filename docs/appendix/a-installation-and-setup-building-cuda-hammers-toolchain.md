@@ -9,6 +9,8 @@
 </figure>
 <!-- hammer:figure:appendix-A:end -->
 
+For fresh-machine package installation, driver/toolkit setup and the first runnable example, start with [Getting Started](../getting-started.md). This appendix preserves the original toolchain experiments and their historical counts; its 71-file standard sweep is not a current minimum-language claim for the corrected 78-driver collection. Use C++17 for the current lessons.
+
 This appendix closes the loop on a claim this book has repeated,
 unquestioned, in every one of its 34 chapters: `-std=c++17`, printed
 at the top of getting-started.md's own compile-line conventions and

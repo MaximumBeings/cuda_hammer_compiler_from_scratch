@@ -1423,7 +1423,7 @@ This chapter picked up exactly where Chapter 21 left off -- 128 real, enumerated
 
 ## Where We Go Next
 
-Chapter 23, "Building CUDA Hammer's Autotuner," closes Part 5 by building the actual SEARCH this chapter's own cost models were built to guide: given a real `LoopNest` and its own real, enumerated schedule space (Chapter 21) and a cost model honestly known to be imperfect in specific, diagnosed ways (this chapter), how should an autotuner actually decide which candidates to try? The likely answer, set up directly by this chapter's own closing finding, is a HYBRID: use the cost model to prune a large space down to a short list cheaply, then pay for real, compiled measurement -- Part 4's own codegen, not Section 22.3's interpreter -- only on that short list. Apply the Chapter 5-22 depth-level standard throughout.
+Chapter 23, "Building CUDA Hammer's Autotuner," closes Part 5 by building the actual SEARCH this chapter's own cost models were built to guide: given a real `LoopNest` and its own real, enumerated schedule space (Chapter 21) and a cost model honestly known to be imperfect in specific, diagnosed ways (this chapter), how should an autotuner actually decide which candidates to try? The likely answer, set up directly by this chapter's own closing finding, is a HYBRID: use the cost model to prune a large space down to a short list cheaply, then pay for real, compiled measurement -- Part 4's own codegen, not Section 22.3's interpreter -- only on that short list.
 
 ## Worked Solutions
 

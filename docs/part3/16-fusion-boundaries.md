@@ -2178,7 +2178,7 @@ This chapter closed Part 3 by gathering, extending, and finally exercising every
 
 ## Where We Go Next
 
-Part 3 is complete: fusion now has a real IR (Chapters 13-14), a real measured payoff (Chapter 12), an explicit loop-level view (Chapter 15), and a closed, checked taxonomy of exactly when it has to stop (this chapter). None of it has produced a single line of code that could actually run on real hardware yet -- every measurement in Part 3 has been counted bytes and FLOPs, not generated instructions. Part 4, "Code Generation," starts exactly there: Chapter 17, "Lowering CUDA Hammer's IR to Loops," takes the fused IR this Part produced -- FusedElementwise and FusedReduction nodes, their own LoopNests from Chapter 15 -- and turns it into real, executable loop structures for the first time. Apply the Chapter 5-16 depth-level standard (more prose, more diagrams before code) there too.
+Part 3 is complete: fusion now has a real IR (Chapters 13-14), a real measured payoff (Chapter 12), an explicit loop-level view (Chapter 15), and a closed, checked taxonomy of exactly when it has to stop (this chapter). None of it has produced a single line of code that could actually run on real hardware yet -- every measurement in Part 3 has been counted bytes and FLOPs, not generated instructions. Part 4, "Code Generation," starts exactly there: Chapter 17, "Lowering CUDA Hammer's IR to Loops," takes the fused IR this Part produced -- FusedElementwise and FusedReduction nodes, their own LoopNests from Chapter 15 -- and turns it into real, executable loop structures for the first time.
 
 ## Worked Solutions
 

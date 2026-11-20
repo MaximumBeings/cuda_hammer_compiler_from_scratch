@@ -1,0 +1,57 @@
+SOURCE: docs/part5/code/061_what_a_cache_key_must_capture.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part5/code/061_what_a_cache_key_must_capture.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-5o_tedli/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 24.2: what a cache key must capture ===
+
+--- Part 1: correctness under a shape mismatch -- still bit-for-bit correct ---
+
+  schedule actually found FOR the small shape dim0:2,dim1:2:
+    tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+
+  applying that SAME schedule, unmodified, to the genuinely different shape dim0:6,dim1:8:
+    tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1 -- bit-for-bit correct: yes
+
+self-check: a schedule tuned for a 2x2 shape, applied without modification to a 6x8
+shape, still produces the exact correct answer (confirmed). This is not luck: generateScheduleFunction()
+(Chapter 23.2) always derives its own loop bounds from the real LoopNest passed to it, never from
+the Schedule's own cached tile sizes -- a shape mismatch cannot corrupt the answer, ONLY the
+performance, for any two nests with the same number of loops.
+
+--- Part 2: performance under a shape mismatch -- real measurement, whichever way it lands ---
+
+  schedule actually found FOR the large shape dim0:6,dim1:8:
+    tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
+
+  foreign schedule (tuned for dim0:2,dim1:2, applied to dim0:6,dim1:8): 0.0145 us/call
+  proper schedule  (tuned directly for dim0:6,dim1:8):        0.0126 us/call
+
+self-check: correctness held in Part 1 either way -- this is purely a real, measured performance
+comparison, reported honestly whichever way it lands. Nothing about a shape mismatch guarantees a
+large gap for every possible pair of shapes -- some foreign schedules will happen to still be
+decent choices -- but nothing about it guarantees a GOOD one either, which is exactly why a cache
+that quietly served a foreign schedule as if it had been tuned for the real shape would be trading
+away a real, unmeasured amount of performance without ever admitting it did so.
+
+--- Part 3: a coarse key -- total element count only -- silently collides two real shapes ---
+
+  shapeA = dim0:4,dim1:8, totalIterations = 32
+  shapeB = dim0:8,dim1:4, totalIterations = 32
+  coarseKey(shapeA)  = "32"
+  coarseKey(shapeB)  = "32"
+  loopNestKey(shapeA) = "dim0:4,dim1:8"
+  loopNestKey(shapeB) = "dim0:8,dim1:4"
+
+  coarseKey collides shapeA and shapeB into ONE cache entry: yes
+  loopNestKey keeps shapeA and shapeB as two DISTINCT cache entries: yes
+
+  a TuningCache keyed by coarseKey(), asked about shapeB after only shapeA was ever tuned: reports a confident HIT
+
+self-check: shapeA and shapeB are genuinely different LoopNests -- different per-dimension
+extents, different legal tile-size candidates, different memory-stride behavior (Chapter 22.2) --
+that merely happen to multiply out to the same total element count. A cache keyed on that total
+alone cannot tell them apart: it reports shapeB as already tuned the moment shapeA has been, and
+-- as Part 1 already proved -- the schedule it hands back will still be CORRECT, so nothing about
+the program's own output would ever reveal the mistake. Only Section 24.1's own loopNestKey(),
+keyed on the full per-dimension shape, keeps these two real problems apart.

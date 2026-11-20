@@ -1,0 +1,50 @@
+SOURCE: docs/part3/code/032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-k56nwnmn/lesson']
+COMPILE:
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes.cpp:449:25: warning: unused variable 'kBytesPerElement' [-Wunused-const-variable]
+  449 | static constexpr double kBytesPerElement = 4.0;
+      |                         ^~~~~~~~~~~~~~~~
+1 warning generated.
+
+EXECUTION:
+=== Section 14.3: reductionFusionPass() through Chapter 8's own runPasses() ===
+
+--- before any pass (5 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 t1 = Add(%0, %1)
+  %3 t2 = ReLU(%2)
+  %4 s = Sum(%3)
+
+--- after pass 'reductionFusionPass' (3 nodes) ---
+  %0 a = Input()
+  %1 b = Input()
+  %2 s = FusedReduction(external inputs: ext0=%0, ext1=%1)
+      step0 = Add(ext0, ext1)
+      step1 = ReLU(step0)
+      step2 = Sum(step1)  [reduces 12 elements]  <- this node's own output
+
+self-check: runPasses() accepted reductionFusionTransform with ZERO changes to
+Chapter 8's own PassManager interface -- the closure carries the shape dependency
+reductionFusionPass() needs, so TransformPass itself stays exactly Graph(const Graph&) (confirmed)
+
+=== Real bytes moved: before vs. after ===
+
+Bytes moved, BEFORE fusion (3 separate kernels -- t1, t2, s):   260
+Bytes moved, AFTER reductionFusionPass() (t1/t2/s fuse into
+             ONE kernel -- no sharing anywhere in this chain): 68
+
+self-check: bytes moved strictly decreased (260 -> 68, a 73.8% reduction) (confirmed)
+
+Total FLOPs (identical either way -- fusion doesn't change the arithmetic, only where
+it happens; Sum's own N-1-additions correction from this section is what makes this
+number honest): 35
+AI_before = 35 / 260 bytes = 0.134615 FLOPs/byte
+AI_after  = 35 / 68 bytes = 0.514706 FLOPs/byte
+(ridge point, same A100 numbers as Chapter 12's own Section 12.2: 12.5402 FLOPs/byte --
+ still memory-bound on both sides at this toy graph's tiny scale, consistent with
+ Chapter 12's own scale caveat)
+
+=== Correctness: evaluate() agreement, before vs. after ===
+
+self-check: evaluate(original, a=2,b=3).s = 60, evaluate(fused, ...).s = 60 (confirmed)

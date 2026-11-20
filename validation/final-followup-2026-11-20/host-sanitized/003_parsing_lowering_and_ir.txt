@@ -1,0 +1,75 @@
+SOURCE: docs/part0/code/003_parsing_lowering_and_ir.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part0/code/003_parsing_lowering_and_ir.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-3fcno0x7/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 2.1 / 2.2: source -> tokens -> AST -> linear IR -> result ===
+
+--- source: "a + b * c" ---
+AST:
+  +
+    a
+    *
+      b
+      c
+IR (2 instructions):
+  t0 = b * c
+  t1 = a + t0
+IR-interpreted result: 14 | direct-AST-evaluated result: 14 | match: yes
+
+--- source: "(a + b) * c" ---
+AST:
+  *
+    +
+      a
+      b
+    c
+IR (2 instructions):
+  t0 = a + b
+  t1 = t0 * c
+IR-interpreted result: 20 | direct-AST-evaluated result: 20 | match: yes
+
+--- source: "a - b - c" ---
+AST:
+  -
+    -
+      a
+      b
+    c
+IR (2 instructions):
+  t0 = a - b
+  t1 = t0 - c
+IR-interpreted result: 5 | direct-AST-evaluated result: 5 | match: yes
+
+--- source: "(a + 2) * (b - 1)" ---
+AST:
+  *
+    +
+      a
+      2
+    -
+      b
+      1
+IR (3 instructions):
+  t0 = a + 2
+  t1 = b - 1
+  t2 = t0 * t1
+IR-interpreted result: 21 | direct-AST-evaluated result: 21 | match: yes
+
+--- source: "a / b + c * d" ---
+AST:
+  +
+    /
+      a
+      b
+    *
+      c
+      d
+IR (3 instructions):
+  t0 = a / b
+  t1 = c * d
+  t2 = t0 + t1
+IR-interpreted result: 11 | direct-AST-evaluated result: 11 | match: yes
+
+self-check: every expression's IR-interpreted result matches its independent
+direct-AST-evaluated result (confirmed)

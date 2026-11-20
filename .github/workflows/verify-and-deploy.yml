@@ -1,0 +1,83 @@
+name: Verify and deploy CUDA Hammer
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hammer-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install documentation and local regression dependencies
+        run: python -m pip install -r requirements-docs.txt numpy==1.26.4
+      - name: Build and verify the complete publication
+        run: |
+          python -m mkdocs build --strict
+          python tools/verify_book.py --site site
+          python tools/verify_site_links.py --site site
+          python tests/validation_coverage.py
+          python tests/publication_regressions.py
+      - name: Run all host drivers with sanitizers
+        run: python tools/validate_host.py --jobs 3 --sanitize --log-dir validation/ci-host
+      - name: Exercise deliberate compiler and numerical failures
+        run: |
+          python tests/foundations_regressions.py
+          python tests/cases_regressions.py
+          python tests/part7_safety_regressions.py
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, sys, tempfile
+          sources = sorted(Path('tests').glob('systems_*_regression.cpp')) + [Path('tests/codegen_numerics.cpp')]
+          assert len(sources) == 5
+          with tempfile.TemporaryDirectory() as tmp:
+              for source in sources:
+                  exe = str(Path(tmp) / source.stem)
+                  command = ['clang++', '-std=c++17', '-O1', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', str(source), '-o', exe]
+                  if sys.platform == 'linux':
+                      command += ['-ldl']
+                  subprocess.run(command, check=True)
+                  subprocess.run([exe], check=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: host-validation-${{ matrix.os }}
+          path: validation/ci-host
+          retention-days: 14
+  publish:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-docs.txt
+      - name: Build and verify immediately before publication
+        run: |
+          python -m mkdocs build --strict
+          python tools/verify_book.py --site site
+          python tools/verify_site_links.py --site site
+      - name: Publish verified site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          python -m mkdocs gh-deploy --strict

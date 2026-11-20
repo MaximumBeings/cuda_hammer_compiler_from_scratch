@@ -1,0 +1,56 @@
+SOURCE: docs/part3/code/031_the_reduction_boundary_what_a_reductions_output_forces_downstream.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/031_the_reduction_boundary_what_a_reductions_output_forces_downstream.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-6liiz4pn/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 14.2: what a reduction's OWN output forces downstream ===
+
+--- Graph A: s = Sum(relu(x)) feeds y = Add(s, a) -- s has exactly ONE consumer ---
+
+Original graph (5 nodes):
+  %0 x = Input()
+  %1 a = Input()
+  %2 t1 = ReLU(%0)
+  %3 s = Sum(%2)
+  %4 y = Add(%3, %1)
+
+After reductionFusionPass() (4 nodes):
+  %0 x = Input()
+  %1 a = Input()
+  %2 s = FusedReduction(external inputs: ext0=%0)
+      step0 = ReLU(ext0)
+      step1 = Sum(step0)  [reduces 4 elements]  <- this node's own output
+  %3 y = Add(%2, %1)
+
+self-check: 5 nodes -> 4 -- t1 absorbed into s's own FusedReduction body (2 steps),
+s itself stands alone as a boundary (its consumer y cannot inline it, purely because
+s CHANGED SHAPE, not because of sharing -- s has only ONE consumer here) (confirmed)
+self-check: evaluate(original, x=2,a=1).y = 9, evaluate(fused, ...).y = 9 (confirmed)
+
+--- Graph B: t1 feeds BOTH a reduction and something else -- two DIFFERENT reasons
+    to stay a boundary, in the SAME graph, at the SAME time ---
+
+Original graph (6 nodes):
+  %0 x = Input()
+  %1 w = Input()
+  %2 t1 = ReLU(%0)
+  %3 s = Sum(%2)
+  %4 y = Add(%3, %1)
+  %5 y2 = Mul(%2, %1)
+
+After reductionFusionPass() (6 nodes):
+  %0 x = Input()
+  %1 w = Input()
+  %2 t1 = ReLU(%0)
+  %3 s = FusedReduction(external inputs: ext0=%2)
+      step0 = Sum(ext0)  [reduces 4 elements]  <- this node's own output
+  %4 y2 = Mul(%2, %1)
+  %5 y = Add(%3, %1)
+
+self-check: 6 nodes -> 6 -- NO fusion happens at all here, and that is the CORRECT
+answer: t1 stays plain (shared -- 2 consumers), s stays its own (trivial, 1-step)
+FusedReduction (shape-changing -- always wrapped even alone, per Section 14.1's own
+stated rule), y and y2 both stay plain (each only 1 step once their own shared/reduced
+operand is external) (confirmed)
+self-check: evaluate(original, x=2,w=3).y = 11, evaluate(fused, ...).y = 11 (confirmed)
+self-check: evaluate(original, x=2,w=3).y2 = 6, evaluate(fused, ...).y2 = 6 (confirmed)

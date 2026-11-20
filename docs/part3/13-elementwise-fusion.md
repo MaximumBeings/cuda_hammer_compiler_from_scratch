@@ -568,7 +568,7 @@ self-check: evaluate(original, x=1).t3 = 0, evaluate(fused, x=1).t3 = 0 (confirm
 <!-- hammer:figure:13.2:start -->
 <figure class="chapter-figure" markdown="1">
 
-[![A shared value constrains duplication](../images/concepts/13-02.svg?v=00bac5232b8f)](../images/concepts/13-02.svg?v=00bac5232b8f)
+[![A shared value constrains duplication](../images/concepts/13-02.svg?v=cef1694a65c3)](../images/concepts/13-02.svg?v=cef1694a65c3)
 
 <figcaption>One consumer cannot discard work still needed by another.</figcaption>
 </figure>

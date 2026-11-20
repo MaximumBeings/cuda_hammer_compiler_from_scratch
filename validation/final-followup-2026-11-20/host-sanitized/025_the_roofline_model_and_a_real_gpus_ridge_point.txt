@@ -1,0 +1,31 @@
+SOURCE: docs/part3/code/025_the_roofline_model_and_a_real_gpus_ridge_point.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/025_the_roofline_model_and_a_real_gpus_ridge_point.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-_nsg26cy/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 12.2: classifying Section 12.1's chains against a real GPU's ridge point ===
+
+NVIDIA A100 (40GB PCIe) ridge point = 19.5000 TFLOPS / 1555.0000 GB/s = 12.5402 FLOPs/byte
+
+  K          AI_unfused       class            AI_fused         class           
+  1          0.125000         memory-bound     0.125000         memory-bound    
+  2          0.125000         memory-bound     0.250000         memory-bound    
+  4          0.125000         memory-bound     0.500000         memory-bound    
+  8          0.125000         memory-bound     1.000000         memory-bound    
+  16         0.125000         memory-bound     2.000000         memory-bound    
+  32         0.125000         memory-bound     4.000000         memory-bound    
+  64         0.125000         memory-bound     8.000000         memory-bound    
+  100        0.125000         memory-bound     12.500000        memory-bound    
+  101        0.125000         memory-bound     12.625000        compute-bound   
+  128        0.125000         memory-bound     16.000000        compute-bound   
+  1000       0.125000         memory-bound     125.000000       compute-bound   
+  1000000    0.125000         memory-bound     125000.000000    compute-bound   
+
+self-check: the unfused chain is memory-bound at EVERY tested K, including K=1,000,000
+(its AI never grows) (confirmed)
+self-check: at least one tested K makes the FUSED chain compute-bound (confirmed)
+
+Smallest fused chain length that crosses this GPU's ridge point: K = 101
+self-check: fusedAI(K=101) is compute-bound (confirmed), fusedAI(K=100) is NOT (confirmed)
+No UNFUSED chain of any length ever crosses this ridge point -- its arithmetic
+intensity is fixed at 0.125000 FLOPs/byte forever, by construction.

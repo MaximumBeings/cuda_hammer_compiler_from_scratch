@@ -1,0 +1,35 @@
+SOURCE: docs/part4/code/050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part4/code/050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-_sbk_46c/lesson']
+COMPILE:
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part4/code/050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp:202:33: warning: unused function 'computeChainDepths' [-Wunused-function]
+  202 | static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
+      |                                 ^~~~~~~~~~~~~~~~~~
+1 warning generated.
+
+EXECUTION:
+=== Section 20.3: the JIT backend end to end -- no subprocess, no stdout parsing ===
+
+a = [1,-2,3,-4,5,-6,7,-8], b = [2]. evaluateArrays(original).y = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
+
+fused graph (maxChainLength=3, same cap Section 17.3/18.3/19.3 all used): a b t3(FE,3st) t5(FE,2st) s(FR,1st) y(FE,2st) 
+
+--- Backend 1: SCALAR (Chapter 18's own emitSteps() body, JIT-compiled) ---
+
+g++ -shared -fPIC compile (4 functions, scalar): clean
+compute_y (scalar, real function pointer) = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
+self-check: y[0]=132.000000, matches evaluateArrays() (confirmed)
+
+--- Backend 2: VECTOR (Chapter 19's own FMA-fold + reduction body, JIT-compiled, NEON) ---
+
+g++ -shared -fPIC compile (4 functions, NEON, 3 FMA fold(s)): clean
+compute_y (vector, real function pointer) = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
+self-check: y[0]=132.000000, matches evaluateArrays() (confirmed), 3 FMA folds applied (confirmed)
+
+--- Tally: what this JIT backend needed, versus Chapters 17-19's own harness ---
+
+g++ invocations (COMPILATION -- unavoidable, this book's own JIT never embeds a
+compiler as a library): 2 (one per backend, same count Chapter 17-19's own
+harness needed for a chained whole-graph program)
+subprocess launches for EXECUTION: 0 -- every one of this section's own 8 real
+results (4 nodes x 2 backends) crossed from generated code into this program as a
+genuine C++ function return, not a line of stdout text parsed back (confirmed)
