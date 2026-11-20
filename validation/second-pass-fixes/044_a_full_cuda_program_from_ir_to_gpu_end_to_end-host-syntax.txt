@@ -1,0 +1,7 @@
+COMMAND: ['clang++', '-x', 'c++', '-std=c++17', '-Wall', '-Wextra', '-fsyntax-only', 'docs/part4/code/044_a_full_cuda_program_from_ir_to_gpu_end_to_end.cu']
+docs/part4/code/044_a_full_cuda_program_from_ir_to_gpu_end_to_end.cu:257:33: warning: unused function 'computeChainDepths' [-Wunused-function]
+  257 | static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
+      |                                 ^~~~~~~~~~~~~~~~~~
+1 warning generated.
+
+EXIT: 0

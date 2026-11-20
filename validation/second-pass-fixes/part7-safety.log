@@ -1,0 +1,13 @@
+081_calibrated_brightness_contrast_normalization.cpp: PASS 7 Part7 safety checks
+082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs.cpp: PASS 7 Part7 safety checks
+083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp: PASS 9 Part7 safety checks
+084_per_token_mean_centering_a_real_layernorm_building_block.cpp: PASS 7 Part7 safety checks
+085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp: PASS 7 Part7 safety checks
+086_the_whole_classifier_fused_and_vectorized_for_real.cpp: PASS 9 Part7 safety checks
+087_a_real_1d_ftcs_finite_difference_heat_stencil_single_step.cpp: PASS 7 Part7 safety checks
+088_five_steps_unrolled_a_fixed_depth_chain_no_loop_construct.cpp: PASS 7 Part7 safety checks
+089_the_whole_stencil_chain_fused_and_vectorized_for_real.cpp: PASS 9 Part7 safety checks
+090_terminal_payoff_via_relu_a_real_exact_fit.cpp: PASS 7 Part7 safety checks
+091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp: PASS 7 Part7 safety checks
+092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp: PASS 9 Part7 safety checks
+ALL 12 standalone Part7 copies passed shape/count regressions; four also passed body-budget regressions

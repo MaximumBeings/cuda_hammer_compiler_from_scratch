@@ -16,6 +16,7 @@
 // Run:     ./038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager
 #include <cstdio>
 #include <limits>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -25,6 +26,18 @@
 #include <functional>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -148,6 +161,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -166,6 +188,7 @@ static long long numElements(const Shape& s) {
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -178,7 +201,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -188,7 +211,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            shapes[id] = declaredShapes.at(id);
+            shapes[id] = validatedShape(declaredShapes.at(id));
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else if (n->op == OpKind::ReLU) {
@@ -304,36 +327,27 @@ struct FusionResult {
     std::map<int, int> representativeOldId;
 };
 
-static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
-                                                     const TopoResult& topo) {
-    std::map<int, long long> depth;
-    for (int id : topo.order) {
-        const Node* n = g.node(id);
-        bool isChainCandidate = (n->op == OpKind::Add || n->op == OpKind::Mul || n->op == OpKind::ReLU) &&
-                                 consumers.at(id) == 1;
-        if (!isChainCandidate) {
-            depth[id] = 0;
-            continue;
-        }
-        long long best = 0;
-        for (const Value& in : n->inputs) {
-            const Node* pred = g.node(in.nodeId);
-            bool predIsChainMember = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
-                                      consumers.at(pred->id) == 1;
-            if (predIsChainMember) best = std::max(best, depth.at(pred->id));
-        }
-        depth[id] = best + 1;
-    }
-    return depth;
-}
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -516,15 +530,14 @@ static Graph runPasses(const Graph& initial, const std::vector<NamedPass>& passe
 
 // ==================== bytesMoved() (from Chapter 13/14, unchanged) ====================
 
-static constexpr double kBytesPerElement = 4.0;
 static long long bytesMoved(const Graph& g, const std::map<int, long long>& elementCounts) {
     long long totalElements = 0;
     for (const auto& n : g.nodes()) {
         if (n->op == OpKind::Input || n->op == OpKind::Const) continue;
-        for (const Value& in : n->inputs) totalElements += elementCounts.at(in.nodeId);
-        totalElements += elementCounts.at(n->id);
+        for (const Value& in : n->inputs) totalElements = checkedCountAdd(totalElements, elementCounts.at(in.nodeId));
+        totalElements = checkedCountAdd(totalElements, elementCounts.at(n->id));
     }
-    return static_cast<long long>(static_cast<double>(totalElements) * kBytesPerElement);
+    return checkedCountMul(totalElements, 4);
 }
 
 int main() {
@@ -534,10 +547,9 @@ int main() {
     // enough (depth 4) to trigger a size cap of 3. t5: SHARED (2 consumers:
     // s and y2). s: Sum(t5) -- REDUCTION. y2: Mul(t5,b), single consumer.
     // y: Add(s,y2) -- the graph's own designated output, GraphRoot (0
-    // consumers). Hand-derivation for maxChainLength=3: chainDepth(t1..t4)
-    // = 1,2,3,4 -- only t3 (depth 3) is a multiple of 3, so t3 is the ONE
-    // new SizeCap boundary; t4 is not (depth 4, not a multiple of 3), so it
-    // inlines into t5's own group instead.
+    // consumers). With budget 3, t1+t2+t3 fit together. Including them
+    // in t4 would require four operations, so t3 is cut and materialized.
+    // t4 can then inline into the t5 body without exceeding the budget.
     Graph g;
     Value a  = g.addInput("a");
     Value b  = g.addInput("b");
@@ -576,8 +588,8 @@ int main() {
         if (n->debugName == "t4" && std::find(reasons.begin(), reasons.end(), BoundaryReason::SizeCap) != reasons.end())
             t4IsNotSizeCap = false;
     }
-    printf("\nself-check: t3 alone carries SizeCap (chainDepth 3, a multiple of maxChainLength=3);\n");
-    printf("t4 (chainDepth 4) does not (%s)\n", (t3IsSizeCap && t4IsNotSizeCap) ? "confirmed" : "MISMATCH");
+    printf("\nself-check: t3 alone carries SizeCap (a producer cut needed to keep every body within 3 steps);\n");
+    printf("t4 fits in its downstream group and does not (%s)\n", (t3IsSizeCap && t4IsNotSizeCap) ? "confirmed" : "MISMATCH");
 
     // ---- UNFUSED bytes ----
     long long unfusedBytes = bytesMoved(g, elementCounts);

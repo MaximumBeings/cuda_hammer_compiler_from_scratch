@@ -96,8 +96,9 @@ if __name__ == "__main__":
     out, code = capture_output_code(compiled_with_break, a, b, c)
     eager_out = diamond_with_break(a, b, c)
     print()
+    torch.testing.assert_close(out, eager_out, atol=1e-8, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check (graph-broken version): compiled vs. "
-          f"eager match = {torch.allclose(out, eager_out)}")
+          f"eager match = {torch.allclose(out, eager_out, atol=1e-8, rtol=1e-5)}")
 
     kernel_names = re.findall(r"(cpp_fused_\w+) = async_compile\.cpp_pybinding",
                                code)

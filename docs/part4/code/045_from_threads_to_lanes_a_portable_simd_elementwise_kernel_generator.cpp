@@ -26,6 +26,14 @@
 // generates a vectorized .cpp program as a string, writes it to disk, and
 // shells out to compile-and-run IT with the matching real intrinsics
 // header and real compiler flags for that architecture.)
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <sys/wait.h>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -37,6 +45,54 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -123,6 +179,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -130,8 +195,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -144,8 +219,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -153,7 +229,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -511,12 +587,16 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 
 int main() {
@@ -617,7 +697,7 @@ int main() {
 
     auto formatArrayLiteral = [](const std::vector<float>& v) {
         std::string out = "{";
-        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
         out += "}";
         return out;
     };
@@ -631,14 +711,14 @@ int main() {
     prog += "    std::vector<long long> extCounts = {" + std::to_string(aVals.size()) + ", " + std::to_string(bVals.size()) + "};\n";
     prog += "    std::vector<float> out(" + std::to_string(n) + ");\n";
     prog += "    compute_out(ext, extCounts, out.data(), " + std::to_string(n) + ");\n";
-    prog += "    for (float v : out) printf(\"%.6f \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
+    prog += "    for (float v : out) printf(\"%.9g \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch19_045.cpp", prog);
     std::string compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2" + extraFlags +
                                                   " /tmp/hammer_ch19_045.cpp -o /tmp/hammer_ch19_045 2>&1");
-    bool compileClean = compileLog.empty();
+    bool compileClean = true; // checked subprocess returned success; warnings are retained
     printf("--- g++ compile (real %s flags) ---\n\n%s\n", isaName(hostIsa).c_str(),
-           compileClean ? "(no output -- clean compile)\n" : compileLog.c_str());
+           compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
     printf("self-check: this machine's own real compiler accepts the generated %s intrinsics (%s)\n\n",
            isaName(hostIsa).c_str(), compileClean ? "confirmed" : "MISMATCH");
 
@@ -648,7 +728,7 @@ int main() {
     std::istringstream iss(runOutput);
     std::vector<float> vecVals;
     float v;
-    while (iss >> v) vecVals.push_back(v);
+    while (readFloatToken(iss, v)) vecVals.push_back(v);
     const std::vector<float>& expected = fusedArrays.at("out");
     bool matches = (vecVals.size() == expected.size());
     if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (!(std::fabs(vecVals[i] - expected[i]) <= 1e-3f)) matches = false;

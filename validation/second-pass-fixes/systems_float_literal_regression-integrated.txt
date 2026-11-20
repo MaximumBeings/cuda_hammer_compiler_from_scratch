@@ -1,0 +1,7 @@
+COMMAND: ['clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/tests/systems_float_literal_regression.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-integrated-regression-mqt01b9j/systems_float_literal_regression']
+COMPILE EXIT: 0
+
+RUN EXIT: 0
+all9 finite literal bit patterns preserved, including negative zero and subnormal
+all9 finite float comparison stdout values preserve their bits
+generated 1e8 * 1e-7 =10; source literals and comparison stdout both round-trip

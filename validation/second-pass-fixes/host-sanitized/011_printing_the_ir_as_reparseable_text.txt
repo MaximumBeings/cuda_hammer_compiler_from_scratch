@@ -1,0 +1,25 @@
+SOURCE: docs/part1/code/011_printing_the_ir_as_reparseable_text.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part1/code/011_printing_the_ir_as_reparseable_text.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-lfe75cec/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 7.2: printing a graph as text its OWN parser can read back in ===
+
+Printed source (6 nodes):
+a = input()
+b = input()
+t1 = add(a, b)
+t2 = mul(t1, a)
+t3 = relu(t1)
+out = add(t2, t3)
+
+self-check: printed text matches the hand-written expected source byte-for-byte (confirmed)
+self-check: parseProgram(printGraphAsSource(g)) reconstructs a graph STRUCTURALLY
+IDENTICAL to g -- print and parse are genuine inverses (confirmed)
+
+Printed source with a Const node:
+c = const(3.5)
+x = input()
+scaled = mul(c, x)
+
+self-check: a graph containing a Const node also round-trips correctly (confirmed)

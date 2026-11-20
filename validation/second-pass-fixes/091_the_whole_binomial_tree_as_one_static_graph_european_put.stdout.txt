@@ -1,0 +1,27 @@
+=== Chapter 34 (Part 7): Section 34.2 -- the whole binomial tree as ONE static graph (European put) ===
+
+Both the fixed-grid stencil and CRR lattice have statically known connectivity.
+Sections 31/33 chose array-valued nodes and host-side shifts; this section expands
+one scalar Value per lattice entry and wires its children at graph-build time.
+A fixed stencil could also be expanded as scalar nodes, trading staging for graph size.
+This fixed-depth CRR graph therefore uses no im2col staging or per-level host calls.
+
+real tree graph: 65 nodes total -- 5 terminal payoff node(s), 10 backward-induction
+node(s) (N=4 steps -> 4+3+2+1 = 10 backward nodes), 5 shared Const parameters
+
+real CUDA Hammer graph's own European put price (root of the tree): 5.093463
+independent host-side reference (plain C++, never touches CUDA Hammer): 5.093463
+
+self-check: the graph's own root price matches the independent reference exactly (confirmed)
+self-check: 0 < price < K (100.0000), a real no-arbitrage bound on any put's own price (confirmed)
+
+--- what this section actually shows ---
+
+Section 33.2 chose array-valued nodes and fixed-depth host orchestration in its
+driver. This section expands the fixed CRR depth into scalar nodes; its lattice's
+dependencies form a fixed, finite, statically known DAG -- a representation which
+is exactly what a binomial tree of depth N already is -- is exactly the shape CUDA
+Hammer's own graph model was built for since Chapter 4. Section 34.3 extends this SAME
+static graph to a harder real problem: American-style early exercise.
+
+=== Section 34.2 complete: all self-checks confirmed ===

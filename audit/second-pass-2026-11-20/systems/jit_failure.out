@@ -1,0 +1,2 @@
+normal compile error; helper success=false; following caller's unconditional dlopen still runs stale function=37
+compiler exit1, empty stderr; helper returned success=true; stale function=37

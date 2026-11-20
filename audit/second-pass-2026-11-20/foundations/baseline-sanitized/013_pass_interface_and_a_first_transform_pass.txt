@@ -1,0 +1,23 @@
+=== Section 8.2: canonicalizeNodeNames(), a real first transform pass ===
+
+Original graph (human-chosen names):
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1)
+  %3 = Mul(t2)
+  %4 = ReLU(t3)
+  %5 = Add(out)
+
+After canonicalizeNodeNames() (canonical names):
+  %0 = Input(%0)
+  %1 = Input(%1)
+  %2 = Add(%2)
+  %3 = Mul(%3)
+  %4 = ReLU(%4)
+  %5 = Add(%5)
+
+self-check: every node's debugName is exactly "%<its own id>" (confirmed)
+self-check: the canonicalized graph is still graphsStructurallyEqual() to the
+original -- only names changed, the computation itself did not (confirmed)
+self-check: the ORIGINAL graph's own names are completely untouched --
+canonicalizeNodeNames() read from it but never mutated it (confirmed)

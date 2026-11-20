@@ -1,0 +1,56 @@
+SOURCE: docs/part0/code/004_constant_folding_pass.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part0/code/004_constant_folding_pass.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-s51e4fmp/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 2.3: a real constant-folding pass over the IR ===
+
+--- source: "a + (2 * 3)" ---
+IR before folding (2 instructions):
+  t0 = 2 * 3
+  t1 = a + t0
+IR after folding (1 instruction):
+  t1 = a + 6
+result before: 16 | result after: 16 | match: yes | instructions eliminated: 1
+
+--- source: "(4 - 1) * a" ---
+IR before folding (2 instructions):
+  t0 = 4 - 1
+  t1 = t0 * a
+IR after folding (1 instruction):
+  t1 = 3 * a
+result before: 15 | result after: 15 | match: yes | instructions eliminated: 1
+
+--- source: "(2 + 3) * (4 - 1)" ---
+IR before folding (3 instructions):
+  t0 = 2 + 3
+  t1 = 4 - 1
+  t2 = t0 * t1
+IR after folding (0 instructions):
+  (no instructions -- fully folded to a constant)
+result before: 15 | result after: 15 | match: yes | instructions eliminated: 3
+
+--- source: "a + b" ---
+IR before folding (1 instruction):
+  t0 = a + b
+IR after folding (1 instruction):
+  t0 = a + b
+result before: 15 | result after: 15 | match: yes | instructions eliminated: 0
+
+--- source: "(1 + 1) + (1 + 1) + a" ---
+IR before folding (4 instructions):
+  t0 = 1 + 1
+  t1 = 1 + 1
+  t2 = t0 + t1
+  t3 = t2 + a
+IR after folding (1 instruction):
+  t3 = 4 + a
+result before: 104 | result after: 104 | match: yes | instructions eliminated: 3
+
+=== totals across all 5 test expressions ===
+instructions before folding: 12
+instructions after folding:  4
+total eliminated: 8 (66.7% reduction)
+
+self-check: every expression's pre-folding and post-folding result matches
+(confirmed) -- the pass changed the IR's shape but never its meaning

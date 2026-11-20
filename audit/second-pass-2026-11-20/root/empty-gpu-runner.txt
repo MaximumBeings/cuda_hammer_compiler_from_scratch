@@ -1,0 +1,3 @@
+Empty fixture: no docs/part4/code directory exists. Tool-discovery stubs only; no GPU execution.
+exit=0
+Chapter18 GPU runtime checks passed; inspect logs for device-specific results.

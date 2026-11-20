@@ -1,0 +1,4 @@
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp:412:25: warning: unused variable 'kBytesPerElement' [-Wunused-const-variable]
+  412 | static constexpr double kBytesPerElement = 4.0;
+      |                         ^~~~~~~~~~~~~~~~
+1 warning generated.

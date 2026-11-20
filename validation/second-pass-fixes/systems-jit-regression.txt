@@ -1,0 +1,8 @@
+COMMAND: ['clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', 'tests/systems_jit_failure_regression.cpp', '-o', '/tmp/systems_jit_failure_regression']
+
+diagnostic compile failure rejected before load/timing; previous artifact remains intact
+silent compiler exit1 rejected; stale function was not accepted as a new candidate
+successful compiler warning retained; new staged artifact promoted and returns99
+unique staged source/output files cleaned after success and failure
+
+EXIT: 0

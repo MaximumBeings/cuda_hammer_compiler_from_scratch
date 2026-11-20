@@ -1,0 +1,4 @@
+__cplusplus = 201703L
+nodes allocated via std::make_unique: 3 (checksum of ids: 3)
+digit-separator literal elementCount = 1000000
+real result: this file compiled and ran under this standard.

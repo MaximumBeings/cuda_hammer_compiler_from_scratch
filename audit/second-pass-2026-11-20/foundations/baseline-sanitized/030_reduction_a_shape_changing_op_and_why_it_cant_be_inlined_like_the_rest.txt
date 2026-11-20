@@ -1,0 +1,44 @@
+=== Section 14.1: OpKind::Sum, FusedReduction, and reductionFusionPass() ===
+
+Original graph (3 nodes), x declared as shape [4]:
+  %0 x = Input()
+  %1 t1 = ReLU(%0)
+  %2 s = Sum(%1)
+
+After reductionFusionPass() (2 nodes):
+  %0 x = Input()
+  %1 s = FusedReduction(external inputs: ext0=%0)
+      step0 = ReLU(ext0)
+      step1 = Sum(step0)  [reduces 4 elements]  <- this node's own output
+
+self-check: node count dropped from 3 to 2 -- t1 inlines into s's own
+FusedReduction body even though s CHANGES shape (confirmed)
+self-check: exactly one FusedReduction node was created, with 1 external input (x)
+and 2 internal steps (relu, sum), the LAST of which is the Sum (confirmed)
+
+self-check: evaluate(original, x=2).s = 8, evaluate(fused, x=2).s = 8 (confirmed)
+self-check: evaluate(original, x=-3).s = 0, evaluate(fused, x=-3).s = 0 (confirmed)
+
+=== Backward compatibility: reductionFusionPass() on a graph with NO reduction ===
+
+elementwiseFusionPass() output:
+  %0 x = Input()
+  %1 c2 = Const(2)
+  %2 cN3 = Const(-3)
+  %3 t3 = FusedElementwise(external inputs: ext0=%0, ext1=%1, ext2=%2)
+      step0 = Mul(ext0, ext1)
+      step1 = Add(step0, ext2)
+      step2 = ReLU(step1)  <- this node's own output
+
+reductionFusionPass() output on the SAME Sum-free graph:
+  %0 x = Input()
+  %1 c2 = Const(2)
+  %2 cN3 = Const(-3)
+  %3 t3 = FusedElementwise(external inputs: ext0=%0, ext1=%1, ext2=%2)
+      step0 = Mul(ext0, ext1)
+      step1 = Add(step0, ext2)
+      step2 = ReLU(step1)  <- this node's own output
+
+self-check: on a graph with no Sum node at all, reductionFusionPass() produces output
+TEXTUALLY IDENTICAL to Chapter 13's own elementwiseFusionPass() -- a strict
+generalization, not a separate pass with separate rules (confirmed)

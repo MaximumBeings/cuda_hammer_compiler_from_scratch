@@ -1,0 +1,34 @@
+[
+  {
+    "test": "systems_jit_failure_regression.cpp",
+    "compile_exit": 0,
+    "run_exit": 0
+  },
+  {
+    "test": "systems_float_literal_regression.cpp",
+    "compile_exit": 0,
+    "run_exit": 0
+  },
+  {
+    "test": "systems_cuda_text_regression.cpp",
+    "compile_exit": 0,
+    "run_exit": 0
+  },
+  {
+    "test": "systems_fusion_propagation_regression.cpp",
+    "compile_exit": 0,
+    "run_exit": 0
+  },
+  {
+    "test": "docs/part4/code/042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.cu",
+    "host_syntax_exit": 0
+  },
+  {
+    "test": "docs/part4/code/043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.cu",
+    "host_syntax_exit": 0
+  },
+  {
+    "test": "docs/part4/code/044_a_full_cuda_program_from_ir_to_gpu_end_to_end.cu",
+    "host_syntax_exit": 0
+  }
+]

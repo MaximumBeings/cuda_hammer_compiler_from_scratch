@@ -15,6 +15,8 @@
 
  > **Cache scope:** The example's `x86_64`/`aarch64` key separates architectures only. It does not identify a CPU model, cache hierarchy, enabled ISA extensions, compiler version/flags, generator revision or numerical policy. Two different machines of the same architecture still collide. Production performance-cache keys should record those properties, plus workload/operator/dtype/layout, and remeasure stale entries. This text cache contains trusted schedule fixtures, is not an executable-code cache and is not a concurrent transactional database.
 
+> **Output provenance:** Captures explicitly labeled fresh local output were rerun after the second-pass fixes. Other cloud/device transcripts are historical examples, not fresh measurements of this revision.
+
 ---
 
 Chapter 23 closed with a real, working hybrid autotuner and an honest accounting of what it costs: ranking 128 real schedules is cheap, but compiling and carefully measuring even a short list of 8 is not -- seconds of real wall-clock time, one g++ process and one timed measurement loop per candidate. Nothing about that autotuner remembers its own past work. Ask it to schedule the identical `LoopNest [dim0:6, dim1:8]` a second time, in a second program run, and it pays the full cost again, finding the same answer it already found once. This chapter closes Part 5 by giving the autotuner a memory -- not a clever one, just a real file on disk, the same real precedent this book has cited since Chapter 3's own survey of TVM: AutoTVM's own tuning LOGS, which persist a search's own result keyed by the workload and the hardware target it was tuned for, so a real compiler only pays the real cost of tuning once per shape it has never seen before.
@@ -129,6 +131,8 @@ measurement paid a second time.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 060_a_persistent_tuning_cache_keyed_by_loop_nest_shape.cpp -o 060_driver -ldl
 // Run:     ./060_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -143,6 +147,18 @@ measurement paid a second time.
 #include <stdexcept>
 #include <dlfcn.h>
 
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
 // ==================== Loop / LoopNest / Schedule machinery (Chapters 15/21, unchanged) ====================
 
 struct Loop {
@@ -153,7 +169,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -290,6 +306,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -297,14 +315,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== generateScheduleFunction() (Chapter 23.2, unchanged) ====================
@@ -621,7 +671,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "060_a_persistent_tuning_cache_keyed_by_loop_ne
 ./"060_a_persistent_tuning_cache_keyed_by_loop_nest_shape"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 24.1: a real, persistent tuning cache, keyed by LoopNest shape ===
@@ -650,11 +702,11 @@ the real behavior a NEW PROGRAM RUN needs: no shared memory, no live process, ju
 
 --- Part 3: getOrAutotune() -- real autotuning cost paid once, skipped on the next real run ---
 
-  run 1 (fresh cache, nothing on disk yet): MISS in 5619.8 ms -> tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
-  run 2 (brand new TuningCache object, loaded from run 1's real file): HIT in 6.1 us -> tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
+  run 1 (fresh cache, nothing on disk yet): MISS in 9425.9 ms -> tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
+  run 2 (brand new TuningCache object, loaded from run 1's real file): HIT in 7.2 us -> tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
 
   run 1 was a MISS, run 2 was a HIT, both returned the IDENTICAL schedule
-  real wall-clock: run 1 = 5619.8 ms, run 2 = 6.1 us (ratio: run 1 is 927661x slower)
+  real wall-clock: run 1 = 9425.9 ms, run 2 = 7.2 us (ratio: run 1 is 1315366x slower)
   a ratio this large is not a claim that caching is generally a million-times speedup --
   it reflects what is actually being compared: 8 real g++ processes plus 8 real timed
   measurement loops on one side, one short file read and a string parse on the other.
@@ -782,6 +834,8 @@ colliding into one entry in the first place.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 061_what_a_cache_key_must_capture.cpp -o 061_driver -ldl
 // Run:     ./061_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -796,6 +850,18 @@ colliding into one entry in the first place.
 #include <stdexcept>
 #include <dlfcn.h>
 
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
 // ==================== Loop / LoopNest / Schedule machinery (Chapters 15/21, unchanged) ====================
 
 struct Loop {
@@ -806,7 +872,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -943,6 +1009,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -950,14 +1018,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== generateScheduleFunction() (Chapter 23.2, unchanged) ====================
@@ -1246,7 +1346,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "061_what_a_cache_key_must_capture.cpp" -o "061
 ./"061_what_a_cache_key_must_capture"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 24.2: what a cache key must capture ===
@@ -1254,10 +1356,10 @@ g++ -std=c++17 -Wall -Wextra -O2 "061_what_a_cache_key_must_capture.cpp" -o "061
 --- Part 1: correctness under a shape mismatch -- still bit-for-bit correct ---
 
   schedule actually found FOR the small shape dim0:2,dim1:2:
-    tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=2
+    tiles=[dim0:2,dim1:1] order=dim0>dim1 unroll=2
 
   applying that SAME schedule, unmodified, to the genuinely different shape dim0:6,dim1:8:
-    tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=2 -- bit-for-bit correct: yes
+    tiles=[dim0:2,dim1:1] order=dim0>dim1 unroll=2 -- bit-for-bit correct: yes
 
 self-check: a schedule tuned for a 2x2 shape, applied without modification to a 6x8
 shape, still produces the exact correct answer (confirmed). This is not luck: generateScheduleFunction()
@@ -1268,10 +1370,10 @@ performance, for any two nests with the same number of loops.
 --- Part 2: performance under a shape mismatch -- real measurement, whichever way it lands ---
 
   schedule actually found FOR the large shape dim0:6,dim1:8:
-    tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
+    tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
 
-  foreign schedule (tuned for dim0:2,dim1:2, applied to dim0:6,dim1:8): 0.0296 us/call
-  proper schedule  (tuned directly for dim0:6,dim1:8):        0.0218 us/call
+  foreign schedule (tuned for dim0:2,dim1:2, applied to dim0:6,dim1:8): 0.0192 us/call
+  proper schedule  (tuned directly for dim0:6,dim1:8):        0.0179 us/call
 
 self-check: correctness held in Part 1 either way -- this is purely a real, measured performance
 comparison, reported honestly whichever way it lands. Nothing about a shape mismatch guarantees a
@@ -1430,6 +1532,8 @@ own direct measurement of what happens without it.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 062_caching_across_machines_why_the_key_needs_a_target_too.cpp -o 062_driver -ldl
 // Run:     ./062_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -1442,6 +1546,18 @@ own direct measurement of what happens without it.
 #include <stdexcept>
 #include <dlfcn.h>
 
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
 // ==================== Loop / LoopNest / Schedule machinery (Chapters 15/21, unchanged) ====================
 
 struct Loop {
@@ -1452,7 +1568,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -1513,6 +1629,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -1520,14 +1638,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== generateScheduleFunction() (Chapter 23.2, unchanged) ====================
@@ -1779,35 +1929,37 @@ g++ -std=c++17 -Wall -Wextra -O2 "062_caching_across_machines_why_the_key_needs_
 ./"062_caching_across_machines_why_the_key_needs_a_target_too"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 24.3: caching across machines -- why the key needs a target too ===
 
-this program's own real target (compile-time, via predefined macros): x86_64
+this program's own real target (compile-time, via predefined macros): aarch64
 
 --- Part 1: Chapter 23.3's own real winners, both measured for real on THIS machine ---
 
   cloud sandbox's own real winner (Section 23.3):  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
   device's own real winner        (Section 23.3):  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
 
-  measured HERE, on this program's own real machine (x86_64):
-    cloud sandbox's schedule:  0.0218 us/call
-    device's schedule:         0.0221 us/call
+  measured HERE, on this program's own real machine (aarch64):
+    cloud sandbox's schedule:  0.0189 us/call
+    device's schedule:         0.0146 us/call
 
 self-check: both schedules produce the exact correct answer on this machine, exactly as Section
 24.2 already proved a shape-appropriate schedule always must -- a schedule found on a DIFFERENT
-real machine is never a correctness risk. This machine's OWN real winner measures 0.0218 us/call
-here; the OTHER real machine's own winner measures 0.0221 us/call here -- a real, measured
+real machine is never a correctness risk. This machine's OWN real winner measures 0.0146 us/call
+here; the OTHER real machine's own winner measures 0.0189 us/call here -- a real, measured
 difference this program's own clock actually recorded, not a hypothetical one.
 
 --- Part 2: loopNestKeyForTarget() -- two real entries in ONE shared cache file, no collision ---
 
   wrote 2 real entries to one shared file: "dim0:6,dim1:8@x86_64" and "dim0:6,dim1:8@aarch64"
-  this machine (target="x86_64") looks up its OWN key "dim0:6,dim1:8@x86_64" in the shared file: HIT, entry matches
+  this machine (target="aarch64") looks up its OWN key "dim0:6,dim1:8@aarch64" in the shared file: HIT, entry matches
   this machine's own real winner exactly: yes
 
-  the OTHER real machine's own entry, key "dim0:6,dim1:8@aarch64", is still present in the SAME shared file: yes, untouched
+  the OTHER real machine's own entry, key "dim0:6,dim1:8@x86_64", is still present in the SAME shared file: yes, untouched
 
 self-check: one shared cache FILE, two real (workload, target) entries, keyed by
 loopNestKeyForTarget() -- extending Section 24.1's own loopNestKey() with exactly the target

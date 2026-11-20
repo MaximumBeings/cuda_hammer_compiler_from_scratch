@@ -1,0 +1,15 @@
+=== Appendix F.2: the same autotune-and-cache problem, through CUDA Hammer's own real hybrid autotuner ===
+
+LoopNest: dim0=6, dim1=8 (48 total elements, matching TVM's own File 107 n=48)
+real legal schedule count for this LoopNest: 128 (Chapter 21's own enumerateSchedules())
+
+--- run 1: a fresh TuningCache, nothing on disk yet -- pays Chapter 23's own real hybrid-autotuning cost in full ---
+
+  run 1: MISS in 249476.9 ms -> tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+
+--- run 2: a BRAND NEW TuningCache object -- the real behavior a new program run needs ---
+
+  run 2: HIT in 6.7 us -> tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+
+run 1 was a MISS, run 2 was a HIT, both returned the IDENTICAL schedule
+real wall-clock: run 1 = 249476.9 ms, run 2 = 6.7 us (ratio: run 1 is 37185407x slower)

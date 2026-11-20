@@ -1,0 +1,3 @@
+Checked 159 accessible deep-blue SVGs.
+Checked 43 pages, 108 source listings, 346 text blocks.
+PASS: publication structure, code embeds, links and sample-output checks

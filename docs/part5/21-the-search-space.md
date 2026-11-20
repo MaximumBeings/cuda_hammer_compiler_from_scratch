@@ -13,6 +13,8 @@
 
 **What you need to know first:** Chapter 15's own `Loop`/`LoopNest`/`TiledLoop`/`tileLoop()`/`actualInnerExtent()` (reused verbatim throughout this chapter); Chapter 6's own `broadcastShapes()`/`inferShapes()` (the reason a real `LoopNest` can have more than one loop in the first place); the array-comparison tolerance (`1e-3f`, `1e-2f`) every chapter since 17 has used when checking generated code against `evaluateArrays()` (explained concretely, for the first time, in Section 21.2); and Chapter 19's own vector-width "main loop plus scalar tail" shape (reused and generalized in Section 21.3).
 
+> **Output provenance:** Captures explicitly labeled fresh local output were rerun after the second-pass fixes. Other cloud/device transcripts are historical examples, not fresh measurements of this revision.
+
 ---
 
 Every backend through Part 4 -- Chapter 17's scalar loops, Chapter 18's CUDA kernels, Chapter 19's vectorized code, Chapter 20's JIT-loaded functions -- compiled exactly ONE fixed schedule per fused kernel: one tile size (or none at all), one loop order, no unrolling decisions ever revisited. That was never a limitation those chapters needed to apologize for -- Parts 1 through 4 were about a genuinely prior question, whether this book's own generated code computes the CORRECT answer at all, and every one of those chapters answered it for real, compiled and run on real hardware. Part 5 asks a different question: given that a fused kernel's own arithmetic is already proven correct, there are usually SEVERAL different, equally correct ways to execute it -- different tile sizes, different loop nesting orders, different unroll factors -- and some of them run measurably faster than others on real hardware. This chapter builds and validates the SEARCH SPACE itself: which schedules are even legal, and how large that space really is. It deliberately does not yet generate scheduled code (Chapter 22 needs a cost model first, precisely so a later chapter doesn't have to compile and measure every single candidate to find a good one) or run an actual autotuning search (Chapter 23). Every worked example in this chapter still compiles and runs for real, computing genuine numbers about the search space itself -- candidate counts, index-set equality proofs, real float32 sums -- never simulated in a comment.
@@ -115,12 +117,25 @@ discipline, extended from "one hand-picked value" to "the WHOLE list":
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 051_tile_size_candidates_enumerating_one_loops_own_search_space.cpp -o 051_driver
 // Run:     ./051_driver
+#include <limits>
 #include <cstdio>
 #include <string>
 #include <vector>
 #include <set>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop / LoopNest / TiledLoop / tileLoop() / actualInnerExtent() (from Chapter 15, unchanged) ====================
 
@@ -132,7 +147,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -249,7 +264,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "051_tile_size_candidates_enumerating_one_loops
 ./"051_tile_size_candidates_enumerating_one_loops_own_search_space"
 ```
 
-**Output (cloud sandbox, x86-64):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 21.1: enumerateTileSizeCandidates() -- one loop's own search space ===
@@ -378,6 +395,8 @@ Why a REDUCTION's own order is different -- float32's 24-bit mantissa:
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 052_loop_order_and_why_a_reductions_own_order_is_not_just_performance.cpp -o 052_driver
 // Run:     ./052_driver
+#include <stdexcept>
+#include <limits>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -385,6 +404,18 @@ Why a REDUCTION's own order is different -- float32's 24-bit mantissa:
 #include <algorithm>
 #include <numeric>
 #include <cmath>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop / LoopNest (from Chapter 15, unchanged) ====================
 
@@ -396,7 +427,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -524,7 +555,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "052_loop_order_and_why_a_reductions_own_order_
 ./"052_loop_order_and_why_a_reductions_own_order_is_not_just_performance"
 ```
 
-**Output (cloud sandbox, x86-64):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 21.2: enumerateLoopOrders() -- and what order does and doesn't change ===
@@ -684,6 +717,7 @@ enumerated as a full cartesian product over ONE real LoopNest:
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward.cpp -o 053_driver
 // Run:     ./053_driver
+#include <limits>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -692,6 +726,18 @@ enumerated as a full cartesian product over ONE real LoopNest:
 #include <numeric>
 #include <cmath>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop / LoopNest (Chapter 15, unchanged) ====================
 
@@ -703,7 +749,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -902,7 +948,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "053_unrolling_and_the_full_schedule_search_spa
 ./"053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward"
 ```
 
-**Output (cloud sandbox, x86-64):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 21.3: unrolling, and the full schedule search space this chapter built toward ===

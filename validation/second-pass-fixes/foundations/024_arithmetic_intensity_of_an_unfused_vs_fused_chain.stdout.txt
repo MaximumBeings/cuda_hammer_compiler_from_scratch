@@ -1,0 +1,23 @@
+=== Section 12.1: arithmetic intensity of an unfused vs. a fused chain ===
+
+  K          AI_unfused (FLOPs/byte)  AI_fused (FLOPs/byte)   
+  1          0.125000                 0.125000                
+  2          0.125000                 0.250000                
+  4          0.125000                 0.500000                
+  8          0.125000                 1.000000                
+  16         0.125000                 2.000000                
+  32         0.125000                 4.000000                
+  64         0.125000                 8.000000                
+  100        0.125000                 12.500000               
+  101        0.125000                 12.625000               
+  128        0.125000                 16.000000               
+  1000       0.125000                 125.000000              
+  1000000    0.125000                 125000.000000           
+
+self-check: AI_unfused is EXACTLY 0.125000 FLOPs/byte for every K tested, independent of
+chain length and of N (confirmed)
+self-check: AI_fused is strictly increasing as K grows (confirmed)
+
+Both totals grow with K -- but their RATIO behaves completely differently: unfused
+traffic grows exactly as fast as unfused work does, so the ratio never moves; fused
+traffic stays flat while fused work keeps growing, so the ratio climbs without bound.

@@ -1,0 +1,4 @@
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp:216:25: warning: unused variable 'kBytesPerElement' [-Wunused-const-variable]
+  216 | static constexpr double kBytesPerElement = 4.0;
+      |                         ^~~~~~~~~~~~~~~~
+1 warning generated.

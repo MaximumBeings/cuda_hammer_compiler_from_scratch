@@ -1,0 +1,24 @@
+=== Appendix F.1: the same diamond graph, through CUDA Hammer's own real fusion pass ===
+
+--- Part 1: the unfused graph, printed node by node (CUDA Hammer's own IR, Chapter 7's own printGraphAsSource() shape) ---
+
+  %0 = Input()  // "a"
+  %1 = Input()  // "b"
+  %2 = Input()  // "c"
+  %3 = Add(%0, %1)  // "t1"
+  %4 = Mul(%3, %2)  // "t2"
+  %5 = ReLU(%3)  // "t3"
+  %6 = Add(%4, %5)  // "out"
+
+unfused graph: 7 nodes
+
+--- Part 2: after Chapter 16.3's own real boundedReductionFusionPass() (maxChainLength=10, large enough to place no extra boundary) ---
+
+  %0 = Input  // "a"
+  %1 = Input  // "b"
+  %2 = Input  // "c"
+  %3 = Add  // "t1"
+  %4 = FusedElementwise  // "out"  (fused: t2, t3, out collapsed into one FusedElementwise)
+
+fused graph: 5 nodes total, 2 of them real compute (non-Input/Const) nodes
+-- t1's own computation lives INSIDE that one FusedElementwise node's own fusedSteps, never re-materialized through main's own return value: false

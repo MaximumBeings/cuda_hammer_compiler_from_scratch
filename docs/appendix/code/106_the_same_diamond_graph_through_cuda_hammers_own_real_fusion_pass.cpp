@@ -177,12 +177,25 @@ static std::map<int, long long> computeChainDepths(const Graph& g, const std::ma
 }
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }

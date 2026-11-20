@@ -1,0 +1,28 @@
+SOURCE: docs/part1/code/008_frontend_error_handling.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part1/code/008_frontend_error_handling.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-h9aa13zc/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 5.3: rejecting invalid programs instead of crashing or misbuilding ===
+
+--- valid program (control case) ---
+  parsed successfully (3 nodes), no exception thrown
+  expected success, got success -- confirmed
+
+--- undefined name ---
+  threw: "line 2: undefined name 'z' (used before it was defined, or never defined)"
+  expected an exception, got an exception -- confirmed
+
+--- redefinition of an existing name ---
+  threw: "line 2: redefinition of already-defined name 'a'"
+  expected an exception, got an exception -- confirmed
+
+--- arity mismatch (add takes 2 args, given 1) ---
+  threw: "line 2: 'add' takes exactly 2 arguments"
+  expected an exception, got an exception -- confirmed
+
+--- unknown operation ---
+  threw: "line 3: unknown operation 'subtract'"
+  expected an exception, got an exception -- confirmed
+
+self-check: every test case behaved exactly as expected (confirmed)

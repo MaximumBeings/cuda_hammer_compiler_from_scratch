@@ -1,0 +1,43 @@
+=== Section 10.1: commonSubexpressionEliminationPass(), reusing an already-computed value ===
+
+Graph with one duplicate computation ('t3' duplicates 't1'):
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1)
+  %3 = Mul(t2)
+  %4 = Add(t3)
+  %5 = Mul(t4)
+  %6 = Add(out)
+
+After commonSubexpressionEliminationPass():
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1)
+  %3 = Mul(t2)
+  %4 = Mul(t4)
+  %5 = Add(out)
+
+self-check: exactly one duplicate node was dropped, 7 -> 6 (confirmed)
+self-check: 't3' does not appear anywhere in the deduplicated graph (confirmed)
+self-check: 't4' now reads its first operand from the SAME node as 't1' (confirmed)
+self-check: evaluate(original, a=3,b=5).out = 64, evaluate(deduped, a=3,b=5).out = 64 (confirmed)
+
+Graph with two literally-duplicate Const nodes ('k1' and 'k2', both 7):
+  %0 = Const(k1) [value=7]
+  %1 = Input(m)
+  %2 = Add(r1)
+  %3 = Const(k2) [value=7]
+  %4 = Add(r2)
+  %5 = Add(out)
+
+After commonSubexpressionEliminationPass():
+  %0 = Const(k1) [value=7]
+  %1 = Input(m)
+  %2 = Add(r1)
+  %3 = Add(out)
+
+self-check: the Const merge CASCADED into an Add merge in the same pass, 6 -> 4 (confirmed)
+self-check: evaluate(original, m=4.5).out = 23, evaluate(deduped, m=4.5).out = 23 (confirmed)
+
+self-check: a graph with NO duplicate computations comes back the same size, 6 -> 6
+(CSE does not misfire on already-distinct input) (confirmed)

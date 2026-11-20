@@ -1,0 +1,40 @@
+=== Section 22.2: a memory-stride cost model for loop order ===
+
+--- Part 1: estimateLoopOrderCost() for both loop orders, LoopNest [dim0:4096, dim1:4096] ---
+
+  order dim0>dim1 (row-major, inner=dim1=contiguous): predicted cost = 58720256.0
+  order dim1>dim0 (col-major, inner=dim0=strided):    predicted cost = 687865856.0
+  predicted ratio (col-major / row-major) = 11.7x
+
+self-check: the model predicts row-major cheaper (confirmed) -- the LINE-LOAD count alone differs
+by exactly 16:1 (cacheLineElements itself: one line load per element, worst case, versus one
+line load amortized across 16 elements, best case) -- but the OVERALL predicted cost ratio
+(11.7x) is smaller than that, because perElementWork is the SAME 1.0-unit charge either way,
+diluting the memory-only effect once real compute work is added into the same total.
+
+--- Part 2: real measurement -- computeOrdered() on a real 4096x4096 float array (64 MB) ---
+
+  order dim0>dim1 (row-major) best-of-5 =    3.935 ms
+  order dim1>dim0 (col-major) best-of-5 =  307.545 ms
+  measured ratio (col-major / row-major) = 78.15x
+
+self-check: both orders produce the exact same bit-for-bit output array (confirmed) -- Section
+21.2's own finding holds again here: for this elementwise computation, loop order is STILL a
+pure performance knob, never a correctness concern; what changes is only how long it takes.
+
+--- Part 3: does the model's prediction match what actually happened? ---
+
+  model predicts:  row-major cheaper by 11.7x
+  measurement finds: row-major faster by 78.15x
+  ranking matches: yes
+
+Unlike Section 22.1's loop-overhead model, this one gets the RANKING right. The magnitude is
+off -- the model predicted an 11.7x gap and reality delivered 78.15x -- real memory hierarchies
+have effects this deliberately simple model never included (TLB misses under a stride this
+large, and hardware prefetchers that help the contiguous case even more than a flat line-count
+model assumes), so the real penalty for column-major turned out worse than predicted, not
+better. Getting the DIRECTION right while getting the MAGNITUDE wrong is still a useful cost
+model for ranking candidates, which is all an autotuner actually needs from it -- and it is a
+different kind of honesty than Section 22.1's model, which got the direction wrong at high
+unroll factors. Different mechanisms deserve different amounts of trust, which is exactly what
+Section 22.3 has to decide when it combines both models into one score for a real schedule.

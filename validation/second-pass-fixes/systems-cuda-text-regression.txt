@@ -1,0 +1,12 @@
+COMMAND: ['clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', 'tests/systems_cuda_text_regression.cpp', '-o', '/tmp/systems_cuda_text_regression']
+In file included from tests/systems_cuda_text_regression.cpp:3:
+tests/../docs/part4/code/044_a_full_cuda_program_from_ir_to_gpu_end_to_end.cu:257:33: warning: unused function 'computeChainDepths' [-Wunused-function]
+  257 | static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
+      |                                 ^~~~~~~~~~~~~~~~~~
+1 warning generated.
+
+CUDA text retains exact small constant, round-trip stdout and fail-fast diagnostics
+compiler exit77 rejected; only explicit CUDA diagnostic execution may return77
+host-only test: generated CUDA device code was not compiled or executed
+
+EXIT: 0

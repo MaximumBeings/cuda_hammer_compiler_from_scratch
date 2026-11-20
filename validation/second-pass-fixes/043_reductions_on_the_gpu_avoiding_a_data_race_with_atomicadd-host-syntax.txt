@@ -1,0 +1,7 @@
+COMMAND: ['clang++', '-x', 'c++', '-std=c++17', '-Wall', '-Wextra', '-fsyntax-only', 'docs/part4/code/043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.cu']
+docs/part4/code/043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.cu:71:13: warning: unused function 'readFloatToken' [-Wunused-function]
+   71 | static bool readFloatToken(std::istream& input, float& value) {
+      |             ^~~~~~~~~~~~~~
+1 warning generated.
+
+EXIT: 0

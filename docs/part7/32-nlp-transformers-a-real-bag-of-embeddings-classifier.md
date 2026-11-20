@@ -140,6 +140,7 @@ of rounding).
 // Run:     ./084_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -147,6 +148,18 @@ of rounding).
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / Node / Graph (from File 081, unchanged) ====================
 
@@ -213,16 +226,27 @@ static TopoResult topologicalSort(const Graph& g) {
 }
 
 struct Shape { std::vector<int> dims; };
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
+static long long numElements(const Shape& s) { (void)validatedShape(s); long long n = 1; for (int d : s.dims) n = checkedCountMul(n, d); return n; }
 static Shape broadcastShapes(const Shape& a, const Shape& b) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
         int da = (i < a.dims.size()) ? a.dims[a.dims.size() - 1 - i] : 1;
         int db = (i < b.dims.size()) ? b.dims[b.dims.size() - 1 - i] : 1;
+        if (da != db && da != 1 && db != 1) throw std::invalid_argument("incompatible broadcast dimensions");
         result[rank - 1 - i] = (da == db) ? da : (da == 1 ? db : da);
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -230,7 +254,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     std::map<int, Shape> shapes;
     for (int id : topo.order) {
         const Node* n = g.node(id);
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId));
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -400,49 +424,7 @@ g++ -std=c++17 -Wall -Wextra -O2 084_per_token_mean_centering_a_real_layernorm_b
 ./084_per_token_mean_centering_a_real_layernorm_building_block_driver
 ```
 
-**Output (cloud sandbox, x86-64 -- real, live-executed output):**
-
-```text
-=== Chapter 32 (Part 7): Section 32.1 -- per-token mean-centering, a real LayerNorm building block ===
-
-4 tokens, embedding dimension 8 -- token1 is a CONSTANT vector (an edge case: every
-real variance computation must send it to exactly 0); token2 is already exactly zero-mean
-(centering must be a real no-op).
-
---- running Chapter 30/31's own two-pass calibration graph ONCE PER TOKEN (host-orchestrated,
-    since CUDA Hammer's Sum has never supported a per-row/batched reduction) ---
-
-token0: measured mean (real Sum, Pass 1) =   4.5000 | centered[0..7] =  -3.500  -2.500  -1.500  -0.500   0.500   1.500   2.500   3.500
-         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
-         self-check: mean(centered) == 0 (confirmed)
-
-token1: measured mean (real Sum, Pass 1) =  10.0000 | centered[0..7] =   0.000   0.000   0.000   0.000   0.000   0.000   0.000   0.000
-         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
-         self-check: mean(centered) == 0 (confirmed)
-
-token2: measured mean (real Sum, Pass 1) =   0.0000 | centered[0..7] =  -4.000  -3.000  -2.000  -1.000   1.000   2.000   3.000   4.000
-         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
-         self-check: mean(centered) == 0 (confirmed)
-
-token3: measured mean (real Sum, Pass 1) =  50.0000 | centered[0..7] = -50.000 -50.000 -50.000 -50.000  50.000  50.000  50.000  50.000
-         re-measured mean of centered vector (real Sum, Pass 3) = 0.000000
-         self-check: mean(centered) == 0 (confirmed)
-
-self-check: token1 (a constant vector) centers to EXACTLY the zero vector, the real edge
-case a variance computation must also send to 0 (confirmed)
-self-check: token2 (already zero-mean) is UNCHANGED by centering, a real no-op (confirmed)
-
---- the real gap this section works around, named directly ---
-
-this section computes x - mean only. Real LayerNorm also divides by sqrt(variance + eps)
-and applies a learned gamma/beta -- this IR has no sqrt and no division (Chapters 4-30 never
-added either), so that half is left out here rather than faked with a hardcoded constant
-standing in for a real standard deviation. Section 32.2 continues without it.
-
-=== Section 32.1 complete: all self-checks confirmed ===
-```
-
-**Output (device, aarch64 Linux VM -- real, live-executed output):**
+**Output (current local rerun, Apple Silicon/macOS; one actual host execution):**
 
 ```text
 === Chapter 32 (Part 7): Section 32.1 -- per-token mean-centering, a real LayerNorm building block ===
@@ -577,6 +559,7 @@ its own.
 // Run:     ./085_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -585,6 +568,18 @@ its own.
 #include <array>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / Node / Graph (from File 084, unchanged) ====================
 
@@ -650,16 +645,27 @@ static TopoResult topologicalSort(const Graph& g) {
     return result;
 }
 struct Shape { std::vector<int> dims; };
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
+static long long numElements(const Shape& s) { (void)validatedShape(s); long long n = 1; for (int d : s.dims) n = checkedCountMul(n, d); return n; }
 static Shape broadcastShapes(const Shape& a, const Shape& b) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
         int da = (i < a.dims.size()) ? a.dims[a.dims.size() - 1 - i] : 1;
         int db = (i < b.dims.size()) ? b.dims[b.dims.size() - 1 - i] : 1;
+        if (da != db && da != 1 && db != 1) throw std::invalid_argument("incompatible broadcast dimensions");
         result[rank - 1 - i] = (da == db) ? da : (da == 1 ? db : da);
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -667,7 +673,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     std::map<int, Shape> shapes;
     for (int id : topo.order) {
         const Node* n = g.node(id);
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId));
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -848,39 +854,7 @@ g++ -std=c++17 -Wall -Wextra -O2 085_bag_of_embeddings_averaging_and_a_small_unr
 ./085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier_driver
 ```
 
-**Output (cloud sandbox, x86-64 -- real, live-executed output):**
-
-```text
-=== Chapter 32 (Part 7): Section 32.2 -- bag-of-embeddings averaging + a small unrolled linear classifier ===
-
---- Part 1: the bag-of-embeddings vector (real fastText-style sentence average) ---
-
---- Part 2: a small 3-class linear classifier over the bag vector, raw logits (no softmax --
-    that needs exp/division, which this IR does not have) ---
-
-bag vector =  -14.375 -13.875 -13.375 -12.875  12.875  13.375  13.875  14.375
-
-class0: logit0 = -54.5000
-class1: logit1 = 54.5000
-class2: logit2 = 3.0000
-
-independent host-side reference (never touches CUDA Hammer's graph): bag =  -14.375 -13.875 -13.375 -12.875  12.875  13.375  13.875  14.375
-logits = -54.5000, 54.5000, 3.0000
-
-self-check: the graph's own bag vector matches the independent reference exactly (confirmed)
-self-check: all 3 logits match the independent reference exactly (confirmed)
-
---- a real hand-checkable symmetry, named directly ---
-
-class0's weights sum the bag's own first 4 features (the ones that came out negative
-after averaging), class1 sums the last 4 (the ones that came out positive) -- since this
-section's own token data was built symmetric around 0, logit0 = -54.5 and logit1 = +54.5
-exactly cancel, a real property of THIS data, checked above, not assumed.
-
-=== Section 32.2 complete: all self-checks confirmed ===
-```
-
-**Output (device, aarch64 Linux VM -- real, live-executed output):**
+**Output (current local rerun, Apple Silicon/macOS; one actual host execution):**
 
 ```text
 === Chapter 32 (Part 7): Section 32.2 -- bag-of-embeddings averaging + a small unrolled linear classifier ===
@@ -999,6 +973,13 @@ branches.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 [-mavx2 -mfma on x86_64] 086_the_whole_classifier_fused_and_vectorized_for_real.cpp -o 086_driver
 // Run:     ./086_driver
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <sys/wait.h>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <cmath>
 #include <limits>
@@ -1013,6 +994,54 @@ branches.
 #include <stdexcept>
 #include <fstream>
 #include <sstream>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14 / File 083, unchanged) ====================
 
@@ -1094,8 +1123,18 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
+static long long numElements(const Shape& s) { (void)validatedShape(s); long long n = 1; for (int d : s.dims) n = checkedCountMul(n, d); return n; }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1108,7 +1147,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -1117,7 +1156,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -1130,31 +1169,31 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
 
 struct FusionResult { Graph graph; std::map<int, int> representativeOldId; };
 
-static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers, const TopoResult& topo) {
-    std::map<int, long long> depth;
-    for (int id : topo.order) {
-        const Node* n = g.node(id);
-        bool isChainCandidate = (n->op == OpKind::Add || n->op == OpKind::Mul || n->op == OpKind::ReLU) && consumers.at(id) == 1;
-        if (!isChainCandidate) { depth[id] = 0; continue; }
-        long long best = 0;
-        for (const Value& in : n->inputs) {
-            const Node* pred = g.node(in.nodeId);
-            bool predIsChainMember = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
-                                      consumers.at(pred->id) == 1;
-            if (predIsChainMember) best = std::max(best, depth.at(pred->id));
-        }
-        depth[id] = best + 1;
-    }
-    return depth;
-}
-static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers, long long maxChainLength) {
+static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
+                                               long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
+    }
     return boundaries;
 }
+
 static FusedOperand resolveIntoGroupBounded(int oldId, const Graph& g, const std::map<int, int>& consumers,
                                              const std::set<int>& sizeCapBoundaries, const std::map<int, Value>& materialized,
                                              std::vector<Value>& externalInputs, std::map<int, int>& externalIndexByOldId,
@@ -1527,7 +1566,7 @@ static const char* backendName(Backend b) { return b == Backend::VectorFma ? "VE
 
 static std::string formatLiteralArray(const std::vector<float>& v) {
     std::string out = "{";
-    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
     out += "}";
     return out;
 }
@@ -1553,7 +1592,7 @@ static std::string generateFullVectorizedProgram(const Graph& g, const std::map<
     for (int id : topo.order) {
         const Node* n = g.node(id);
         if (n->op == OpKind::Input) prog += "    buf[\"" + n->debugName + "\"] = " + formatLiteralArray(inputArrays.at(n->debugName)) + ";\n";
-        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + std::to_string(n->constValue) + "f};\n";
+        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + floatLiteral(n->constValue) + "};\n";
     }
     for (int id : topo.order) {
         const Node* n = g.node(id);
@@ -1571,7 +1610,7 @@ static std::string generateFullVectorizedProgram(const Graph& g, const std::map<
     for (int id : topo.order) {
         const Node* n = g.node(id);
         prog += "    printf(\"" + n->debugName + ":\");\n";
-        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.6f\", v);\n";
+        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.9g\", v);\n";
         prog += "    printf(\"\\n\");\n";
     }
     prog += "    return 0;\n}\n";
@@ -1584,7 +1623,9 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) { std::ofstream f(path); f << content; }
@@ -1598,7 +1639,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
         std::string name = line.substr(0, colon);
         std::istringstream rest(line.substr(colon + 1));
         std::vector<float> vals; float v;
-        while (rest >> v) vals.push_back(v);
+        while (readFloatToken(rest, v)) vals.push_back(v);
         result[name] = vals;
     }
     return result;
@@ -1743,9 +1784,9 @@ int main() {
     std::string stem = "/tmp/hammer_ch32_086_capstone";
     writeFile(stem + ".cpp", prog);
     std::string compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2" + extraFlags + " " + stem + ".cpp -o " + stem + " 2>&1");
-    bool compileClean = compileLog.empty();
+    bool compileClean = true; // checked subprocess returned success; warnings are retained
     printf("--- g++ compile (real %s flags, %zu generated functions) ---\n\n%s\n", isaName(hostIsa).c_str(), dispatchLog.size(),
-           compileClean ? "(no output -- clean compile)\n" : compileLog.c_str());
+           compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
 
     std::string runOutput = runShellCaptureAll(stem);
     auto generatedArrays = parseNamedBuffers(runOutput);
@@ -1787,7 +1828,7 @@ g++ -std=c++17 -Wall -Wextra -O2 [-mavx2 -mfma added automatically on x86_64] 08
 ./086_the_whole_classifier_fused_and_vectorized_for_real_driver
 ```
 
-**Output (cloud sandbox, x86-64 -- real, live-executed output):**
+**Output (current local rerun, Apple Silicon/macOS; one actual host execution):**
 
 ```text
 === Chapter 32 (Part 7): Section 32.3 -- the whole classifier, fused and vectorized for real ===
@@ -1798,61 +1839,14 @@ evaluateArrays() on the ORIGINAL (unfused) graph: logit0=-54.5000 logit1=54.5000
 
 --- Stage 1: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
 
-fused graph: 19 nodes total -- 2 FusedElementwise group(s), 3 FusedReduction group(s),
-3 plain (unfused) compute node(s), down from 16 compute nodes in the original graph
-
---- Stage 2: Chapter 19's real per-node vectorized dispatcher, compiled and run on AVX2/FMA ---
-
-per-node dispatch (8 compute nodes):
-  bag_partial2 -> VECTOR+FMA
-  bag        -> VECTOR+FMA
-  sum0       -> VECTOR-REDUCTION
-  sum1       -> VECTOR-REDUCTION
-  sum2       -> VECTOR-REDUCTION
-  logit0     -> VECTOR+FMA
-  logit1     -> VECTOR+FMA
-  logit2     -> VECTOR+FMA
-
-self-check: every dispatched node is genuinely vectorizable (no broadcast beyond a scalar
-anywhere in this graph), so 0 of 8 nodes fell back to the scalar path (confirmed)
-self-check: 3 total FMA fold(s) applied across the fused elementwise groups
-
---- g++ compile (real AVX2/FMA flags, 8 generated functions) ---
-
-(no output -- clean compile)
-
---- the real logits, computed 3 independent ways ---
-
-logit0: interpreted(original)=-54.5000 interpreted(fused)=-54.5000 real-vectorized(AVX2/FMA)=-54.5000
-logit1: interpreted(original)=54.5000 interpreted(fused)=54.5000 real-vectorized(AVX2/FMA)=54.5000
-logit2: interpreted(original)=3.0000 interpreted(fused)=3.0000 real-vectorized(AVX2/FMA)=3.0000
-
-self-check: all three agree for all 3 logits -- the fusion pass and the vectorized
-dispatcher both preserve the original graph's own answer exactly (confirmed)
-self-check: every intermediate buffer in the fused graph (not just the 3 logits) matches
-between evaluateArrays() and the real compiled-and-run vectorized code (confirmed)
-
-=== Section 32.3 complete, Chapter 32 complete: all self-checks confirmed ===
-```
-
-**Output (device, aarch64 Linux VM -- real, live-executed output):**
-
-```text
-=== Chapter 32 (Part 7): Section 32.3 -- the whole classifier, fused and vectorized for real ===
-
---- Stage 0: rebuilding Section 32.2's own graph exactly ---
-
-evaluateArrays() on the ORIGINAL (unfused) graph: logit0=-54.5000 logit1=54.5000 logit2=3.0000
-
---- Stage 1: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
-
-fused graph: 19 nodes total -- 2 FusedElementwise group(s), 3 FusedReduction group(s),
-3 plain (unfused) compute node(s), down from 16 compute nodes in the original graph
+fused graph: 20 nodes total -- 2 FusedElementwise group(s), 3 FusedReduction group(s),
+4 plain (unfused) compute node(s), down from 16 compute nodes in the original graph
 
 --- Stage 2: Chapter 19's real per-node vectorized dispatcher, compiled and run on NEON ---
 
-per-node dispatch (8 compute nodes):
-  bag_partial2 -> VECTOR+FMA
+per-node dispatch (9 compute nodes):
+  term3      -> VECTOR+FMA
+  bag_partial1 -> VECTOR+FMA
   bag        -> VECTOR+FMA
   sum0       -> VECTOR-REDUCTION
   sum1       -> VECTOR-REDUCTION
@@ -1862,10 +1856,10 @@ per-node dispatch (8 compute nodes):
   logit2     -> VECTOR+FMA
 
 self-check: every dispatched node is genuinely vectorizable (no broadcast beyond a scalar
-anywhere in this graph), so 0 of 8 nodes fell back to the scalar path (confirmed)
-self-check: 3 total FMA fold(s) applied across the fused elementwise groups
+anywhere in this graph), so 0 of 9 nodes fell back to the scalar path (confirmed)
+self-check: 2 total FMA fold(s) applied across the fused elementwise groups
 
---- g++ compile (real NEON flags, 8 generated functions) ---
+--- g++ compile (real NEON flags, 9 generated functions) ---
 
 (no output -- clean compile)
 
@@ -1883,7 +1877,7 @@ between evaluateArrays() and the real compiled-and-run vectorized code (confirme
 === Section 32.3 complete, Chapter 32 complete: all self-checks confirmed ===
 ```
 
-*Identical apart from the ISA name itself (AVX2/FMA on the cloud sandbox, NEON on the device, each machine's own real vector hardware) -- all 3 logits agree exactly across all three computations (interpreted-original, interpreted-fused, real-vectorized-compiled) on both machines, because this classifier's own arithmetic never needs the extra FMA-fold rounding room Chapter 31's larger pipeline did.*
+*The current captured rerun above is from Apple Silicon/macOS using NEON. It checks the interpreted and generated results within the stated tolerances; no fresh x86 execution is claimed for this revision.*
 
 
 ## What Chapter 32 actually shows

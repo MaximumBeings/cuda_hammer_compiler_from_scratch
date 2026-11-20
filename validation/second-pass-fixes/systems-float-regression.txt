@@ -1,0 +1,12 @@
+COMMAND: ['clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', 'tests/systems_float_literal_regression.cpp', '-o', '/tmp/systems_float_literal_regression']
+In file included from tests/systems_float_literal_regression.cpp:2:
+tests/../docs/part4/code/041_lowering_a_whole_fused_graph.cpp:265:33: warning: unused function 'computeChainDepths' [-Wunused-function]
+  265 | static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
+      |                                 ^~~~~~~~~~~~~~~~~~
+1 warning generated.
+
+all9 finite literal bit patterns preserved, including negative zero and subnormal
+all9 finite float comparison stdout values preserve their bits
+generated 1e8 * 1e-7 =10; source literals and comparison stdout both round-trip
+
+EXIT: 0

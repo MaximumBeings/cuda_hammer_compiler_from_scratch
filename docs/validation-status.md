@@ -1,20 +1,22 @@
 # Validation Status
 
-The November 20, 2026 audit corrected code defects and narrowed claims that exceeded the teaching implementations. [The correction record](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/blob/main/TECHNICAL_ACCURACY_AUDIT.md) links the findings, primary references and reproducible checks.
+The November 20, 2026 independent re-audit found 12 further defects after the first publication, including a constant-folding heap overflow and incorrect generated constants. All 12 have been corrected. [The second-pass correction record](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/blob/main/SECOND_PASS_CORRECTIONS.md) links implementation changes, actual results and remaining limits. Passing ordinary exit-code checks was insufficient; current checks include sanitizer and deliberate-failure regressions.
 
-## Host and documentation checks
+## Current local correction-pass checks
 
-- All **78 standalone host C++ lessons** compile and execute on native macOS/Apple Clang/arm64. This includes generated CPU child programs; it does not execute CUDA kernels.
-- All **five focused foundations sanitizer suites** pass, including floating-point rewrite policy, parser/printer precision, shapes, integer overflow and tiling boundaries.
-- Numerical comparison regressions reject NaN and distinguish FMA rounding from separate multiply/add.
-- NumPy attention and quantization checks pass. LLVM examples compile and execute. TVM, MLIR/Polly, CUTLASS and optional profiling-tool examples have separately stated dependency and version limits; this audit does not claim fresh execution of those unavailable stacks.
-- All **109 source listings** match their embedded code. Local links, numbered sections and sample-output structure are checked. All **159 SVG diagrams** have accessible labels, share the deep-blue 760-unit canvas and resolve in the strict MkDocs build.
+- **78/78 standalone host C++ drivers pass** native macOS/Apple Clang builds with AddressSanitizer, UndefinedBehaviorSanitizer and float-cast-overflow instrumentation. Generated child programs are exercised but are not automatically sanitizer-instrumented by that driver sweep.
+- **38/38 foundations examples** also pass an independent sanitized run, including the formerly failing complete constant-folding example. **21 focused foundations regression suites** pass.
+- Four targeted systems regressions also pass with ASan/UBSan. JIT regressions reject diagnostic and silent compiler failures with an existing library, preserve the prior artifact, and promote only a successful staged build. Successful compiler warnings remain diagnostics rather than false failures.
+- Float-literal and comparison-output tests preserve nine finite bit patterns, including subnormal/negative zero. The formerly incorrect generated calculation now returns **10 for `1e8 * 1e-7`**. CUDA-source text is checked locally; device code was not freshly compiled or executed in this pass.
+- Fifteen local NumPy/AST acceptance/calibration checks pass; application safety and actual-body-budget regressions pass across standalone copies. Adapters test failure wiring, not unavailable framework compiler internals.
+- **17 negative coverage cases pass**: host, GPU, foundations and publication validators reject missing/empty manifests, absent inputs and incomplete expected coverage.
+- All **108 actual source files** match their embedded listings. All **159 SVG diagrams** retain the shared deep-blue 760-unit canvas and accessible labels. Strict MkDocs and local publication checks pass. The previous displayed count of 109 included a cache directory, not an additional source file.
 
-Fresh native-host logs and framework/device records are available in the repository's [validation directory](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation). Sample stdout may differ in machine timings, random-library details and compiler IR across platforms; byte-identical timing is not a requirement or a meaningful promise.
+Current evidence is under [second-pass fixes](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/second-pass-fixes). Native sample stdout was refreshed where code changed. Timings, random-library details and compiler IR need not be byte-identical across platforms.
 
-## GPU and Linux validation
+## Earlier Linux/A100 baseline — not rerun for the changed CUDA generators
 
-The connected instance was an **NVIDIA A100-PCIE-40GB**, with driver 580.105.08 and CUDA toolkit 12.8. These are actual executions, not offline-compile or CPU-reference substitutes.
+The earlier `69a3b19` validation used an **NVIDIA A100-PCIE-40GB**, driver 580.105.08 and CUDA toolkit 12.8. The runs below were actual executions, but they preceded the latest literal, JIT and fusion-budget corrections. **The GPU stayed off during the correction pass; the modified CUDA generators have no fresh device run.** The unchanged Triton kernels retain their matching source-hash evidence for the stated cases.
 
 | Check | Result | Scope |
 | --- | --- | --- |
@@ -31,7 +33,7 @@ The attention comparison's largest observed absolute error was approximately **2
 
 The instance had Python 3.12.3, PyTorch 2.7.0, Triton 3.3.0, NumPy 1.26.4 and JAX 0.6.0. Historical book transcripts may target different versions. Optional introspection was guarded where the installed PyTorch lacked a newer API; no claim of an exhaustive framework-version compatibility sweep is made.
 
-Actual commands, device metadata, numerical output, sanitizer summaries and source hashes are retained in [GPU code-generation logs](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/accuracy-fixes/gpu), [A100 case-study logs](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/accuracy-fixes/a100-case-studies), and [Linux host records](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/linux-host). These results supersede the original no-device diagnostics for the exercised cases.
+Actual commands, device metadata, numerical output, sanitizer summaries and source hashes are retained in [GPU code-generation logs](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/accuracy-fixes/gpu), [A100 case-study logs](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/accuracy-fixes/a100-case-studies), and [Linux host records](https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/linux-host). These historical results supersede the original no-device diagnostics for their exercised revision and cases; they do not validate later CUDA-generator changes.
 
 ## What passing checks do not establish
 

@@ -649,7 +649,7 @@ Part A -- valid DAG (6 nodes, built only through the graph API):
     %3 = Mul(t2) <- %2, %0
     %4 = ReLU(t3) <- %2
     %5 = Add(out) <- %3, %4
-  Kahn's algorithm order: %0 %1 %2 %3 %4 %5 
+  Kahn's algorithm order: %0 %1 %2 %3 %4 %5
   Kahn's algorithm reports valid: yes
   independent positional cross-check agrees: confirmed
 

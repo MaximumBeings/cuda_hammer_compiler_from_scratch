@@ -1,0 +1,4 @@
+Empty fixture: no docs or diagram manifest.
+exit=0
+Checked 0 pages, 0 source listings, 0 text blocks.
+PASS: publication structure, code embeds, links and sample-output checks

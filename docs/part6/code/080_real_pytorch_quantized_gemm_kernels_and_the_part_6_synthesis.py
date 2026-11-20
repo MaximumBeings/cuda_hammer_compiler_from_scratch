@@ -104,6 +104,7 @@ if __name__ == "__main__":
           f"real arith.extsi/tt.reduce ops directly; its OWN correctness "
           f"is the only evidence available here, honestly, not its "
           f"internal structure)")
+    torch.testing.assert_close(real_out, manual_ref, atol=0, rtol=0, equal_nan=False)
     print(f"Real correctness check: _int_mm vs. manual int32 matmul = "
           f"{torch.equal(real_out, manual_ref)}")
 
@@ -124,9 +125,10 @@ if __name__ == "__main__":
         weights_int8.to(torch.float32) * per_channel_scales[:, None]).T
     print(f"Real schema: "
           f"{torch.ops.aten._weight_int8pack_mm.default._schema}")
+    torch.testing.assert_close(weight_only_out, manual_weight_only_ref, atol=1e-4, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check: _weight_int8pack_mm vs. manual "
           f"dequantize-then-matmul = "
-          f"{torch.allclose(weight_only_out, manual_weight_only_ref, atol=1e-4)}")
+          f"{torch.allclose(weight_only_out, manual_weight_only_ref, atol=1e-4, rtol=1e-5)}")
     print(f"Real, honest scope note: Files 078 and 079 both built the "
           f"FULL-int8 scheme (Part 2's own _int_mm) by hand. This real "
           f"op confirms production systems support a genuinely SEPARATE "
@@ -148,6 +150,7 @@ if __name__ == "__main__":
     compiled_quant_matmul = torch.compile(quant_matmul_fn)
     compiled_out, code = capture_output_code(compiled_quant_matmul, a, b)
     eager_out = quant_matmul_fn(a, b)
+    torch.testing.assert_close(compiled_out, eager_out, atol=0, rtol=0, equal_nan=False)
     print(f"Real correctness check: torch.compile'd vs. eager match = "
           f"{torch.equal(compiled_out, eager_out)}")
 

@@ -1,0 +1,24 @@
+SOURCE: docs/part1/code/010_shape_validation_errors.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part1/code/010_shape_validation_errors.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-jn4l0mbn/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 6.3: rejecting shape-invalid graphs instead of trusting them blindly ===
+
+--- valid graph (control case: File 009's own diamond) ---
+  inferred successfully, no exception thrown
+  expected success, got success -- confirmed
+
+--- incompatible shapes, neither dimension matches or is 1 ---
+  threw: "node %2 (bad): shapes [3, 4] and [5, 6] are not broadcast-compatible (4 vs 6 at trailing position 0)"
+  expected an exception, got an exception -- confirmed
+
+--- incompatible shapes, only the leading dimension differs (still rejected) ---
+  threw: "node %2 (bad): shapes [3, 4] and [3, 5] are not broadcast-compatible (4 vs 5 at trailing position 0)"
+  expected an exception, got an exception -- confirmed
+
+--- missing declared shape for a leaf node ---
+  threw: "node %1 (b): no declared shape was provided for this leaf node"
+  expected an exception, got an exception -- confirmed
+
+self-check: every test case behaved exactly as expected (confirmed)

@@ -1,0 +1,3 @@
+Empty fixture: no docs/ sources.
+exit=0
+0/0 host lessons passed. This does not execute CUDA kernels or external Python frameworks.

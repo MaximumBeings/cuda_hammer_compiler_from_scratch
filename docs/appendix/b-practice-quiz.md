@@ -185,7 +185,7 @@ Click a question to reveal its answer.
     *(Section 33.2, File 088)*
 
 ??? question "Q4. What real structural finding did Section 34.2 make about representing a binomial option tree, in direct contrast to Sections 31.2's and 33.1's own staging techniques?"
-    A tree's own parent-child relationship is IRREGULAR but completely, statically known at build time -- exactly what an ordinary CUDA Hammer `Value` reference already expresses, the SAME mechanism Chapter 4's own diamond graph used for one node feeding two consumers. Unlike Section 31.2/33.1, it needed NO im2col-style staging; unlike Section 33.2, it needed no host-orchestrated re-evaluation between levels -- the whole tree is one static graph, evaluated once.
+    Both fixed-grid stencil connectivity and the CRR lattice are known before input values exist. Earlier stencil examples chose array-valued nodes with host shifts; Chapter 34 expands every fixed-depth lattice entry into scalar Value nodes and wires the dependencies directly. A stencil could also use scalar expansion, trading staging for graph size. The distinction is graph granularity, not regular versus irregular or runtime-known versus static connectivity.
 
     *(Section 34.2, File 091)*
 

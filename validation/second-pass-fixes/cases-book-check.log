@@ -1,0 +1,28 @@
+Checked 159 accessible deep-blue SVGs.
+Checked 43 pages, 108 source listings, 344 text blocks.
+docs/appendix/code/106_the_same_diamond_graph_through_cuda_hammers_own_real_fusion_pass.cpp: source embed differs or absent
+docs/appendix/code/108_the_same_autotune_and_cache_problem_through_cuda_hammers_own_real_hybrid_autotuner.cpp: source embed differs or absent
+docs/part4/code/039_from_scalars_to_arrays_a_real_per_element_interpreter.cpp: source embed differs or absent
+docs/part4/code/040_generating_real_loop_code_a_textual_c++_backend.cpp: source embed differs or absent
+docs/part4/code/041_lowering_a_whole_fused_graph.cpp: source embed differs or absent
+docs/part4/code/042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.cu: source embed differs or absent
+docs/part4/code/043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.cu: source embed differs or absent
+docs/part4/code/044_a_full_cuda_program_from_ir_to_gpu_end_to_end.cu: source embed differs or absent
+docs/part4/code/045_from_threads_to_lanes_a_portable_simd_elementwise_kernel_generator.cpp: source embed differs or absent
+docs/part4/code/046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized.cpp: source embed differs or absent
+docs/part4/code/047_a_whole_graph_vectorized_dispatch_reduction_and_a_real_fallback.cpp: source embed differs or absent
+docs/part4/code/048_extern_c_and_dlopen_a_function_pointer_from_generated_text.cpp: source embed differs or absent
+docs/part4/code/049_one_shared_library_many_functions_a_jit_module_for_a_whole_graph.cpp: source embed differs or absent
+docs/part4/code/050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp: source embed differs or absent
+docs/part5/code/051_tile_size_candidates_enumerating_one_loops_own_search_space.cpp: source embed differs or absent
+docs/part5/code/052_loop_order_and_why_a_reductions_own_order_is_not_just_performance.cpp: source embed differs or absent
+docs/part5/code/053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward.cpp: source embed differs or absent
+docs/part5/code/054_a_loop_overhead_cost_model_for_tile_size_and_unroll_factor.cpp: source embed differs or absent
+docs/part5/code/055_a_memory_stride_cost_model_for_loop_order.cpp: source embed differs or absent
+docs/part5/code/056_combining_both_cost_models_prediction_vs_measurement_for_real_schedules.cpp: source embed differs or absent
+docs/part5/code/057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp: source embed differs or absent
+docs/part5/code/058_real_codegen_for_a_full_schedule_tile_size_loop_order_and_unroll_factor_together.cpp: source embed differs or absent
+docs/part5/code/059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp: source embed differs or absent
+docs/part5/code/060_a_persistent_tuning_cache_keyed_by_loop_nest_shape.cpp: source embed differs or absent
+docs/part5/code/061_what_a_cache_key_must_capture.cpp: source embed differs or absent
+docs/part5/code/062_caching_across_machines_why_the_key_needs_a_target_too.cpp: source embed differs or absent

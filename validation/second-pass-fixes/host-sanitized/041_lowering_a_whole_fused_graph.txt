@@ -1,0 +1,39 @@
+SOURCE: docs/part4/code/041_lowering_a_whole_fused_graph.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part4/code/041_lowering_a_whole_fused_graph.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-aw550qni/lesson']
+COMPILE:
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part4/code/041_lowering_a_whole_fused_graph.cpp:265:33: warning: unused function 'computeChainDepths' [-Wunused-function]
+  265 | static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
+      |                                 ^~~~~~~~~~~~~~~~~~
+1 warning generated.
+
+EXECUTION:
+=== Section 17.3: lowering a WHOLE graph -- Chapter 16's own capstone, now real and executable ===
+
+a = [1,-2,3,-4,5,-6,7,-8], b = [2]. evaluateArrays(original).y = 132.000000
+
+--- UNCAPPED fusion ---
+
+Nodes: 5. a b t5(FE,5st) s(FR,1st) y(FE,2st) 
+
+self-check: generated+compiled+run program's EVERY buffer matches evaluateArrays()
+on this same fused graph (confirmed)
+generated program's y = 132.000000
+
+self-check: matches evaluateArrays(original, unfused).y = 132.000000 (confirmed)
+
+--- CAPPED (maxChainLength=3) fusion ---
+
+Nodes: 6. a b t3(FE,3st) t5(FE,2st) s(FR,1st) y(FE,2st) 
+
+self-check: generated+compiled+run program's EVERY buffer matches evaluateArrays()
+on this same fused graph (confirmed)
+generated program's y = 132.000000
+
+self-check: matches evaluateArrays(original, unfused).y = 132.000000 (confirmed)
+
+=== Two structurally different generated programs (different node counts, different
+loop nests, different generated functions), same final number ===
+
+uncapped-generated y = 132.000000
+capped-generated   y = 132.000000
+self-check: both generated, compiled, and EXECUTED programs agree exactly (confirmed)

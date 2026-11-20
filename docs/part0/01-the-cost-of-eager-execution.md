@@ -235,14 +235,14 @@ g++ -std=c++17 -Wall -Wextra -O2 001_eager_vs_fused_memory_traffic.cpp -o 001_ea
 Array size: 1000 float32 elements (4000 bytes)
 
 num_ops  eager_bytes_moved      fused_bytes_moved      reduction_x    outputs_match
-1        8000                   8000                   1.00           yes       
-2        16000                  8000                   2.00           yes       
-3        24000                  8000                   3.00           yes       
-4        32000                  8000                   4.00           yes       
-5        40000                  8000                   5.00           yes       
-6        48000                  8000                   6.00           yes       
-7        56000                  8000                   7.00           yes       
-8        64000                  8000                   8.00           yes       
+1        8000                   8000                   1.00           yes
+2        16000                  8000                   2.00           yes
+3        24000                  8000                   3.00           yes
+4        32000                  8000                   4.00           yes
+5        40000                  8000                   5.00           yes
+6        48000                  8000                   6.00           yes
+7        56000                  8000                   7.00           yes
+8        64000                  8000                   8.00           yes
 
 self-check: every row's counted bytes match the closed-form formula
 eager(N) = N * 2 * array_bytes, fused = 2 * array_bytes (confirmed); eager and
@@ -412,20 +412,20 @@ A fused kernel replaces the whole chain with exactly ONE launch, regardless
 of how many operations were fused into it.
 
 num_ops  eager_model_us           one_kernel_model_us      reduction_x
-1        9.60                     9.60                     1.00        
-2        19.20                    9.60                     2.00        
-3        28.80                    9.60                     3.00        
-4        38.40                    9.60                     4.00        
-5        48.00                    9.60                     5.00        
-6        57.60                    9.60                     6.00        
-7        67.20                    9.60                     7.00        
-8        76.80                    9.60                     8.00        
+1        9.60                     9.60                     1.00
+2        19.20                    9.60                     2.00
+3        28.80                    9.60                     3.00
+4        38.40                    9.60                     4.00
+5        48.00                    9.60                     5.00
+6        57.60                    9.60                     6.00
+7        67.20                    9.60                     7.00
+8        76.80                    9.60                     8.00
 
 === Synthesis: a concrete 4-operation chain on a 1,000,000-element tensor ===
 
 Chain length: 4 operations. Tensor: 1000000 float32 elements (3.81 MiB).
 
-                               eager           fused          
+                               eager           fused
 synchronized latency model     38.40           9.60             (us, from NVIDIA's cited synchronized-kernel figure)
 memory traffic                 30.52           7.63             (MiB, logically counted from array sizes)
 

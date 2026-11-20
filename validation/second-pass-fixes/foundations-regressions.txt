@@ -1,0 +1,113 @@
+floating_semantics: PASS
+strict Inf*0 remains NaN; signed-zero addition preserved; relaxed mode requires opt-in: PASS
+
+frontend_roundtrip: PASS
+negative/scientific/precise/signed-zero constants round-trip; changed constants and malformed syntax detected: PASS
+
+shape_validation: PASS
+negative static shape rejected before propagation: PASS
+
+shape_overflow: PASS
+shape product overflow rejected without signed overflow: PASS
+
+loop_boundary: PASS
+LLONG_MAX ceiling division, partial tile, zero/negative extent and invalid index: PASS
+
+folded_original_driver: PASS
+=== Section 2.3: a real constant-folding pass over the IR ===
+
+--- source: "a + (2 * 3)" ---
+IR before folding (2 instructions):
+  t0 = 2 * 3
+  t1 = a + t0
+IR after folding (1 instruction):
+  t1 = a + 6
+result before: 16 | result after: 16 | match: yes | instructions eliminated: 1
+
+--- source: "(4 - 1) * a" ---
+IR before folding (2 instructions):
+  t0 = 4 - 1
+  t1 = t0 * a
+IR after folding (1 instruction):
+  t1 = 3 * a
+result before: 15 | result after: 15 | match: yes | instructions eliminated: 1
+
+--- source: "(2 + 3) * (4 - 1)" ---
+IR before folding (3 instructions):
+  t0 = 2 + 3
+  t1 = 4 - 1
+  t2 = t0 * t1
+IR after folding (0 instructions):
+  (no instructions -- fully folded to a constant)
+result before: 15 | result after: 15 | match: yes | instructions eliminated: 3
+
+--- source: "a + b" ---
+IR before folding (1 instruction):
+  t0 = a + b
+IR after folding (1 instruction):
+  t0 = a + b
+result before: 15 | result after: 15 | match: yes | instructions eliminated: 0
+
+--- source: "(1 + 1) + (1 + 1) + a" ---
+IR before folding (4 instructions):
+  t0 = 1 + 1
+  t1 = 1 + 1
+  t2 = t0 + t1
+  t3 = t2 + a
+IR after folding (1 instruction):
+  t3 = 4 + a
+result before: 104 | result after: 104 | match: yes | instructions eliminated: 3
+
+=== totals across all 5 test expressions ===
+instructions before folding: 12
+instructions after folding:  4
+total eliminated: 8 (66.7% reduction)
+
+self-check: every expression's pre-folding and post-folding result matches
+(confirmed) -- the pass changed the IR's shape but never its meaning
+
+integer_domain: PASS
+out-of-range literals and arithmetic diagnosed; valid integer arithmetic retained: PASS
+
+branching_fusion_budget: PASS
+balanced branching tree obeys body budgets1/2/3/4/8 with matching results; cap0 rejected: PASS
+
+copied_shape_inference: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+aggregate_overflow: PASS
+representable shapes with oversized traffic and aggregate count overflow rejected: PASS
+
+loop_total_overflow: PASS
+loop iteration product overflow rejected: PASS
+
+shape_copy_009: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_010: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_026: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_029: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_030: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_031: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_032: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_035: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_036: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+
+shape_copy_038: PASS
+copied inference rejects negative/zero dimensions and unrepresentable products: PASS
+

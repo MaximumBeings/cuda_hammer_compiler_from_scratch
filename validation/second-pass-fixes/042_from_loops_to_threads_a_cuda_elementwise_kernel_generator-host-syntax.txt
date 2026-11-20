@@ -1,0 +1,3 @@
+COMMAND: ['clang++', '-x', 'c++', '-std=c++17', '-Wall', '-Wextra', '-fsyntax-only', 'docs/part4/code/042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.cu']
+
+EXIT: 0

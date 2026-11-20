@@ -1,0 +1,5 @@
+=== Appendix E.3: File 054's computeUnrolled(), unrollFactor=1, extent=10000000 ===
+
+result[0]=1  result[9999999]=1.178
+best-of-5 wall-clock: 15.501 ms
+self-check: bit-for-bit equal to unrollFactor=1 baseline (confirmed)

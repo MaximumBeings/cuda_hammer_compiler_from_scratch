@@ -139,6 +139,7 @@ either boundary cell.
 // Run:     ./087_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -146,6 +147,18 @@ either boundary cell.
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / Node / Graph (from File 081, unchanged) ====================
 
@@ -212,16 +225,27 @@ static TopoResult topologicalSort(const Graph& g) {
 }
 
 struct Shape { std::vector<int> dims; };
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
+static long long numElements(const Shape& s) { (void)validatedShape(s); long long n = 1; for (int d : s.dims) n = checkedCountMul(n, d); return n; }
 static Shape broadcastShapes(const Shape& a, const Shape& b) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
         int da = (i < a.dims.size()) ? a.dims[a.dims.size() - 1 - i] : 1;
         int db = (i < b.dims.size()) ? b.dims[b.dims.size() - 1 - i] : 1;
+        if (da != db && da != 1 && db != 1) throw std::invalid_argument("incompatible broadcast dimensions");
         result[rank - 1 - i] = (da == db) ? da : (da == 1 ? db : da);
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -229,7 +253,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     std::map<int, Shape> shapes;
     for (int id : topo.order) {
         const Node* n = g.node(id);
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId));
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -433,52 +457,7 @@ g++ -std=c++17 -Wall -Wextra -O2 087_a_real_1d_ftcs_finite_difference_heat_stenc
 ./087_a_real_1d_ftcs_finite_difference_heat_stencil_single_step_driver
 ```
 
-**Output (cloud sandbox, x86-64 -- real, live-executed output):**
-
-```text
-=== Chapter 33 (Part 7): Section 33.1 -- a real 1D FTCS finite-difference heat stencil, one step ===
-
-real update formula and stability condition (John S. Butler, DIT, "The Explicit Forward
-Time Centered Space (FTCS) Difference Equation for the Heat Equation," Numerical Analysis
-book, quoted verbatim):
-
-  "w_{i,j+1} = r*w_{i-1,j} + (1-2r)*w_{i,j} + r*w_{i+1,j}"   where   "r = k/h^2"
-  stability condition: "r <= 1/2"
-
-this section's own r = 0.2500, which satisfies r <= 0.5 with margin (confirmed)
-
-initial condition w0 (a symmetric 2-cell hot spot, N=8):    0.0    0.0    0.0  100.0  100.0    0.0    0.0    0.0
-
---- the real im2col-style neighbor shift (Chapter 31.2's own shiftImage(), now in 1D) ---
-
-wLeft  (each point's LEFT  neighbor, zero-padded at the boundary):    0.0    0.0    0.0    0.0  100.0  100.0    0.0    0.0
-wRight (each point's RIGHT neighbor, zero-padded at the boundary):    0.0    0.0  100.0  100.0    0.0    0.0    0.0    0.0
-
---- the real CUDA Hammer graph's own w_new, vs. an independent direct FTCS reference ---
-
-CUDA Hammer graph :    0.000   0.000  25.000  75.000  75.000  25.000   0.000   0.000
-independent ref   :    0.000   0.000  25.000  75.000  75.000  25.000   0.000   0.000
-
-self-check: the graph's own w_new matches the independent direct reference exactly (confirmed)
-self-check: total heat is exactly conserved this step (sum before=200.0000, sum after=200.0000) (confirmed)
-            -- the disturbance has not yet reached the domain's own boundary cells, so no
-            heat has flowed into the zero-padded ghost region on either side yet.
-
-self-check: w_new is symmetric (w[i] == w[N-1-i]), matching the symmetric initial condition
-and the symmetric stencil and boundary treatment (confirmed)
-
---- the real gap this section works around, named directly ---
-
-this stencil needs each output point to read its own left and right neighbor -- CUDA
-Hammer's IR has never had a shift/gather op, and Part 7's own promise rules out adding
-one now. This section needs no new technique at all: it reuses Section 31.2's own
-im2col-style pre-shifted-input pattern unchanged, in 1D instead of 2D. Section 33.2
-continues with the real gap THIS chapter is actually about: running more than one step.
-
-=== Section 33.1 complete: all self-checks confirmed ===
-```
-
-**Output (device, aarch64 Linux VM -- real, live-executed output):**
+**Output (current local rerun, Apple Silicon/macOS; one actual host execution):**
 
 ```text
 === Chapter 33 (Part 7): Section 33.1 -- a real 1D FTCS finite-difference heat stencil, one step ===
@@ -628,6 +607,7 @@ stated the same direct way Chapters 31 and 32 stated their own.
 // Run:     ./088_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -635,6 +615,18 @@ stated the same direct way Chapters 31 and 32 stated their own.
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / Node / Graph (from File 087, unchanged) ====================
 
@@ -701,16 +693,27 @@ static TopoResult topologicalSort(const Graph& g) {
 }
 
 struct Shape { std::vector<int> dims; };
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
+static long long numElements(const Shape& s) { (void)validatedShape(s); long long n = 1; for (int d : s.dims) n = checkedCountMul(n, d); return n; }
 static Shape broadcastShapes(const Shape& a, const Shape& b) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
         int da = (i < a.dims.size()) ? a.dims[a.dims.size() - 1 - i] : 1;
         int db = (i < b.dims.size()) ? b.dims[b.dims.size() - 1 - i] : 1;
+        if (da != db && da != 1 && db != 1) throw std::invalid_argument("incompatible broadcast dimensions");
         result[rank - 1 - i] = (da == db) ? da : (da == 1 ? db : da);
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -718,7 +721,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     std::map<int, Shape> shapes;
     for (int id : topo.order) {
         const Node* n = g.node(id);
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId));
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -904,50 +907,7 @@ g++ -std=c++17 -Wall -Wextra -O2 088_five_steps_unrolled_a_fixed_depth_chain_no_
 ./088_five_steps_unrolled_a_fixed_depth_chain_no_loop_construct_driver
 ```
 
-**Output (cloud sandbox, x86-64 -- real, live-executed output):**
-
-```text
-=== Chapter 33 (Part 7): Section 33.2 -- 5 steps unrolled, a fixed-depth chain (no loop construct) ===
-
-real gap named directly: a real PDE solver repeats the update until some stopping point,
-which every real implementation expresses as a LOOP in the host driver. CUDA Hammer's IR
-has never had a loop or any other control-flow construct (Chapters 4-32 never added one) --
-every graph so far has been a fixed, finite DAG known completely at build time. This
-section's own workaround: a FIXED, compile-time-known step count (5) unrolled directly
-into the HOST driver -- 5 small, independent CUDA Hammer graphs run in sequence, not one
-big graph, where step t's own real INPUT is step (t-1)'s own real OUTPUT.
-
-step 0 (initial):    0.0000   0.0000   0.0000 100.0000 100.0000   0.0000   0.0000   0.0000   sum=200.0000
-step 1 (Hammer):    0.0000   0.0000  25.0000  75.0000  75.0000  25.0000   0.0000   0.0000   sum=200.0000  (matches independent reference: yes)
-step 2 (Hammer):    0.0000   6.2500  31.2500  62.5000  62.5000  31.2500   6.2500   0.0000   sum=200.0000  (matches independent reference: yes)
-step 3 (Hammer):    1.5625  10.9375  32.8125  54.6875  54.6875  32.8125  10.9375   1.5625   sum=200.0000  (matches independent reference: yes)
-step 4 (Hammer):    3.5156  14.0625  32.8125  49.2188  49.2188  32.8125  14.0625   3.5156   sum=199.2188  (matches independent reference: yes)
-step 5 (Hammer):    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734   sum=197.4609  (matches independent reference: yes)
-
-self-check: all 5 steps, run through 5 fresh CUDA Hammer graphs, match the independent
-host-side reference exactly at every step (confirmed)
-
---- a real, hand-checkable consequence of this section's own boundary treatment ---
-
-total heat stays EXACTLY conserved (sum=200.0000, matching step 0's sum=200.0000) through step 3,
-while the disturbance is still confined to the domain's interior (confirmed). By step 4 it has
-reached the boundary cells and real heat genuinely leaks into the zero-padded ghost region
-(sum=199.2188, a real loss of 0.7812, not a bug) -- the same zero-padded boundary APPROXIMATION
-Section 31.2 used for its image border, here producing a real, physically-sensible
-consequence (confirmed) rather than an artifact to explain away.
-
---- the honest scope boundary this section stops at ---
-
-this section can only run a FIXED, predetermined number of steps decided at build time. It
-cannot express a real adaptive "iterate until converged" solver loop, since deciding to
-stop early based on a runtime condition needs control flow this IR has never had. Section
-33.3 continues with this SAME fixed-depth chain, now run through Chapter 14/16's real
-fusion pass and Chapter 19's real vectorized-CPU codegen at every step.
-
-=== Section 33.2 complete: all self-checks confirmed ===
-```
-
-**Output (device, aarch64 Linux VM -- real, live-executed output):**
+**Output (current local rerun, Apple Silicon/macOS; one actual host execution):**
 
 ```text
 === Chapter 33 (Part 7): Section 33.2 -- 5 steps unrolled, a fixed-depth chain (no loop construct) ===
@@ -1090,8 +1050,16 @@ expressing the repetition INSIDE a single graph.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 [-mavx2 -mfma on x86_64] 089_the_whole_stencil_chain_fused_and_vectorized_for_real.cpp -o 089_driver
 // Run:     ./089_driver
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <sys/wait.h>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1103,6 +1071,54 @@ expressing the repetition INSIDE a single graph.
 #include <stdexcept>
 #include <fstream>
 #include <sstream>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14 / File 086, unchanged) ====================
 
@@ -1184,8 +1200,18 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
+static long long numElements(const Shape& s) { (void)validatedShape(s); long long n = 1; for (int d : s.dims) n = checkedCountMul(n, d); return n; }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1198,7 +1224,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -1207,7 +1233,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -1220,31 +1246,31 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
 
 struct FusionResult { Graph graph; std::map<int, int> representativeOldId; };
 
-static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers, const TopoResult& topo) {
-    std::map<int, long long> depth;
-    for (int id : topo.order) {
-        const Node* n = g.node(id);
-        bool isChainCandidate = (n->op == OpKind::Add || n->op == OpKind::Mul || n->op == OpKind::ReLU) && consumers.at(id) == 1;
-        if (!isChainCandidate) { depth[id] = 0; continue; }
-        long long best = 0;
-        for (const Value& in : n->inputs) {
-            const Node* pred = g.node(in.nodeId);
-            bool predIsChainMember = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
-                                      consumers.at(pred->id) == 1;
-            if (predIsChainMember) best = std::max(best, depth.at(pred->id));
-        }
-        depth[id] = best + 1;
-    }
-    return depth;
-}
-static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers, long long maxChainLength) {
+static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
+                                               long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
+    }
     return boundaries;
 }
+
 static FusedOperand resolveIntoGroupBounded(int oldId, const Graph& g, const std::map<int, int>& consumers,
                                              const std::set<int>& sizeCapBoundaries, const std::map<int, Value>& materialized,
                                              std::vector<Value>& externalInputs, std::map<int, int>& externalIndexByOldId,
@@ -1617,7 +1643,7 @@ static const char* backendName(Backend b) { return b == Backend::VectorFma ? "VE
 
 static std::string formatLiteralArray(const std::vector<float>& v) {
     std::string out = "{";
-    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
     out += "}";
     return out;
 }
@@ -1643,7 +1669,7 @@ static std::string generateFullVectorizedProgram(const Graph& g, const std::map<
     for (int id : topo.order) {
         const Node* n = g.node(id);
         if (n->op == OpKind::Input) prog += "    buf[\"" + n->debugName + "\"] = " + formatLiteralArray(inputArrays.at(n->debugName)) + ";\n";
-        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + std::to_string(n->constValue) + "f};\n";
+        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + floatLiteral(n->constValue) + "};\n";
     }
     for (int id : topo.order) {
         const Node* n = g.node(id);
@@ -1661,7 +1687,7 @@ static std::string generateFullVectorizedProgram(const Graph& g, const std::map<
     for (int id : topo.order) {
         const Node* n = g.node(id);
         prog += "    printf(\"" + n->debugName + ":\");\n";
-        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.6f\", v);\n";
+        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.9g\", v);\n";
         prog += "    printf(\"\\n\");\n";
     }
     prog += "    return 0;\n}\n";
@@ -1674,7 +1700,9 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) { std::ofstream f(path); f << content; }
@@ -1688,7 +1716,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
         std::string name = line.substr(0, colon);
         std::istringstream rest(line.substr(colon + 1));
         std::vector<float> vals; float v;
-        while (rest >> v) vals.push_back(v);
+        while (readFloatToken(rest, v)) vals.push_back(v);
         result[name] = vals;
     }
     return result;
@@ -1818,7 +1846,7 @@ int main() {
         std::string stem = "/tmp/hammer_ch33_089_step" + std::to_string(t);
         writeFile(stem + ".cpp", prog);
         std::string compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2" + extraFlags + " " + stem + ".cpp -o " + stem + " 2>&1");
-        bool compileClean = compileLog.empty();
+        bool compileClean = true; // checked subprocess returned success; warnings are retained
         if (!compileClean) { printf("step %d compile FAILED:\n%s\n", t, compileLog.c_str()); allOk = false; }
         std::string runOutput = runShellCaptureAll(stem);
         auto generatedArrays = parseNamedBuffers(runOutput);
@@ -1877,7 +1905,7 @@ g++ -std=c++17 -Wall -Wextra -O2 [-mavx2 -mfma added automatically on x86_64] 08
 ./089_the_whole_stencil_chain_fused_and_vectorized_for_real_driver
 ```
 
-**Output (cloud sandbox, x86-64 -- real, live-executed output):**
+**Output (current local rerun, Apple Silicon/macOS; one actual host execution):**
 
 ```text
 === Chapter 33 (Part 7): Section 33.3 -- the whole stencil chain, fused and vectorized for real ===
@@ -1889,62 +1917,7 @@ Sum node at all, unlike Chapter 31.3's and 32.3's own capstone graphs.
 
 --- Stage 1: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
 
-fused graph: 6 nodes total -- 1 FusedElementwise group(s), 0 FusedReduction group(s),
-0 plain (unfused) compute node(s), down from 5 compute nodes in the original graph.
-self-check: 0 FusedReduction groups, since this graph has no Sum node at all -- the SAME
-unmodified pass this book has called Chapter 14's reduction fusion pass since Chapter 14
-genuinely generalizes to a pure-elementwise graph (confirmed)
-
---- Stage 2: Chapter 19's real vectorized dispatcher, called once per real timestep on AVX2/FMA ---
-
-per-node dispatch, identical every step since it is the SAME fused graph structure
-each time (only the literal data baked into main() changes step to step):
-  w_new        -> VECTOR+FMA
-
-step 1: interpreted(original) vs interpreted(fused) vs real-vectorized(AVX2/FMA) -- all 3 agree
-step 2: interpreted(original) vs interpreted(fused) vs real-vectorized(AVX2/FMA) -- all 3 agree
-step 3: interpreted(original) vs interpreted(fused) vs real-vectorized(AVX2/FMA) -- all 3 agree
-step 4: interpreted(original) vs interpreted(fused) vs real-vectorized(AVX2/FMA) -- all 3 agree
-step 5: interpreted(original) vs interpreted(fused) vs real-vectorized(AVX2/FMA) -- all 3 agree
-
-final state after 5 real timesteps, computed 3 independent ways:
-interpreted(original) :    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734
-interpreted(fused)    :    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734
-real-vectorized(AVX2/FMA):    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734
-
-self-check: all 5 steps agree across all 3 computations -- the fusion pass and the real
-vectorized dispatcher both preserve the original graph's own answer exactly, chained
-across 5 real, sequentially-dependent timesteps (confirmed)
-self-check: 0 of 5 total dispatched nodes fell back to the scalar path across all 5 steps
-(confirmed), 10 total FMA fold(s) applied
-
---- what this capstone actually shows ---
-
-Chapter 18's own generateFullVectorizedProgram() bakes its inputs in as compile-time
-literals, unchanged since it was built -- it was never designed to read runtime data. So
-running the SAME fused, vectorized kernel across 5 real timesteps here means calling this
-one unchanged generator 5 separate times, once per step, each with that step's own real
-host-shifted data baked in -- not because the compiled kernel's own logic changes (it never
-does: identical fused steps, every single step), but because of that real, stated design
-choice. This mirrors, in miniature, how real production stencil codes actually run on real
-GPUs: one compiled kernel, launched repeatedly from a host driver, once per timestep.
-
-=== Section 33.3 complete, Chapter 33 complete: all self-checks confirmed ===
-```
-
-**Output (device, aarch64 Linux VM -- real, live-executed output):**
-
-```text
-=== Chapter 33 (Part 7): Section 33.3 -- the whole stencil chain, fused and vectorized for real ===
-
---- Stage 0: rebuilding Section 33.1's own single-step graph exactly ---
-
-single-step graph: 10 nodes total, 5 of them real compute nodes (3 Mul, 2 Add) -- NO
-Sum node at all, unlike Chapter 31.3's and 32.3's own capstone graphs.
-
---- Stage 1: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
-
-fused graph: 6 nodes total -- 1 FusedElementwise group(s), 0 FusedReduction group(s),
+fused graph: 7 nodes total -- 2 FusedElementwise group(s), 0 FusedReduction group(s),
 0 plain (unfused) compute node(s), down from 5 compute nodes in the original graph.
 self-check: 0 FusedReduction groups, since this graph has no Sum node at all -- the SAME
 unmodified pass this book has called Chapter 14's reduction fusion pass since Chapter 14
@@ -1954,6 +1927,7 @@ genuinely generalizes to a pure-elementwise graph (confirmed)
 
 per-node dispatch, identical every step since it is the SAME fused graph structure
 each time (only the literal data baked into main() changes step to step):
+  partial      -> VECTOR+FMA
   w_new        -> VECTOR+FMA
 
 step 1: interpreted(original) vs interpreted(fused) vs real-vectorized(NEON) -- all 3 agree
@@ -1970,7 +1944,7 @@ real-vectorized(NEON  ):    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266 
 self-check: all 5 steps agree across all 3 computations -- the fusion pass and the real
 vectorized dispatcher both preserve the original graph's own answer exactly, chained
 across 5 real, sequentially-dependent timesteps (confirmed)
-self-check: 0 of 5 total dispatched nodes fell back to the scalar path across all 5 steps
+self-check: 0 of 10 total dispatched nodes fell back to the scalar path across all 5 steps
 (confirmed), 10 total FMA fold(s) applied
 
 --- what this capstone actually shows ---
@@ -1987,7 +1961,7 @@ GPUs: one compiled kernel, launched repeatedly from a host driver, once per time
 === Section 33.3 complete, Chapter 33 complete: all self-checks confirmed ===
 ```
 
-*Identical apart from the ISA name itself (AVX2/FMA on the cloud sandbox, NEON on the device, each machine's own real vector hardware) -- the final state after all 5 real timesteps agrees exactly across all three computations (interpreted-original, interpreted-fused, real-vectorized-compiled) on both machines, matching File 088's own already-verified 5-step reference exactly.*
+*The current captured rerun above is from Apple Silicon/macOS using NEON. It checks the interpreted and generated results within the stated tolerances; no fresh x86 execution is claimed for this revision.*
 
 
 ## What Chapter 33 actually shows

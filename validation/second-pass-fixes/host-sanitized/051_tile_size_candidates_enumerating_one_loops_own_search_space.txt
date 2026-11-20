@@ -1,0 +1,27 @@
+SOURCE: docs/part5/code/051_tile_size_candidates_enumerating_one_loops_own_search_space.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part5/code/051_tile_size_candidates_enumerating_one_loops_own_search_space.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-gltui059/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 21.1: enumerateTileSizeCandidates() -- one loop's own search space ===
+
+Loop i: extent=13 -> 5 tile-size candidates: 1, 2, 4, 8, 13
+  tileSize=1   -> outerExtent=13   index set matches untiled (confirmed)
+  tileSize=2   -> outerExtent=7    index set matches untiled (confirmed)
+  tileSize=4   -> outerExtent=4    index set matches untiled (confirmed)
+  tileSize=8   -> outerExtent=2    index set matches untiled (confirmed)
+  tileSize=13  -> outerExtent=1    index set matches untiled (confirmed)
+
+Loop j: extent=16 -> 5 tile-size candidates: 1, 2, 4, 8, 16
+  tileSize=1   -> outerExtent=16   index set matches untiled (confirmed)
+  tileSize=2   -> outerExtent=8    index set matches untiled (confirmed)
+  tileSize=4   -> outerExtent=4    index set matches untiled (confirmed)
+  tileSize=8   -> outerExtent=2    index set matches untiled (confirmed)
+  tileSize=16  -> outerExtent=1    index set matches untiled (confirmed)
+
+=== What this buys, and what it costs ===
+
+naive exhaustive search (every tile size 1..extent): 13 candidates
+this section's own heuristic (powers of two + the extent itself): 5 candidates
+self-check: 5 candidates is a real, checkable reduction from 13 -- and every single one of
+those 5 candidates was just individually proven correct above, not merely assumed (confirmed)

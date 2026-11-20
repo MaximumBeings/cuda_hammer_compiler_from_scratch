@@ -1,0 +1,56 @@
+SOURCE: docs/part7/code/089_the_whole_stencil_chain_fused_and_vectorized_for_real.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/089_the_whole_stencil_chain_fused_and_vectorized_for_real.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-peb1qbgx/lesson']
+COMPILE:
+
+EXECUTION:
+=== Chapter 33 (Part 7): Section 33.3 -- the whole stencil chain, fused and vectorized for real ===
+
+--- Stage 0: rebuilding Section 33.1's own single-step graph exactly ---
+
+single-step graph: 10 nodes total, 5 of them real compute nodes (3 Mul, 2 Add) -- NO
+Sum node at all, unlike Chapter 31.3's and 32.3's own capstone graphs.
+
+--- Stage 1: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
+
+fused graph: 7 nodes total -- 2 FusedElementwise group(s), 0 FusedReduction group(s),
+0 plain (unfused) compute node(s), down from 5 compute nodes in the original graph.
+self-check: 0 FusedReduction groups, since this graph has no Sum node at all -- the SAME
+unmodified pass this book has called Chapter 14's reduction fusion pass since Chapter 14
+genuinely generalizes to a pure-elementwise graph (confirmed)
+
+--- Stage 2: Chapter 19's real vectorized dispatcher, called once per real timestep on NEON ---
+
+per-node dispatch, identical every step since it is the SAME fused graph structure
+each time (only the literal data baked into main() changes step to step):
+  partial      -> VECTOR+FMA
+  w_new        -> VECTOR+FMA
+
+step 1: interpreted(original) vs interpreted(fused) vs real-vectorized(NEON) -- all 3 agree
+step 2: interpreted(original) vs interpreted(fused) vs real-vectorized(NEON) -- all 3 agree
+step 3: interpreted(original) vs interpreted(fused) vs real-vectorized(NEON) -- all 3 agree
+step 4: interpreted(original) vs interpreted(fused) vs real-vectorized(NEON) -- all 3 agree
+step 5: interpreted(original) vs interpreted(fused) vs real-vectorized(NEON) -- all 3 agree
+
+final state after 5 real timesteps, computed 3 independent ways:
+interpreted(original) :    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734
+interpreted(fused)    :    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734
+real-vectorized(NEON  ):    5.2734  16.1133  32.2266  45.1172  45.1172  32.2266  16.1133   5.2734
+
+self-check: all 5 steps agree across all 3 computations -- the fusion pass and the real
+vectorized dispatcher both preserve the original graph's own answer exactly, chained
+across 5 real, sequentially-dependent timesteps (confirmed)
+self-check: 0 of 10 total dispatched nodes fell back to the scalar path across all 5 steps
+(confirmed), 10 total FMA fold(s) applied
+
+--- what this capstone actually shows ---
+
+Chapter 18's own generateFullVectorizedProgram() bakes its inputs in as compile-time
+literals, unchanged since it was built -- it was never designed to read runtime data. So
+running the SAME fused, vectorized kernel across 5 real timesteps here means calling this
+one unchanged generator 5 separate times, once per step, each with that step's own real
+host-shifted data baked in -- not because the compiled kernel's own logic changes (it never
+does: identical fused steps, every single step), but because of that real, stated design
+choice. This mirrors, in miniature, how real production stencil codes actually run on real
+GPUs: one compiled kernel, launched repeatedly from a host driver, once per timestep.
+
+=== Section 33.3 complete, Chapter 33 complete: all self-checks confirmed ===

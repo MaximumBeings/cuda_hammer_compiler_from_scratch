@@ -1,0 +1,2 @@
+exit=0
+inferShapes accepted [-2, 3]

@@ -1,0 +1,2 @@
+exit=42
+requested cap=3, largest fused body=7 steps

@@ -13,6 +13,10 @@
 
 **What you need to know first:** Chapter 18's own `emitSteps()` and `Target` enum, and Chapter 19's own `Isa`/`vecXxx()` vector primitives and FMA-fold peephole optimization (all reused with one small, uniform change -- wrapped in `extern "C"`); Chapter 16's own `boundedReductionFusionPass()` (reused verbatim in Section 20.3); Chapter 8's own `canonicalizeNodeNames()` uniqueness invariant (leaned on directly in Section 20.2); and Chapter 4's own non-copyable, move-only `Graph` design, the exact model this chapter's own `JitModule` follows for a real operating-system resource instead of a `std::vector<std::unique_ptr<Node>>`.
 
+ > **Compilation contract:** Child exit status from `pclose()` determines success; an empty log does not. A failed compiler, including a silent nonzero exit, throws before loading or measuring a candidate. `compileToSharedLibrary()` builds private staged source/output files and promotes a new shared object only after success. Compiler warnings are retained as diagnostics but do not invalidate a successful build. A previous library may remain on disk after failure, but is never accepted as the new candidate.
+
+> **Output provenance:** Captures explicitly labeled fresh local output were rerun after the second-pass fixes. Other cloud/device transcripts are historical examples, not fresh measurements of this revision.
+
 ---
 
 Every backend since Chapter 17 has followed the same shape: generate a `.cpp` file, shell out to a real compiler via `popen()`, run the resulting BINARY as a separate child process, and read that process's own printed stdout back as text to compare against `evaluateArrays()`. That harness has proven every generated program's own arithmetic correct across four chapters now, and it never once lied about what it was doing -- but it also never let this program's own code call a single line of that generated code directly. Every result, without exception, crossed a process boundary as TEXT: printed by one process, parsed back by another, even when both processes were produced by the exact same compiler on the exact same machine moments apart. This chapter replaces the RUN half of that pattern -- never the compile half, a real and honestly stated limitation explained where it comes up -- with something a running C++ program has always been able to do to itself: load a compiled function straight into its own address space and call it as an ordinary function pointer.
@@ -165,6 +169,9 @@ applied to a real OS resource this time):
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 048_extern_c_and_dlopen_a_function_pointer_from_generated_text.cpp -o 048_driver -ldl
 // Run:     ./048_driver
+#include <limits>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -177,6 +184,18 @@ applied to a real OS resource this time):
 #include <sstream>
 #include <cmath>
 #include <dlfcn.h>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -263,6 +282,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -270,8 +298,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -284,8 +322,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -293,7 +332,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -619,24 +658,57 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 // Compiles source text into a real, loadable shared library. This IS a
 // popen() shell-out -- this chapter never claims the COMPILER itself runs
-// in-process, only that EXECUTION does. A true self-hosting JIT would embed
-// the compiler as a library (LLVM's own ORC JIT, or libclang) instead of
-// shelling out to a separate g++ process even for this one step -- named
-// here as a real, stated limitation, not hidden.
+// in-process, only that EXECUTION does. An in-process JIT could use LLVM
+// ORC plus a frontend/IR pipeline. Self-hosting means a compiler is written
+// in its own input language; libclang is an analysis API, not an ORC substitute.
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 using ElementwiseFn = void (*)(const std::vector<const float*>&, const std::vector<long long>&, float*, long long);
@@ -681,7 +753,7 @@ int main() {
     std::string soPath = "/tmp/hammer_ch20_048.so";
     std::string compileLog;
     bool compileClean = compileToSharedLibrary(prog, cppPath, soPath, compileLog);
-    printf("--- g++ -shared -fPIC compile (ONE shell-out, for COMPILATION only) ---\n\n%s\n", compileClean ? "(no output -- clean compile)\n" : compileLog.c_str());
+    printf("--- g++ -shared -fPIC compile (ONE shell-out, for COMPILATION only) ---\n\n%s\n", compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
 
     printf("--- Loading the compiled .so IN-PROCESS: dlopen(), dlsym(), call the function pointer directly ---\n\n");
     std::vector<float> aVals = {1, -2, 3, -4, 5, -6, 7, -8};
@@ -736,7 +808,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "048_extern_c_and_dlopen_a_function_pointer_fro
 ./"048_extern_c_and_dlopen_a_function_pointer_from_generated_text"
 ```
 
-**Output (cloud sandbox, x86-64, AVX2/FMA):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 20.1: extern "C" and dlopen() -- a function pointer from generated text ===
@@ -756,7 +830,7 @@ extern "C" void compute_out(const std::vector<const float*>& ext, const std::vec
 
 --- g++ -shared -fPIC compile (ONE shell-out, for COMPILATION only) ---
 
-(no output -- clean compile)
+(no output -- successful compile)
 
 --- Loading the compiled .so IN-PROCESS: dlopen(), dlsym(), call the function pointer directly ---
 
@@ -911,6 +985,9 @@ Why symbol names can never collide within one graph:
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 049_one_shared_library_many_functions_a_jit_module_for_a_whole_graph.cpp -o 049_driver -ldl
 // Run:     ./049_driver
+#include <limits>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -923,6 +1000,18 @@ Why symbol names can never collide within one graph:
 #include <sstream>
 #include <cmath>
 #include <dlfcn.h>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1009,6 +1098,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -1016,8 +1114,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1030,8 +1138,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -1039,7 +1148,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -1401,19 +1510,53 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
     ++compileInvocationCount;
-    return compileLog.empty();
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 using ElementwiseFn = void (*)(const std::vector<const float*>&, const std::vector<long long>&, float*, long long);
@@ -1473,7 +1616,7 @@ int main() {
     std::string compileLog;
     bool compileClean = compileToSharedLibrary(prog, cppPath, soPath, compileLog);
     printf("--- g++ -shared -fPIC compile (whole graph, ONE invocation) ---\n\n%s\n",
-           compileClean ? "(no output -- clean compile)\n" : compileLog.c_str());
+           compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
     printf("self-check: this whole graph's own 3 non-leaf nodes needed exactly %d g++ invocation(s)\n", compileInvocationCount);
     printf("to compile -- Chapter 17/18's own harness would have shelled out once PER GENERATED\n");
     printf("PROGRAM; this section shells out once PER GRAPH (%s)\n\n", compileInvocationCount == 1 ? "confirmed" : "MISMATCH");
@@ -1536,7 +1679,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "049_one_shared_library_many_functions_a_jit_mo
 ./"049_one_shared_library_many_functions_a_jit_module_for_a_whole_graph"
 ```
 
-**Output (cloud sandbox, x86-64, AVX2/FMA):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 20.2: one shared library, many functions -- a JIT module for a whole graph ===
@@ -1550,7 +1695,7 @@ generateJitProgramForGraph(): 3 extern "C" functions in ONE source file:
 
 --- g++ -shared -fPIC compile (whole graph, ONE invocation) ---
 
-(no output -- clean compile)
+(no output -- successful compile)
 
 self-check: this whole graph's own 3 non-leaf nodes needed exactly 1 g++ invocation(s)
 to compile -- Chapter 17/18's own harness would have shelled out once PER GENERATED
@@ -1696,6 +1841,9 @@ Honest tally -- what actually changed, and what did not:
 // Run:     ./050_driver
 // Numerical policy: FMA contraction and vector reductions may change rounding.
 // These teaching backends permit contraction; they are not strict bitwise FP rewrites.
+#include <limits>
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -1709,6 +1857,18 @@ Honest tally -- what actually changed, and what did not:
 #include <sstream>
 #include <cmath>
 #include <dlfcn.h>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1795,6 +1955,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -1802,8 +1971,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1816,8 +1995,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -1825,7 +2005,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -1859,12 +2039,25 @@ static std::map<int, long long> computeChainDepths(const Graph& g, const std::ma
 }
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -2426,20 +2619,53 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     const std::string& extraFlags, std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC" + extraFlags + " " +
-                                     cppPath + " -o " + soPath + " 2>&1");
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + extraFlags + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
     ++compileInvocationCount;
-    return compileLog.empty();
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 using ElementwiseFn = void (*)(const std::vector<const float*>&, const std::vector<long long>&, float*, long long);
@@ -2616,7 +2842,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "050_the_jit_backend_end_to_end_no_subprocess_n
 ./"050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing"
 ```
 
-**Output (cloud sandbox, x86-64, AVX2/FMA):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 20.3: the JIT backend end to end -- no subprocess, no stdout parsing ===
@@ -2631,9 +2859,9 @@ g++ -shared -fPIC compile (4 functions, scalar): clean
 compute_y (scalar, real function pointer) = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
 self-check: y[0]=132.000000, matches evaluateArrays() (confirmed)
 
---- Backend 2: VECTOR (Chapter 19's own FMA-fold + reduction body, JIT-compiled, AVX2/FMA) ---
+--- Backend 2: VECTOR (Chapter 19's own FMA-fold + reduction body, JIT-compiled, NEON) ---
 
-g++ -shared -fPIC compile (4 functions, AVX2/FMA, 3 FMA fold(s)): clean
+g++ -shared -fPIC compile (4 functions, NEON, 3 FMA fold(s)): clean
 compute_y (vector, real function pointer) = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
 self-check: y[0]=132.000000, matches evaluateArrays() (confirmed), 3 FMA folds applied (confirmed)
 
@@ -2718,3 +2946,12 @@ Chapter 21, "The Search Space: Tile Sizes, Loop Orders, and Unrolling," opens Pa
 
 None new. This chapter's own `JitModule` design, `extern "C"` wrapping discipline, and whole-graph JIT compilation technique are all original to this book, building on Chapter 4's own non-copyable resource-ownership discipline, Chapter 8's own node-name uniqueness guarantee, and this chapter's own directly observed `dlopen()`/`dlsym()`/`dlclose()` toolchain behavior on both real machines.
 **Technical references:** [C++ language linkage](https://eel.is/c++draft/dcl.link), [LLVM ORC](https://llvm.org/docs/ORCv2.html), [libclang scope](https://clang.llvm.org/docs/LibClang.html).
+
+### Current compiler-failure regression
+
+```text
+diagnostic compile failure rejected before load/timing; previous artifact remains intact
+silent compiler exit1 rejected; stale function was not accepted as a new candidate
+successful compiler warning retained; new staged artifact promoted and returns99
+unique staged source/output files cleaned after success and failure
+```

@@ -1,0 +1,52 @@
+=== Section 16.2: boundedFusionPass() -- a boundary with nothing to do with correctness ===
+
+Original graph (6 nodes):
+  %0 x = Input()
+  %1 c = Const(3)
+  %2 t1 = ReLU(%0)
+  %3 t2 = Mul(%2, %1)
+  %4 t3 = Add(%3, %1)
+  %5 t4 = Mul(%4, %1)
+
+--- UNCAPPED (Chapter 13's own elementwiseFusionPass(), no size limit) ---
+
+  %0 x = Input()
+  %1 c = Const(3)
+  %2 t4 = FusedElementwise(external inputs: ext0=%0, ext1=%1)
+      step0 = ReLU(ext0)
+      step1 = Mul(step0, ext1)
+      step2 = Add(step1, ext1)
+      step3 = Mul(step2, ext1)  <- this node's own output
+
+self-check: uncapped fusion produces ONE FusedElementwise node with all 4 steps,
+6 -> 3 nodes (confirmed)
+
+--- CAPPED (maxChainLength=2) ---
+
+  %0 x = Input()
+  %1 c = Const(3)
+  %2 t2 = FusedElementwise(external inputs: ext0=%0, ext1=%1)
+      step0 = ReLU(ext0)
+      step1 = Mul(step0, ext1)  <- this node's own output
+  %3 t4 = FusedElementwise(external inputs: ext0=%2, ext1=%1)
+      step0 = Add(ext0, ext1)
+      step1 = Mul(step0, ext1)  <- this node's own output
+
+self-check: capped fusion produces TWO FusedElementwise nodes, each with AT MOST
+2 steps, 6 -> 4 nodes -- t2 becomes a NEW boundary the cap alone is responsible for
+(confirmed)
+
+self-check: evaluate(original, x=2).t4 = 27, evaluate(uncapped,...) = 27,
+evaluate(capped,...) = 27 -- all three agree (confirmed)
+
+=== The cap's own real, measured cost ===
+
+Bytes moved, UNFUSED (4 separate kernels):              140
+Bytes moved, UNCAPPED fusion (1 kernel, all 4 steps):   36
+Bytes moved, CAPPED fusion (2 kernels, maxChainLength=2): 72
+
+self-check: capping costs real, measured bytes relative to uncapped fusion (72 vs.
+36) (confirmed), while still moving far less than staying fully unfused (140) (confirmed) --
+a real trade-off, not a free lunch: bounded kernel size costs some of fusion's own
+savings, in exchange for a cap real compilers impose for reasons this book's own
+byte-counting was never built to measure (register pressure, compile time).

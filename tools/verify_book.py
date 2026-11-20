@@ -2,10 +2,15 @@
 """Check publication structure, code embeds, local links, diagrams and output scope."""
 from pathlib import Path
 import argparse, json, re, sys, urllib.parse, xml.etree.ElementTree as ET
+from validation_manifest import CoverageError, require_inputs
 ROOT=Path(__file__).resolve().parents[1];DOCS=ROOT/'docs'
 def outside_code(text):return re.sub(r'^```[^\n]*\n.*?^```\s*$', '', text, flags=re.M|re.S)
 def check(site=None):
- errors=[];outputs=0;pages=list(DOCS.rglob('*.md'));sources=list(DOCS.rglob('code/*'))
+ errors=[];outputs=0
+ try:
+  pages=require_inputs(ROOT,'pages'); sources=require_inputs(ROOT,'sources')
+ except CoverageError as ex:
+  print('Coverage failure: '+str(ex)); return 1
  for p in pages:
   s=p.read_text();plain=outside_code(s);headings=re.findall(r'^##\s+((?:\d+|[A-F])\.\d+)\b',plain,re.M)
   if len(headings)!=len(set(headings)):errors.append(f'{p.relative_to(ROOT)}: repeated numbered sections')
@@ -25,8 +30,14 @@ def check(site=None):
   for page in part.glob('*.md'):blocks.extend(re.findall(r'^```[^\n]*\n(.*?)^```',page.read_text(),re.M|re.S))
   if not any(content==b.strip() for b in blocks):errors.append(f'{source.relative_to(ROOT)}: source embed differs or absent')
  manifest=ROOT/'tools/diagram-manifest.json'
+ if not manifest.is_file():
+  print('Missing required diagram manifest'); return 1
  if manifest.exists():
   assets=json.loads(manifest.read_text())
+  if not isinstance(assets,list) or not assets or len(assets)!=len(set(assets)):
+   print('Expected nonempty unique diagram manifest'); return 1
+  if len(assets)!=159:
+   print('Diagram coverage differs from the 159-figure book contract'); return 1
   for asset in assets:
    p=DOCS/asset
    try:

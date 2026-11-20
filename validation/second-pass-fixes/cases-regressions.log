@@ -1,0 +1,10 @@
+PASS calibration: default, positive-only and negative-only quantized subranges
+PASS 066_tirs_own_real_schedule_primitives_split_and_vectorize.py: 1 assertion(s), explicit tolerances and nonzero mismatch exit
+PASS 067_relax_the_real_successor_to_relay_and_its_own_fusion_boundary.py: 1 assertion(s), explicit tolerances and nonzero mismatch exit
+PASS 068_metaschedules_real_tuningrecord_database_ch24s_own_cache_idea_at_production_scale.py: 1 assertion(s), explicit tolerances and nonzero mismatch exit
+PASS 072_torch_compiles_real_two_stage_pipeline_dynamo_capture_then_inductor_codegen.py: 1 assertion(s), explicit tolerances and nonzero mismatch exit
+PASS 073_graph_breaks_a_real_tracing_boundary_distinct_from_inductors_own_fusion_decision.py: 1 assertion(s), explicit tolerances and nonzero mismatch exit
+PASS 074_real_inductor_autotune_config_next_to_cuda_hammers_own_schedule_and_tuningcache.py: 1 assertion(s), explicit tolerances and nonzero mismatch exit
+PASS 077_real_pytorch_flash_attention_and_why_inductor_never_regenerates_it.py: 3 assertion(s), explicit tolerances and nonzero mismatch exit
+PASS 080_real_pytorch_quantized_gemm_kernels_and_the_part_6_synthesis.py: 3 assertion(s), explicit tolerances and nonzero mismatch exit
+ALL 15 host case-study regression checks PASSED; no framework/GPU execution claimed

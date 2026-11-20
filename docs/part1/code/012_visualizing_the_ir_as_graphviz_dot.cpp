@@ -37,6 +37,7 @@
 // (Requires the `dot` command from Graphviz to be installed for the
 // self-check; the DOT text itself is produced either way.)
 #include <cstdio>
+#include <limits>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -46,6 +47,18 @@
 #include <algorithm>
 #include <stdexcept>
 #include <fstream>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / Node / Graph (from Chapter 4) ====================
 
@@ -141,6 +154,15 @@ static TopoResult topologicalSort(const Graph& g) {
 struct Shape {
     std::vector<int> dims;
 };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -153,6 +175,7 @@ static std::string shapeStr(const Shape& s) {
 }
 
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -171,7 +194,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         }
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
@@ -186,7 +209,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
             if (it == declaredShapes.end()) throw std::runtime_error(context + ": no declared shape");
             for (int d : it->second.dims)
                 if (d <= 0) throw std::runtime_error(context + ": dimensions must be positive");
-            shapes[id] = it->second;
+            shapes[id] = validatedShape(it->second);
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else {

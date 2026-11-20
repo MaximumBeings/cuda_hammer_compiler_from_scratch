@@ -9,6 +9,10 @@
 </figure>
 <!-- hammer:figure:opener-2:end -->
 
+!!! note "Integer semantics and temporary identity"
+    This example uses the host `int` range with checked arithmetic: out-of-range literals, overflow and division by zero raise diagnostics. The same checked helper is used by runtime interpretation and compile-time folding. Surviving SSA temporary ids need not be dense after folding; the interpreter stores values in an id-keyed map, rather than allocating one slot per remaining instruction.
+
+
 **What you will understand:** the general vocabulary every real compiler is built from -- lexing, parsing, an abstract syntax tree (AST), lowering, a linear intermediate representation (IR), a pass, and code generation -- built here on a tiny arithmetic expression language, genuinely implemented and run, before Part 1 ever starts building CUDA Hammer's own tensor-graph version of the same pipeline.
 
 **What you need to know first:** Chapter 1's argument for why fusing operations matters. Basic C++ (classes, recursion, `std::unique_ptr`). No prior compiler-construction background is assumed -- that is exactly what this chapter builds.
@@ -88,6 +92,7 @@ The code below is a complete front end for the expression language: a lexer that
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 003_parsing_lowering_and_ir.cpp -o 003_parsing_lowering_and_ir
 // Run:     ./003_parsing_lowering_and_ir
 #include <cstdio>
+#include <limits>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -114,7 +119,10 @@ static std::vector<Token> lex(const std::string& src) {
         if (isdigit(static_cast<unsigned char>(c))) {
             int value = 0;
             while (i < src.size() && isdigit(static_cast<unsigned char>(src[i]))) {
-                value = value * 10 + (src[i] - '0');
+                int digit = src[i] - '0';
+                if (value > (std::numeric_limits<int>::max() - digit) / 10)
+                    throw std::overflow_error("integer literal out of range");
+                value = value * 10 + digit;
                 ++i;
             }
             toks.push_back({TokKind::Num, value, 0});
@@ -283,20 +291,30 @@ static void printIr(const std::vector<Instruction>& ir, std::string& out) {
 
 // ============================ Interpreter ============================
 
-static int resolveOperand(const Operand& o, const std::vector<int>& temps,
+static int resolveOperand(const Operand& o, const std::map<int, int>& temps,
                            const std::map<char, int>& env) {
     if (o.kind == OperandKind::Literal) return o.literalValue;
     if (o.kind == OperandKind::Variable) return env.at(o.varName);
-    return temps[o.tempIndex];
+    return temps.at(o.tempIndex);
 }
 
 static int applyOp(char op, int a, int b) {
-    switch (op) {
-        case '+': return a + b;
-        case '-': return a - b;
-        case '*': return a * b;
-        default:  return a / b;
+    if (op == '/') {
+        if (b == 0) throw std::domain_error("integer division by zero");
+        if (a == std::numeric_limits<int>::min() && b == -1)
+            throw std::overflow_error("integer division overflow");
+        return a / b;
     }
+    long long result;
+    switch (op) {
+        case '+': result = static_cast<long long>(a) + b; break;
+        case '-': result = static_cast<long long>(a) - b; break;
+        case '*': result = static_cast<long long>(a) * b; break;
+        default: throw std::invalid_argument("unknown arithmetic operator");
+    }
+    if (result < std::numeric_limits<int>::min() || result > std::numeric_limits<int>::max())
+        throw std::overflow_error("integer arithmetic overflow");
+    return static_cast<int>(result);
 }
 
 // Interprets the IR in order, returning the final expression's value.
@@ -304,7 +322,7 @@ static int applyOp(char op, int a, int b) {
 // for a bare literal or variable (zero instructions), it IS the answer.
 static int interpretIr(const std::vector<Instruction>& ir, const Operand& resultOperand,
                         const std::map<char, int>& env) {
-    std::vector<int> temps(ir.size(), 0);
+    std::map<int, int> temps; // surviving instruction ids need not be dense
     for (const auto& ins : ir) {
         int a = resolveOperand(ins.lhs, temps, env);
         int b = resolveOperand(ins.rhs, temps, env);
@@ -555,6 +573,7 @@ The pass below, `foldConstants`, walks File 003's own IR exactly once, in instru
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 004_constant_folding_pass.cpp -o 004_constant_folding_pass
 // Run:     ./004_constant_folding_pass
 #include <cstdio>
+#include <limits>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -577,7 +596,10 @@ static std::vector<Token> lex(const std::string& src) {
         if (isdigit(static_cast<unsigned char>(c))) {
             int value = 0;
             while (i < src.size() && isdigit(static_cast<unsigned char>(src[i]))) {
-                value = value * 10 + (src[i] - '0');
+                int digit = src[i] - '0';
+                if (value > (std::numeric_limits<int>::max() - digit) / 10)
+                    throw std::overflow_error("integer literal out of range");
+                value = value * 10 + digit;
                 ++i;
             }
             toks.push_back({TokKind::Num, value, 0});
@@ -667,16 +689,31 @@ static void printIr(const std::vector<Instruction>& ir, std::string& out) {
     for (const auto& ins : ir)
         out += "  t" + std::to_string(ins.destTemp) + " = " + operandStr(ins.lhs) + " " + std::string(1, ins.op) + " " + operandStr(ins.rhs) + "\n";
 }
-static int resolveOperand(const Operand& o, const std::vector<int>& temps, const std::map<char, int>& env) {
+static int resolveOperand(const Operand& o, const std::map<int, int>& temps, const std::map<char, int>& env) {
     if (o.kind == OperandKind::Literal) return o.literalValue;
     if (o.kind == OperandKind::Variable) return env.at(o.varName);
-    return temps[o.tempIndex];
+    return temps.at(o.tempIndex);
 }
 static int applyOp(char op, int a, int b) {
-    switch (op) { case '+': return a + b; case '-': return a - b; case '*': return a * b; default: return a / b; }
+    if (op == '/') {
+        if (b == 0) throw std::domain_error("integer division by zero");
+        if (a == std::numeric_limits<int>::min() && b == -1)
+            throw std::overflow_error("integer division overflow");
+        return a / b;
+    }
+    long long result;
+    switch (op) {
+        case '+': result = static_cast<long long>(a) + b; break;
+        case '-': result = static_cast<long long>(a) - b; break;
+        case '*': result = static_cast<long long>(a) * b; break;
+        default: throw std::invalid_argument("unknown arithmetic operator");
+    }
+    if (result < std::numeric_limits<int>::min() || result > std::numeric_limits<int>::max())
+        throw std::overflow_error("integer arithmetic overflow");
+    return static_cast<int>(result);
 }
 static int interpretIr(const std::vector<Instruction>& ir, const Operand& resultOperand, const std::map<char, int>& env) {
-    std::vector<int> temps(ir.size(), 0);
+    std::map<int, int> temps; // surviving instruction ids need not be dense
     for (const auto& ins : ir) {
         int a = resolveOperand(ins.lhs, temps, env);
         int b = resolveOperand(ins.rhs, temps, env);

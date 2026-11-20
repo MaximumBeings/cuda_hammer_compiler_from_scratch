@@ -13,6 +13,8 @@
 
 **What you need to know first:** Chapter 15's own `Loop`/`LoopNest`/`TiledLoop`/`tileLoop()`/`actualInnerExtent()` and Chapter 21's own `LoopOrder`/`enumerateLoopOrders()`, `unrollFactorCandidates()`/`computeUnrolled()`/`arraysExactlyEqual()`, and `Schedule`/`enumerateSchedules()`/`scheduleStr()` (all reused unchanged throughout this chapter); Chapter 19's own real-clock, best-of-N timing discipline; and Chapter 21's own closing number -- 128 legal schedules for one tiny `LoopNest` -- which this chapter picks up exactly where it was left.
 
+> **Output provenance:** Captures explicitly labeled fresh local output were rerun after the second-pass fixes. Other cloud/device transcripts are historical examples, not fresh measurements of this revision.
+
 ---
 
 Chapter 21 closed Part 5's opening chapter with a real, enumerated number: 128 legal schedules for one tiny two-loop `LoopNest`, and an explicit refusal to compile and run every single one just to find the best. This chapter builds the piece that refusal was waiting on: a COST MODEL, a cheap formula that estimates how good a schedule is likely to be without actually running it, so a later autotuner does not have to measure blindly. A cost model earns trust the same way every other claim in this book has since Chapter 17's own first generated loop -- by being checked against a real clock, on real hardware, and reported honestly when it is wrong, not asserted and left unverified.
@@ -136,11 +138,24 @@ never told about.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 054_a_loop_overhead_cost_model_for_tile_size_and_unroll_factor.cpp -o 054_driver
 // Run:     ./054_driver
+#include <stdexcept>
 #include <cstdio>
 #include <string>
 #include <vector>
 #include <chrono>
 #include <limits>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop (Chapter 15, unchanged) ====================
 
@@ -305,7 +320,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "054_a_loop_overhead_cost_model_for_tile_size_a
 ./"054_a_loop_overhead_cost_model_for_tile_size_and_unroll_factor"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 22.1: a loop-overhead cost model for tile size and unroll factor ===
@@ -339,13 +356,13 @@ the model's predicted best is therefore always the LARGEST candidate: chunkSize=
 
 --- Part 3: real measurement -- computeUnrolled() at extent=50,000,000, best-of-5 trials ---
 
-  unrollFactor=1   best-of-5 =  157.738 ms   (bit-for-bit correct: yes)
-  unrollFactor=2   best-of-5 =  150.744 ms   (bit-for-bit correct: yes)
-  unrollFactor=4   best-of-5 =  127.949 ms   (bit-for-bit correct: yes)
-  unrollFactor=8   best-of-5 =  138.004 ms   (bit-for-bit correct: yes)
-  unrollFactor=16  best-of-5 =  136.083 ms   (bit-for-bit correct: yes)
-  unrollFactor=32  best-of-5 =  126.207 ms   (bit-for-bit correct: yes)
-  unrollFactor=64  best-of-5 =  133.430 ms   (bit-for-bit correct: yes)
+  unrollFactor=1   best-of-5 =  105.447 ms   (bit-for-bit correct: yes)
+  unrollFactor=2   best-of-5 =   71.379 ms   (bit-for-bit correct: yes)
+  unrollFactor=4   best-of-5 =   39.676 ms   (bit-for-bit correct: yes)
+  unrollFactor=8   best-of-5 =   30.240 ms   (bit-for-bit correct: yes)
+  unrollFactor=16  best-of-5 =   16.869 ms   (bit-for-bit correct: yes)
+  unrollFactor=32  best-of-5 =   27.012 ms   (bit-for-bit correct: yes)
+  unrollFactor=64  best-of-5 =   21.351 ms   (bit-for-bit correct: yes)
 
 self-check: every unroll factor still produces the exact same bit-for-bit result (confirmed) --
 unroll factor is a pure performance knob here, same finding as Section 21.3, so ranking these
@@ -354,7 +371,7 @@ candidates by SPEED ALONE, with no correctness tradeoff to weigh, is a fair comp
 --- Part 4: does the model's prediction match what actually happened? ---
 
   model predicts best chunkSize:    64 (predicted cost strictly favors the largest candidate)
-  real measurement's fastest factor: 32 (126.207 ms, best-of-5)
+  real measurement's fastest factor: 16 (16.869 ms, best-of-5)
   match: no
 
 This is not a bug in the measurement, and it is not a bug in the model -- it is the model
@@ -503,11 +520,24 @@ prediction -- the model got the direction right and the size wrong.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 055_a_memory_stride_cost_model_for_loop_order.cpp -o 055_driver
 // Run:     ./055_driver
+#include <stdexcept>
 #include <cstdio>
 #include <string>
 #include <vector>
 #include <chrono>
 #include <limits>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop / LoopNest / LoopOrder (Chapter 15 / 21.2, unchanged) ====================
 
@@ -541,7 +571,7 @@ using LoopOrder = std::vector<int>;
 static double estimateLoopOrderCost(const LoopNest& nest, const LoopOrder& order,
                                      long long cacheLineElements, double perLineCost, double perElementWork) {
     long long totalIterations = 1;
-    for (const Loop& l : nest.loops) totalIterations *= l.extent;
+    for (const Loop& l : nest.loops) totalIterations = checkedCountMul(totalIterations, l.extent);
 
     int contiguousDim = static_cast<int>(nest.loops.size()) - 1;  // last loop dim = row-major-contiguous
     int innermostDim = order.back();                              // last entry in the ORDER = innermost trip
@@ -672,7 +702,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "055_a_memory_stride_cost_model_for_loop_order.
 ./"055_a_memory_stride_cost_model_for_loop_order"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 22.2: a memory-stride cost model for loop order ===
@@ -691,9 +723,9 @@ diluting the memory-only effect once real compute work is added into the same to
 
 --- Part 2: real measurement -- computeOrdered() on a real 4096x4096 float array (64 MB) ---
 
-  order dim0>dim1 (row-major) best-of-5 =   13.906 ms
-  order dim1>dim0 (col-major) best-of-5 =  390.835 ms
-  measured ratio (col-major / row-major) = 28.11x
+  order dim0>dim1 (row-major) best-of-5 =    3.935 ms
+  order dim1>dim0 (col-major) best-of-5 =  307.545 ms
+  measured ratio (col-major / row-major) = 78.15x
 
 self-check: both orders produce the exact same bit-for-bit output array (confirmed) -- Section
 21.2's own finding holds again here: for this elementwise computation, loop order is STILL a
@@ -702,11 +734,11 @@ pure performance knob, never a correctness concern; what changes is only how lon
 --- Part 3: does the model's prediction match what actually happened? ---
 
   model predicts:  row-major cheaper by 11.7x
-  measurement finds: row-major faster by 28.11x
+  measurement finds: row-major faster by 78.15x
   ranking matches: yes
 
 Unlike Section 22.1's loop-overhead model, this one gets the RANKING right. The magnitude is
-off -- the model predicted an 11.7x gap and reality delivered 28.11x -- real memory hierarchies
+off -- the model predicted an 11.7x gap and reality delivered 78.15x -- real memory hierarchies
 have effects this deliberately simple model never included (TLB misses under a stride this
 large, and hardware prefetchers that help the contiguous case even more than a flat line-count
 model assumes), so the real penalty for column-major turned out worse than predicted, not
@@ -844,6 +876,18 @@ that combination's honest report card.
 #include <limits>
 #include <stdexcept>
 
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
 // ==================== Loop / LoopNest / TiledLoop / tileLoop() / actualInnerExtent() (Chapter 15, unchanged) ====================
 
 struct Loop {
@@ -854,7 +898,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -1197,7 +1241,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "056_combining_both_cost_models_prediction_vs_m
 ./"056_combining_both_cost_models_prediction_vs_measurement_for_real_schedules"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 22.3: combining both cost models -- prediction vs. measurement for real schedules ===
@@ -1224,24 +1270,24 @@ enumerateSchedules() produced 128 schedules (confirmed, same count as Section 21
 
 --- Part 3: real measurement -- executeSchedule() run 800,000 times per schedule, best-of-7 ---
 
-  [  0] best-of-7 total =  151.393 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
-  [ 25] best-of-7 total =   78.118 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
-  [ 51] best-of-7 total =   80.997 ms  (bit-for-bit correct: yes)  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
-  [ 76] best-of-7 total =  104.180 ms  (bit-for-bit correct: yes)  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
-  [102] best-of-7 total =   76.610 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
-  [127] best-of-7 total =   51.974 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  [  0] best-of-7 total =  225.966 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  [ 25] best-of-7 total =  108.766 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  [ 51] best-of-7 total =   88.195 ms  (bit-for-bit correct: yes)  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  [ 76] best-of-7 total =   97.418 ms  (bit-for-bit correct: yes)  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  [102] best-of-7 total =  121.629 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  [127] best-of-7 total =   64.946 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
 
 self-check: all 6 schedules, run through the SAME interpreter, produce the exact same
 bit-for-bit output as the untiled, unordered, un-unrolled reference computation (confirmed) --
 every point in this schedule space is a valid answer; only the cost differs.
 
 measured ranking, fastest to slowest:
-  measured #1: [127]   51.974 ms  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
-  measured #2: [102]   76.610 ms  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
-  measured #3: [ 25]   78.118 ms  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
-  measured #4: [ 51]   80.997 ms  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
-  measured #5: [ 76]  104.180 ms  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
-  measured #6: [  0]  151.393 ms  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  measured #1: [127]   64.946 ms  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  measured #2: [ 51]   88.195 ms  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  measured #3: [ 76]   97.418 ms  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  measured #4: [ 25]  108.766 ms  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  measured #5: [102]  121.629 ms  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  measured #6: [  0]  225.966 ms  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
 
 --- Part 4: does the combined model's ranking match what actually happened? ---
 
@@ -1249,9 +1295,9 @@ measured ranking, fastest to slowest:
   measurement's fastest: [127] tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
   same schedule: no
 
-  pairwise ranking agreement: 6 of 15 comparisons agree (40%)
+  pairwise ranking agreement: 9 of 15 comparisons agree (60%)
 
-A 40% agreement rate is close to the 50% a coin flip would average on a 6-item ranking, and
+A 60% agreement rate is close to the 50% a coin flip would average on a 6-item ranking, and
 that should not be softened into a vague 'no model is perfect.' There is a real, specific
 reason it lands this weak: this LoopNest has only 48 total elements, far too little real work
 for any single call to executeSchedule() to register on a wall clock, which is exactly why Part

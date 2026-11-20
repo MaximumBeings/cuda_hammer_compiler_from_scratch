@@ -6,7 +6,11 @@ This is an implementation review with focused regressions, not a universal proof
 
 The machine-readable [findings ledger](validation/findings.json) records 25 grouped review items; several cover multiple copied implementations.
 
-## Detailed findings and corrections
+## Second independent review and correction pass
+
+The independent review of published `69a3b19` found 12 further defects, including a real AddressSanitizer failure in the introductory constant-folder and silent generated-literal/JIT failures. These were missed by the original ordinary-exit-code tests. All 12 are now addressed in [the second-pass correction record](SECOND_PASS_CORRECTIONS.md), including a fresh 78-driver host sanitizer sweep and targeted failure-mode regressions. Earlier Linux/A100 results below remain historical; the updated CUDA generators were not freshly executed on a GPU.
+
+## Original detailed findings and corrections
 
 - [Foundations: Chapters 1–16](validation/accuracy-fixes/foundations.md): floating-point rewrite policy, finite FP32 parser/printer round trips, shape/product validation, overflow-safe tiling, timing provenance, roofline interpretation and fusion legality.
 - [Systems: Chapters 17–24 and toolchain appendices](validation/accuracy-fixes/systems.md): FMA semantics, nonfinite comparisons, genuine CUDA execution checks, checked child processes, architecture selection, JIT/linkage claims, tuning-cache scope, profiling terminology and source-listing consistency.
@@ -20,7 +24,7 @@ The homepage no longer claims that every tensor framework and hand-written CUDA 
 
 Added 159 responsive SVGs: a whole-book map, 34 chapter openers, 102 chapter concept diagrams, six appendix openers and 16 numbered appendix concept diagrams. They use the shared deep-blue style and a 760-unit canvas, accessible labels and full-size links. Diagrams describe control/data flow and boundaries; their cards and arrows are not hardware measurements.
 
-`tools/verify_book.py` checks numbered-section uniqueness, local Markdown links, source-listing correspondence, nontrivial sample outputs and SVG structure/built assets. All 109 downloadable source listings are checked against embedded code. Historical diagnostic/IR transcripts are kept distinct from fresh execution; a retained historical excerpt is not relabeled as a new toolchain result.
+`tools/verify_book.py` checks numbered-section uniqueness, local Markdown links, source-listing correspondence, nontrivial sample outputs and SVG structure/built assets. All 108 downloadable source listings are checked against embedded code. Historical diagnostic/IR transcripts are kept distinct from fresh execution; a retained historical excerpt is not relabeled as a new toolchain result.
 
 `tools/validate_host.py` compiles every standalone C++ lesson in an isolated temporary directory, executes it and records stdout/stderr, return codes, host/compiler metadata and duration. The script returns failure if any lesson fails. The Markdown illustrates actual calculations, graph states, shapes and before/after results rather than only pass counts.
 

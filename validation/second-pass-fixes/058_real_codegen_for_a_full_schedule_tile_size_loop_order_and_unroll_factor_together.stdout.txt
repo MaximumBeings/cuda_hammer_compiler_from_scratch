@@ -1,0 +1,51 @@
+=== Section 23.2: real codegen for a full schedule -- tile size, loop order, unroll factor ===
+
+--- Part 1: correctness -- several real, compiled schedules, both loop orders ---
+
+  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:3,dim1:3] order=dim0>dim1 unroll=3 successful compile: yes  bit-for-bit correct: yes
+
+self-check: every one of these real, compiled schedules -- both loop orders, several tile
+sizes and unroll factors -- produces the exact same bit-for-bit answer (confirmed), the same finding
+Section 22.3's own interpreter already established, now confirmed for genuinely compiled code.
+
+--- Part 2: Section 22.3's own 6 schedules, evenly spaced, this time COMPILED not interpreted ---
+
+  [  0] best-of-9 total =   23.160 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  [ 25] best-of-9 total =   18.041 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  [ 51] best-of-9 total =   49.993 ms  (bit-for-bit correct: yes)  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  [ 76] best-of-9 total =   28.029 ms  (bit-for-bit correct: yes)  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  [102] best-of-9 total =   25.906 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  [127] best-of-9 total =   23.578 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+
+measured ranking, fastest to slowest (real compiled code, no interpreter):
+  measured #1: [ 25]   18.041 ms  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  measured #2: [  0]   23.160 ms  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  measured #3: [127]   23.578 ms  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  measured #4: [102]   25.906 ms  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  measured #5: [ 76]   28.029 ms  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  measured #6: [ 51]   49.993 ms  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+
+--- Part 3: does real compiled code change the cost model's own ranking agreement? ---
+
+  pairwise ranking agreement (real compiled code): 9 of 15 comparisons agree (60%)
+  (Section 22.3's own interpreted agreement was 40% on the cloud sandbox, 53% on the device)
+
+This is close to Section 22.3's own interpreted numbers (40%/53%), not meaningfully higher --
+a real, honest correction to that section's own diagnosis. Interpreter overhead was A real
+cost, and Section 23.1's own compile-time finding proves real codegen has real costs of its
+own that an interpreter never pays -- but removing the interpreter did NOT, by itself, raise
+the combined cost model's own ranking agreement on this problem. The more likely explanation,
+visible now that interpretation is no longer a confound to blame: a 48-element computation is
+simply too small and too fast for the real differences between these 6 schedules to be the
+dominant signal in a wall-clock measurement, compiled or not -- system noise, cache state left
+over from whichever schedule ran immediately before, and OS scheduling jitter all compete with
+the actual, tiny difference these schedules make at this scale. Section 22.1 and 22.2 each
+measured real, larger computations (50 million and 16.7 million elements) and got much
+cleaner agreement with their own models; this section's own honest finding is that SCALE, not
+interpretation, was probably the bigger confound all along -- a genuinely useful correction to
+carry into Section 23.3's own real autotuner, which will need to budget real measurement time
+carefully regardless of problem size.

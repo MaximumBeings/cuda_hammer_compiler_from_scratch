@@ -177,6 +177,10 @@ def main():
 
     built["main"](a_tvm, b_tvm, c_tvm)
     ref = a_np + b_np
+    actual = c_tvm.numpy()
+    if not np.isfinite(actual).all():
+        raise AssertionError("non-finite compiled result")
+    np.testing.assert_allclose(actual, ref, atol=0.0, rtol=0.0, equal_nan=False)
     max_err = float(np.max(np.abs(c_tvm.numpy() - ref)))
     print(f"max abs error vs. NumPy reference: {max_err}")
     print(f"bit-exact match: {max_err == 0.0}")
@@ -438,6 +442,10 @@ def main():
     result = vm["main"](a_tvm, b_tvm, c_tvm)
     t1_ref = a_np + b_np
     ref = (t1_ref * c_np) + np.maximum(t1_ref, 0.0)
+    actual = result.numpy()
+    if not np.isfinite(actual).all():
+        raise AssertionError("non-finite compiled result")
+    np.testing.assert_allclose(actual, ref, atol=1e-06, rtol=1e-5, equal_nan=False)
     max_err = float(np.max(np.abs(result.numpy() - ref)))
     print(f"max abs error vs. NumPy reference: {max_err}")
     print(f"bit-exact match: {max_err == 0.0}")
@@ -884,6 +892,13 @@ def main():
     a_tvm = tvm.runtime.tensor(rng.uniform(size=n).astype("float32"), dev)
     b_tvm = tvm.runtime.tensor(rng.uniform(size=n).astype("float32"), dev)
     c_tvm = tvm.runtime.tensor(np.zeros(n, dtype="float32"), dev)
+
+    built["main"](a_tvm, b_tvm, c_tvm)
+    actual = c_tvm.numpy()
+    ref = a_tvm.numpy() + b_tvm.numpy()
+    if not np.isfinite(actual).all():
+        raise AssertionError("non-finite compiled result")
+    np.testing.assert_allclose(actual, ref, atol=0.0, rtol=0.0, equal_nan=False)
 
     reps = 200_000
     start = time.perf_counter()

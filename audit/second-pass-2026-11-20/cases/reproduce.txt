@@ -1,0 +1,8 @@
+Calibration fallback:
+  range -128 127 returned scale 1.0 zero_point 0; quantized [0 0]
+  range 1 127 returned scale 1.0 zero_point 0; ValueError: signed-int8 range and in-range zero point required
+  range -128 -1 returned scale 1.0 zero_point 0; ValueError: signed-int8 range and in-range zero point required
+
+Exact comparison-print AST extracted from canonical File072:
+Real correctness check: compiled vs. eager match = False
+Comparison mismatch raised no exception; full source contains 0 assert statements.

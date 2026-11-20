@@ -19,11 +19,24 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 054_a_loop_overhead_cost_model_for_tile_size_and_unroll_factor.cpp -o 054_driver
 // Run:     ./054_driver
+#include <stdexcept>
 #include <cstdio>
 #include <string>
 #include <vector>
 #include <chrono>
 #include <limits>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop (Chapter 15, unchanged) ====================
 

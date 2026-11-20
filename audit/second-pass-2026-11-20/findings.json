@@ -1,0 +1,140 @@
+{
+  "date": "2026-11-20",
+  "reviewed_commit": "69a3b198b0d8bc6003fb8049a0dec3bf4e829bc1",
+  "findings": [
+    {
+      "id": "R2-01",
+      "priority": "P1",
+      "title": "Constant folding writes outside temporary storage",
+      "path": "docs/part0/code/004_constant_folding_pass.cpp",
+      "line": 153,
+      "review": "foundations-review.md",
+      "review_id": "F2-01",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-02",
+      "priority": "P1",
+      "title": "Generated float literals silently lose valid values",
+      "path": "docs/part4/code/041_lowering_a_whole_fused_graph.cpp",
+      "line": 500,
+      "review": "systems-review.md",
+      "review_id": "S2-SYS-02",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-03",
+      "priority": "P1",
+      "title": "Failed JIT compilation can reuse stale code",
+      "path": "docs/part5/code/057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp",
+      "line": 76,
+      "review": "systems-review.md",
+      "review_id": "S2-SYS-01",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-04",
+      "priority": "P2",
+      "title": "Fusion cap limits depth rather than emitted body size",
+      "path": "docs/part3/code/037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow.cpp",
+      "line": 344,
+      "review": "foundations-review.md",
+      "review_id": "F2-02",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-05",
+      "priority": "P2",
+      "title": "Loop and logical byte arithmetic can overflow",
+      "path": "docs/part3/code/034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary.cpp",
+      "line": 42,
+      "review": "foundations-review.md",
+      "review_id": "F2-03",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-06",
+      "priority": "P2",
+      "title": "Integer expression parsing and arithmetic are unchecked",
+      "path": "docs/part0/code/003_parsing_lowering_and_ir.cpp",
+      "line": 48,
+      "review": "foundations-review.md",
+      "review_id": "F2-04",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-07",
+      "priority": "P2",
+      "title": "Later shape inference copies omit dimension validation",
+      "path": "docs/part3/code/033_from_shapes_to_loop_nests_giving_fused_nodes_real_iteration_bounds.cpp",
+      "line": 187,
+      "review": "foundations-review.md",
+      "review_id": "F2-05",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-08",
+      "priority": "P2",
+      "title": "XLA logging fields are mistaken for cache reuse guarantees",
+      "path": "docs/part6/25-xla-fusion-and-autotuning-in-a-real-production-compiler.md",
+      "line": 1110,
+      "review": "cases-review.md",
+      "review_id": "SC-1",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-09",
+      "priority": "P2",
+      "title": "Framework numerical checks print False without failing",
+      "path": "docs/part6/code/072_torch_compiles_real_two_stage_pipeline_dynamo_capture_then_inductor_codegen.py",
+      "line": 111,
+      "review": "cases-review.md",
+      "review_id": "SC-2",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-10",
+      "priority": "P2",
+      "title": "Stencil connectivity explanation confuses graph granularity with runtime knowledge",
+      "path": "docs/part7/code/091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp",
+      "line": 261,
+      "review": "cases-review.md",
+      "review_id": "SC-3",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-11",
+      "priority": "P2",
+      "title": "Validation entrypoints report success with no inputs",
+      "path": "tools/validate_gpu.py",
+      "line": 12,
+      "review": "root/validation-tools.md",
+      "review_id": "empty-input coverage",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    },
+    {
+      "id": "R2-12",
+      "priority": "P3",
+      "title": "All-zero calibration returns invalid parameters for custom subranges",
+      "path": "docs/part6/code/078_affine_quantization_math_and_why_codegen_needs_a_wider_accumulator.py",
+      "line": 54,
+      "review": "cases-review.md",
+      "review_id": "SC-4",
+      "status": "corrected",
+      "resolution_record": "SECOND_PASS_CORRECTIONS.md"
+    }
+  ],
+  "correction_date": "2026-11-20",
+  "validation_scope": "Native macOS host/sanitizer and targeted regressions; no fresh GPU or external-framework execution."
+}

@@ -1,0 +1,59 @@
+=== Section 22.1: a loop-overhead cost model for tile size and unroll factor ===
+
+--- Part 1: estimateLoopOverheadCost() on a small extent=13 (not evenly divisible) ---
+
+  chunkSize=1  -> trips=ceil(13/1)=13  cost = 13*40.0 + 13*1.0 = 533.0
+  chunkSize=2  -> trips=ceil(13/2)=7   cost = 7*40.0 + 13*1.0 = 293.0
+  chunkSize=4  -> trips=ceil(13/4)=4   cost = 4*40.0 + 13*1.0 = 173.0
+  chunkSize=8  -> trips=ceil(13/8)=2   cost = 2*40.0 + 13*1.0 = 93.0
+  chunkSize=13 -> trips=ceil(13/13)=1   cost = 1*40.0 + 13*1.0 = 53.0
+
+self-check: every extra trip costs a fixed 40.0 units no matter how small the tail is --
+chunkSize=13 (one single trip covering the whole extent) is the model's cheapest option here,
+exactly the same intuition Section 21.1 used to justify why the loop's own full extent always
+belongs in the tile-size candidate list.
+
+--- Part 2: the model's prediction at extent=50,000,000, across real candidate chunk sizes ---
+
+  chunkSize=1   predicted cost =   2050000000.0
+  chunkSize=2   predicted cost =   1050000000.0
+  chunkSize=4   predicted cost =    550000000.0
+  chunkSize=8   predicted cost =    300000000.0
+  chunkSize=16  predicted cost =    175000000.0
+  chunkSize=32  predicted cost =    112500000.0
+  chunkSize=64  predicted cost =     81250000.0
+
+self-check: predicted cost is non-increasing as chunkSize grows (confirmed) -- the model's own
+per-element term never depends on chunkSize, so ONLY fewer trips can ever lower the estimate;
+the model's predicted best is therefore always the LARGEST candidate: chunkSize=64.
+
+--- Part 3: real measurement -- computeUnrolled() at extent=50,000,000, best-of-5 trials ---
+
+  unrollFactor=1   best-of-5 =  105.447 ms   (bit-for-bit correct: yes)
+  unrollFactor=2   best-of-5 =   71.379 ms   (bit-for-bit correct: yes)
+  unrollFactor=4   best-of-5 =   39.676 ms   (bit-for-bit correct: yes)
+  unrollFactor=8   best-of-5 =   30.240 ms   (bit-for-bit correct: yes)
+  unrollFactor=16  best-of-5 =   16.869 ms   (bit-for-bit correct: yes)
+  unrollFactor=32  best-of-5 =   27.012 ms   (bit-for-bit correct: yes)
+  unrollFactor=64  best-of-5 =   21.351 ms   (bit-for-bit correct: yes)
+
+self-check: every unroll factor still produces the exact same bit-for-bit result (confirmed) --
+unroll factor is a pure performance knob here, same finding as Section 21.3, so ranking these
+candidates by SPEED ALONE, with no correctness tradeoff to weigh, is a fair comparison.
+
+--- Part 4: does the model's prediction match what actually happened? ---
+
+  model predicts best chunkSize:    64 (predicted cost strictly favors the largest candidate)
+  real measurement's fastest factor: 16 (16.869 ms, best-of-5)
+  match: no
+
+This is not a bug in the measurement, and it is not a bug in the model -- it is the model
+being HONEST about its own limits. estimateLoopOverheadCost() only knows about one real
+mechanism (fixed cost per trip), so it can only ever recommend 'fewer, bigger trips.' Real
+hardware has other mechanisms this simple model was never told about -- instruction-cache
+pressure, register pressure, and lost auto-vectorization opportunities all grow with very
+large unroll factors -- and past some machine-specific point those costs start to outweigh
+the loop-overhead savings the model DOES know about. The model is not wrong to prefer fewer
+trips in general; it is incomplete about where that preference stops paying off. This is
+exactly why Chapter 23's own autotuner will not trust a cost model blindly -- it will use
+one to narrow 128 candidates down to a short list, then MEASURE the short list for real.

@@ -1,0 +1,35 @@
+COMMAND: ['clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', 'docs/part4/code/039_from_scalars_to_arrays_a_real_per_element_interpreter.cpp', '-o', '/tmp/hammer-second-fix-039']
+COMPILE:
+
+EXECUTION:
+=== Section 17.1: evaluateArrays() -- a real per-element interpreter ===
+
+Original graph: 6 nodes. Fused graph: 4 nodes (t1 stays external -- shared; t2/t3/out
+fuse into one FusedElementwise, external inputs t1 and a).
+
+--- Part A: uniform inputs (every element the same) -- bridging to everything Ch9-16 already proved ---
+
+evaluate(a=2, b=3).out (OLD, scalar) = 15
+evaluateArrays(original graph, uniform a=2,b=3).out: all 12 elements = 15? yes
+evaluateArrays(fused graph,    uniform a=2,b=3).out: all 12 elements = 15? yes
+self-check: under uniform inputs, evaluateArrays() collapses to exactly what the OLD
+scalar evaluate() always reported, for BOTH graphs (confirmed)
+
+--- Part B: non-uniform inputs (every element genuinely different) ---
+
+out[0]: hand-derived 22, evaluateArrays(original) = 22
+out[5]: hand-derived 182, evaluateArrays(original) = 182
+out[11]: hand-derived 676, evaluateArrays(original) = 676
+self-check: hand-derived positions match evaluateArrays() on the ORIGINAL graph (confirmed)
+
+self-check: with genuinely DIFFERENT values at every one of the 12 positions, the
+ORIGINAL graph and the FUSED graph agree at EVERY position, not just in aggregate (confirmed)
+
+--- Part C: a reduction (Sum), non-uniform input, checked by direct arithmetic ---
+
+x = [-3, 5, -1, 2, 0, 4]  ->  relu(x) = [0, 5, 0, 2, 0, 4]  ->  sum = 11 (hand-derived)
+evaluateArrays(original, unfused).s = 11
+evaluateArrays(fused: rt1+s -> one FusedReduction).s = 11
+self-check: both agree with the hand-derived sum (confirmed)
+
+EXIT: 0

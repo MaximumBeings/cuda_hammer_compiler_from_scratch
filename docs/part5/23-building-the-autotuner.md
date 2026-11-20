@@ -13,6 +13,10 @@
 
 **What you need to know first:** Chapter 20's own `JitModule` (RAII dlopen/dlsym/dlclose) and `compileToSharedLibrary()` (the one remaining g++ shell-out, scoped to compilation only); Chapter 21's own `Loop`/`LoopNest`/`Schedule`/`enumerateSchedules()`/`scheduleStr()`, and its own closing number -- 128 legal schedules for `LoopNest [dim0:6, dim1:8]`; and Chapter 22's own `estimateLoopOverheadCost()`/`estimateLoopOrderCost()`/`estimateScheduleCost()`, plus that chapter's own closing, honestly-diagnosed finding -- a combined cost model, applied to 6 schedules run through a generic INTERPRETER, landing at a near-chance ranking agreement (40% on the cloud sandbox, 53% on the device), traced to interpreter bookkeeping overhead on a 48-element toy problem, not evidence the underlying models are worthless.
 
+ > **Candidate integrity:** The reused JIT helper now checks process exit status and compiles into fresh staged files. Failure throws before timing or recording a schedule, so a previous candidate's library cannot masquerade as a failed new build. Warning text is preserved separately from the success/failure result.
+
+> **Output provenance:** Captures explicitly labeled fresh local output were rerun after the second-pass fixes. Other cloud/device transcripts are historical examples, not fresh measurements of this revision.
+
 ---
 
 Chapter 22 closed with a specific, named confound still standing between its own cost models and a real autotuner: every candidate schedule that chapter ever measured was run through `executeSchedule()`, a generic interpreter that reads a `Schedule`'s own fields as data at runtime rather than a real, schedule-specific compiled function. That confound was a deliberate, honestly-stated choice, not an oversight -- Part 4's own codegen chapters (17 through 20) each built one hand-written generator for ONE fixed computation, never a generator parameterized by an arbitrary `Schedule`. This chapter builds that generator, closes the interpreter gap Chapter 22 left open, and then does the thing every prior chapter in Part 5 was building toward: it actually searches.
@@ -131,6 +135,8 @@ cost Chapter 22's own interpreter never had to pay at all.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp -o 057_driver -ldl
 // Run:     ./057_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -139,6 +145,18 @@ cost Chapter 22's own interpreter never had to pay at all.
 #include <limits>
 #include <stdexcept>
 #include <dlfcn.h>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop (Chapter 15, unchanged) ====================
 
@@ -183,6 +201,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -190,14 +210,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== Section 23.1: real codegen for tile size + unroll factor ====================
@@ -267,7 +319,7 @@ int main() {
         fn(a.data(), out.data(), extent);
         bool ok = arraysExactlyEqual(out, reference);
         allCorrect = allCorrect && ok && clean;
-        printf("  tileSize=%-2lld unrollFactor=%-2lld  clean compile: %-3s  bit-for-bit correct: %s\n",
+        printf("  tileSize=%-2lld unrollFactor=%-2lld  successful compile: %-3s  bit-for-bit correct: %s\n",
                tileSize, unrollFactor, clean ? "yes" : "no", ok ? "yes" : "NO");
     }
     printf("\nself-check: every one of these 5 real, COMPILED, dlopen-loaded schedules produces the exact\n");
@@ -326,18 +378,20 @@ g++ -std=c++17 -Wall -Wextra -O2 "057_real_codegen_for_a_scheduled_loop_tile_siz
 ./"057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 23.1: real codegen for a scheduled loop -- tile size and unroll factor ===
 
 --- Part 1: extent=23 (not evenly divisible by most tile/unroll choices), 5 real schedules ---
 
-  tileSize=1  unrollFactor=1   clean compile: yes  bit-for-bit correct: yes
-  tileSize=7  unrollFactor=3   clean compile: yes  bit-for-bit correct: yes
-  tileSize=8  unrollFactor=4   clean compile: yes  bit-for-bit correct: yes
-  tileSize=23 unrollFactor=5   clean compile: yes  bit-for-bit correct: yes
-  tileSize=5  unrollFactor=5   clean compile: yes  bit-for-bit correct: yes
+  tileSize=1  unrollFactor=1   successful compile: yes  bit-for-bit correct: yes
+  tileSize=7  unrollFactor=3   successful compile: yes  bit-for-bit correct: yes
+  tileSize=8  unrollFactor=4   successful compile: yes  bit-for-bit correct: yes
+  tileSize=23 unrollFactor=5   successful compile: yes  bit-for-bit correct: yes
+  tileSize=5  unrollFactor=5   successful compile: yes  bit-for-bit correct: yes
 
 self-check: every one of these 5 real, COMPILED, dlopen-loaded schedules produces the exact
 same bit-for-bit answer (confirmed) -- tile size and unroll factor stay a pure performance knob for
@@ -345,11 +399,11 @@ an elementwise loop whether that loop is interpreted (Chapter 22) or actually co
 
 --- Part 2: extent=30,000,000 -- compile time vs. execution time, both real, both separate ---
 
-  tileSize=1     unrollFactor=1    compile:    43.4 ms   run (best-of-5):  32.154 ms  (clean)
-  tileSize=1024  unrollFactor=4    compile:    50.0 ms   run (best-of-5):  25.504 ms  (clean)
-  tileSize=1024  unrollFactor=16   compile:    49.0 ms   run (best-of-5):  25.834 ms  (clean)
-  tileSize=4096  unrollFactor=16   compile:    50.0 ms   run (best-of-5):  25.628 ms  (clean)
-  tileSize=4096  unrollFactor=64   compile:    49.2 ms   run (best-of-5):  25.647 ms  (clean)
+  tileSize=1     unrollFactor=1    compile:   141.3 ms   run (best-of-5):   6.090 ms  (clean)
+  tileSize=1024  unrollFactor=4    compile:   202.8 ms   run (best-of-5):   7.481 ms  (clean)
+  tileSize=1024  unrollFactor=16   compile:   237.9 ms   run (best-of-5):  12.710 ms  (clean)
+  tileSize=4096  unrollFactor=16   compile:   218.4 ms   run (best-of-5):  10.078 ms  (clean)
+  tileSize=4096  unrollFactor=64   compile:   202.9 ms   run (best-of-5):   8.149 ms  (clean)
 
 self-check: compile time and execution time land in the SAME real order of magnitude here --
 a handful to several tens of milliseconds each, a real g++ process costing about as much as
@@ -468,6 +522,8 @@ on both machines.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 058_real_codegen_for_a_full_schedule_tile_size_loop_order_and_unroll_factor_together.cpp -o 058_driver -ldl
 // Run:     ./058_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -480,6 +536,18 @@ on both machines.
 #include <stdexcept>
 #include <dlfcn.h>
 
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
 // ==================== Loop / LoopNest (Chapter 15, unchanged) ====================
 
 struct Loop {
@@ -490,7 +558,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -602,6 +670,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -609,14 +679,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== Section 23.2: real codegen for a FULL schedule ====================
@@ -709,7 +811,7 @@ int main() {
         fn(a.data(), out.data());
         bool ok = arraysExactlyEqual(out, reference);
         allCorrect = allCorrect && ok && clean;
-        printf("  %-40s clean compile: %-3s  bit-for-bit correct: %s\n",
+        printf("  %-40s successful compile: %-3s  bit-for-bit correct: %s\n",
                scheduleStr(nest, s).c_str(), clean ? "yes" : "no", ok ? "yes" : "NO");
     }
     printf("\nself-check: every one of these real, compiled schedules -- both loop orders, several tile\n");
@@ -839,18 +941,20 @@ g++ -std=c++17 -Wall -Wextra -O2 "058_real_codegen_for_a_full_schedule_tile_size
 ./"058_real_codegen_for_a_full_schedule_tile_size_loop_order_and_unroll_factor_together"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 23.2: real codegen for a full schedule -- tile size, loop order, unroll factor ===
 
 --- Part 1: correctness -- several real, compiled schedules, both loop orders ---
 
-  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1 clean compile: yes  bit-for-bit correct: yes
-  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8 clean compile: yes  bit-for-bit correct: yes
-  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1 clean compile: yes  bit-for-bit correct: yes
-  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8 clean compile: yes  bit-for-bit correct: yes
-  tiles=[dim0:3,dim1:3] order=dim0>dim1 unroll=3 clean compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8 successful compile: yes  bit-for-bit correct: yes
+  tiles=[dim0:3,dim1:3] order=dim0>dim1 unroll=3 successful compile: yes  bit-for-bit correct: yes
 
 self-check: every one of these real, compiled schedules -- both loop orders, several tile
 sizes and unroll factors -- produces the exact same bit-for-bit answer (confirmed), the same finding
@@ -858,24 +962,24 @@ Section 22.3's own interpreter already established, now confirmed for genuinely 
 
 --- Part 2: Section 22.3's own 6 schedules, evenly spaced, this time COMPILED not interpreted ---
 
-  [  0] best-of-9 total =   59.900 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
-  [ 25] best-of-9 total =   68.009 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
-  [ 51] best-of-9 total =   43.917 ms  (bit-for-bit correct: yes)  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
-  [ 76] best-of-9 total =   37.708 ms  (bit-for-bit correct: yes)  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
-  [102] best-of-9 total =   58.772 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
-  [127] best-of-9 total =   67.505 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  [  0] best-of-9 total =   23.160 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  [ 25] best-of-9 total =   18.041 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  [ 51] best-of-9 total =   49.993 ms  (bit-for-bit correct: yes)  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  [ 76] best-of-9 total =   28.029 ms  (bit-for-bit correct: yes)  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  [102] best-of-9 total =   25.906 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  [127] best-of-9 total =   23.578 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
 
 measured ranking, fastest to slowest (real compiled code, no interpreter):
-  measured #1: [ 76]   37.708 ms  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
-  measured #2: [ 51]   43.917 ms  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
-  measured #3: [102]   58.772 ms  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
-  measured #4: [  0]   59.900 ms  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
-  measured #5: [127]   67.505 ms  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
-  measured #6: [ 25]   68.009 ms  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  measured #1: [ 25]   18.041 ms  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  measured #2: [  0]   23.160 ms  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  measured #3: [127]   23.578 ms  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  measured #4: [102]   25.906 ms  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  measured #5: [ 76]   28.029 ms  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  measured #6: [ 51]   49.993 ms  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
 
 --- Part 3: does real compiled code change the cost model's own ranking agreement? ---
 
-  pairwise ranking agreement (real compiled code): 6 of 15 comparisons agree (40%)
+  pairwise ranking agreement (real compiled code): 9 of 15 comparisons agree (60%)
   (Section 22.3's own interpreted agreement was 40% on the cloud sandbox, 53% on the device)
 
 This is close to Section 22.3's own interpreted numbers (40%/53%), not meaningfully higher --
@@ -1027,6 +1131,8 @@ schedule -- not which predicted one -- came out fastest.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp -o 059_driver -ldl
 // Run:     ./059_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -1039,6 +1145,18 @@ schedule -- not which predicted one -- came out fastest.
 #include <stdexcept>
 #include <dlfcn.h>
 
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
 // ==================== Loop / LoopNest / Schedule machinery (Chapters 15/21, unchanged) ====================
 
 struct Loop {
@@ -1049,7 +1167,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -1186,6 +1304,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -1193,14 +1313,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== Section 23.2's own generateScheduleFunction() (unchanged) ====================
@@ -1417,7 +1569,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "059_the_autotuner_pruning_with_a_cost_model_th
 ./"059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, machine-specific timing):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 23.3: the autotuner -- pruning with a cost model, then measuring for real ===
@@ -1428,43 +1582,43 @@ LoopNest [dim0:6, dim1:8]: 128 real, legal schedules (Section 21.3's own number,
 
 cheapest 8 predicted schedules (the autotuner's own short list):
   predicted #1: cost=   288.0  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
-  predicted #2: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
-  predicted #3: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
-  predicted #4: cost=   328.0  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
-  predicted #5: cost=   328.0  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
-  predicted #6: cost=   368.0  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
-  predicted #7: cost=   368.0  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=4
-  predicted #8: cost=   368.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
+  predicted #2: cost=   328.0  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
+  predicted #3: cost=   328.0  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
+  predicted #4: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
+  predicted #5: cost=   328.0  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
+  predicted #6: cost=   368.0  tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+  predicted #7: cost=   368.0  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=4
+  predicted #8: cost=   368.0  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
 
 --- Part 2: HYBRID -- compile and carefully measure (best-of-9, 2,000,000 reps) only the 8 ---
 
-  [rank 1] compile= 137.9 ms  per-call= 0.0337 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
-  [rank 2] compile= 129.2 ms  per-call= 0.0279 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
-  [rank 3] compile= 147.4 ms  per-call= 0.0381 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
-  [rank 4] compile= 108.1 ms  per-call= 0.0311 us  correct=yes  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
-  [rank 5] compile= 107.8 ms  per-call= 0.0221 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
-  [rank 6] compile= 107.5 ms  per-call= 0.0395 us  correct=yes  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
-  [rank 7] compile= 130.5 ms  per-call= 0.0334 us  correct=yes  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=4
-  [rank 8] compile= 121.4 ms  per-call= 0.0222 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=2
+  [rank 1] compile= 532.1 ms  per-call= 0.0203 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=8
+  [rank 2] compile= 631.9 ms  per-call= 0.0160 us  correct=yes  tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4
+  [rank 3] compile= 578.3 ms  per-call= 0.0220 us  correct=yes  tiles=[dim0:4,dim1:8] order=dim0>dim1 unroll=8
+  [rank 4] compile= 622.9 ms  per-call= 0.0208 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=4
+  [rank 5] compile= 505.1 ms  per-call= 0.0207 us  correct=yes  tiles=[dim0:6,dim1:4] order=dim0>dim1 unroll=8
+  [rank 6] compile= 453.0 ms  per-call= 0.0181 us  correct=yes  tiles=[dim0:2,dim1:8] order=dim0>dim1 unroll=8
+  [rank 7] compile= 518.8 ms  per-call= 0.0257 us  correct=yes  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=4
+  [rank 8] compile= 529.8 ms  per-call= 0.0157 us  correct=yes  tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8
 
-hybrid autotuner's own winner: tiles=[dim0:6,dim1:8] order=dim0>dim1 unroll=4 (0.0221 us/call, best-of-9 over 2,000,000 reps)
-hybrid total wall-clock (compile + measure, 8 candidates): 5756.1 ms
+hybrid autotuner's own winner: tiles=[dim0:4,dim1:4] order=dim0>dim1 unroll=8 (0.0157 us/call, best-of-9 over 2,000,000 reps)
+hybrid total wall-clock (compile + measure, 8 candidates): 10444.5 ms
 
 --- Part 3: EXHAUSTIVE -- compile and measure all 128, for real (lighter pass: best-of-3, 200,000 reps) ---
 
 all 128 real schedules compiled and measured. every one bit-for-bit correct: confirmed
-true best, by exhaustive real measurement: tiles=[dim0:2,dim1:8] order=dim1>dim0 unroll=1 (0.0172 us/call, best-of-3 over 200,000 reps)
+true best, by exhaustive real measurement: tiles=[dim0:4,dim1:8] order=dim1>dim0 unroll=1 (0.0088 us/call, best-of-3 over 200,000 reps)
 (per-call time, not raw totals, since this pass uses a different repeat count than Part 2 --
 comparing raw totals across two different repeat counts would not be a fair comparison)
-exhaustive total wall-clock (compile + measure, all 128 candidates): 17032.8 ms
+exhaustive total wall-clock (compile + measure, all 128 candidates): 307334.8 ms
 
 --- Part 4: did pruning to 8 find the true best? was it actually cheaper? ---
 
   true best (exhaustive, all 128) in the cost model's own top-8 short list: no
   hybrid's own winner == true best (exhaustive, all 128): no
-  hybrid wall-clock:   5756.1 ms (8 candidates, careful measurement)
-  exhaustive wall-clock:  17032.8 ms (128 candidates, lighter measurement)
-  real wall-clock ratio (exhaustive / hybrid): 2.96x
+  hybrid wall-clock:  10444.5 ms (8 candidates, careful measurement)
+  exhaustive wall-clock: 307334.8 ms (128 candidates, lighter measurement)
+  real wall-clock ratio (exhaustive / hybrid): 29.43x
 
 The cost model's own top-8 did NOT contain the schedule real, exhaustive measurement found
 to actually be fastest -- an honest miss, not a hidden one. This is exactly the risk of pruning

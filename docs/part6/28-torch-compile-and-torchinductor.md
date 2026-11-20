@@ -235,8 +235,9 @@ if __name__ == "__main__":
     eager_out = diamond(a, b, c)
 
     print(f"Real torch.cuda.is_available(): {torch.cuda.is_available()}")
+    torch.testing.assert_close(out, eager_out, atol=1e-8, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check: compiled vs. eager match = "
-          f"{torch.allclose(out, eager_out)}")
+          f"{torch.allclose(out, eager_out, atol=1e-8, rtol=1e-5)}")
 
     print()
     print("=== Real Inductor-generated C++ (one real kernel function) ===")
@@ -445,8 +446,9 @@ if __name__ == "__main__":
     out, code = capture_output_code(compiled_with_break, a, b, c)
     eager_out = diamond_with_break(a, b, c)
     print()
+    torch.testing.assert_close(out, eager_out, atol=1e-8, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check (graph-broken version): compiled vs. "
-          f"eager match = {torch.allclose(out, eager_out)}")
+          f"eager match = {torch.allclose(out, eager_out, atol=1e-8, rtol=1e-5)}")
 
     kernel_names = re.findall(r"(cpp_fused_\w+) = async_compile\.cpp_pybinding",
                                code)
@@ -692,8 +694,9 @@ if __name__ == "__main__":
         eager_out = matmul(x, y)
         print(f"  max_autotune_gemm_backends temporarily set to "
               f"{inductor_config.max_autotune_gemm_backends!r}")
+        torch.testing.assert_close(out, eager_out, atol=1e-4, rtol=1e-5, equal_nan=False)
         print(f"  Real correctness check: compiled vs. eager match = "
-              f"{torch.allclose(out, eager_out, atol=1e-4)}")
+              f"{torch.allclose(out, eager_out, atol=1e-4, rtol=1e-5)}")
     finally:
         inductor_config.max_autotune_gemm_backends = old_backends
 

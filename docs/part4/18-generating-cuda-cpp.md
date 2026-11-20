@@ -17,7 +17,7 @@
 
 **What you need to know first:** Chapter 17's own `LoopNest`/`FusedStep`/`lowerNode()`/`generateLoopFunction()`, Chapter 16's own `boundedReductionFusionPass()` (reused verbatim in Section 18.3), and Chapter 14's own reduction-fusion `Sum` rule.
 
- > **Validation history:** The original transcripts below were captured without a CUDA device; they are historical diagnostics, not results produced by the repaired fail-fast checks. A later NVIDIA A100 run executes the generated kernels and compares their output with the interpreter; see the fresh GPU results at the end of this chapter. No-device now exits77 as an incomplete runtime validation.
+ > **Validation history:** The recorded A100 results at the end are previous-revision evidence, not a fresh GPU validation of the current literal/cap changes. The original transcripts below were captured without a CUDA device; they are historical diagnostics, not results produced by the repaired fail-fast checks. A later NVIDIA A100 run executes the generated kernels and compares their output with the interpreter; see the fresh GPU results at the end of this chapter. No-device now exits77 as an incomplete runtime validation.
 
 ---
 
@@ -147,6 +147,13 @@ CUDA elementwise kernel -- one THREAD per output element, not one loop pass:
 #define HAMMER_CUDA_ARCH "sm_70"
 #endif
 
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <sys/wait.h>
 #include <string>
@@ -159,6 +166,54 @@ CUDA elementwise kernel -- one THREAD per output element, not one loop pass:
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -245,6 +300,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -252,8 +316,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -266,8 +340,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -275,7 +350,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -584,7 +659,7 @@ static std::string generateCudaElementwiseKernel(const std::string& kernelName, 
 
 // ==================== Shell-out helpers ====================
 
-static std::string runShellCaptureAll(const std::string& cmd) {
+static std::string runShellCaptureAll(const std::string& cmd, bool allowCudaDiagnostic = false) {
     std::string out;
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
@@ -594,13 +669,15 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     // A generated program uses 77 for fail-fast CUDA diagnostics. The
     // caller distinguishes a no-device skip from other CUDA failures.
     if (status == -1 || !WIFEXITED(status) ||
-        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        (WEXITSTATUS(status) != 0 && !(allowCudaDiagnostic && WEXITSTATUS(status) == 77)))
         throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 
 int main() {
@@ -664,7 +741,7 @@ int main() {
 
     auto formatArrayLiteral = [](const std::vector<float>& v) {
         std::string out = "{";
-        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
         out += "}";
         return out;
     };
@@ -691,19 +768,19 @@ int main() {
     prog += "    float hOut[" + std::to_string(n) + "];\n";
     prog += "    CUDA_CHECK(cudaMemcpy(hOut, dOut, n * sizeof(float), cudaMemcpyDeviceToHost));\n";
     prog += "    printf(\"kernel result: \");\n";
-    prog += "    for (long long i = 0; i < n; ++i) printf(\"%.6f \", hOut[i]);\n";
+    prog += "    for (long long i = 0; i < n; ++i) printf(\"%.9g \", hOut[i]);\n";
     prog += "    printf(\"\\n\");\n";
     prog += "    CUDA_CHECK(cudaFree(dExt0)); CUDA_CHECK(cudaFree(dExt1)); CUDA_CHECK(cudaFree(dOut));\n";
     prog += "    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch18_042.cu", prog);
     std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o /tmp/hammer_ch18_042 /tmp/hammer_ch18_042.cu 2>&1");
-    bool compileClean = compileLog.find("error") == std::string::npos;
-    printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- clean compile)\n" : compileLog.c_str());
+    bool compileClean = true; // checked subprocess returned success; diagnostics are not exit status
+    printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
     printf("self-check: nvcc accepts the generated .cu file as valid CUDA C++ (%s)\n\n",
            compileClean ? "confirmed" : "MISMATCH");
 
-    std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_042 2>&1");
+    std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_042 2>&1", true);
     printf("--- Running the compiled CUDA binary ---\n\n");
     printf("%s\n", runOutput.c_str());
     bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
@@ -715,7 +792,7 @@ int main() {
         else {
             std::istringstream values(runOutput.substr(pos + std::string("kernel result:").size()));
             std::vector<float> got; float value;
-            while (values >> value) got.push_back(value);
+            while (readFloatToken(values, value)) got.push_back(value);
             const auto& expectedGpu = fusedArrays.at("out");
             gpuMatches = gpuMatches && got.size() == expectedGpu.size();
             for (size_t i = 0; gpuMatches && i < got.size(); ++i)
@@ -735,7 +812,7 @@ int main() {
     cpuProg += "    std::vector<long long> extCounts = {" + std::to_string(n) + ", " + std::to_string(n) + "};\n";
     cpuProg += "    std::vector<float> out(" + std::to_string(n) + ");\n";
     cpuProg += "    compute_out_cpu(ext, extCounts, out.data(), " + std::to_string(n) + ");\n";
-    cpuProg += "    for (float v : out) printf(\"%.6f \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
+    cpuProg += "    for (float v : out) printf(\"%.9g \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
     writeFile("/tmp/hammer_ch18_042_cpu.cpp", cpuProg);
     runShellCaptureAll("g++ -std=c++17 -O2 /tmp/hammer_ch18_042_cpu.cpp -o /tmp/hammer_ch18_042_cpu 2>&1");
     std::string cpuOut = runShellCaptureAll("/tmp/hammer_ch18_042_cpu");
@@ -747,7 +824,7 @@ int main() {
     std::istringstream iss(cpuOut);
     std::vector<float> cpuVals;
     float v;
-    while (iss >> v) cpuVals.push_back(v);
+    while (readFloatToken(iss, v)) cpuVals.push_back(v);
     bool cpuMatches = (cpuVals.size() == fusedArrays.at("out").size());
     if (cpuMatches) for (size_t i = 0; i < cpuVals.size(); ++i) if (!(std::fabs(cpuVals[i] - fusedArrays.at("out")[i]) <= 1e-3f)) cpuMatches = false;
     printf("self-check: this IS the number the kernel's own arithmetic computes -- proven by real\n");
@@ -917,6 +994,13 @@ reduction -- see this section's own stated limitation, above).
 #define HAMMER_CUDA_ARCH "sm_70"
 #endif
 
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <sys/wait.h>
 #include <string>
@@ -929,6 +1013,54 @@ reduction -- see this section's own stated limitation, above).
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1015,6 +1147,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -1022,8 +1163,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1036,8 +1187,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -1045,7 +1197,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -1337,7 +1489,7 @@ static std::string generateCudaReductionKernel(const std::string& kernelName, co
     return src;
 }
 
-static std::string runShellCaptureAll(const std::string& cmd) {
+static std::string runShellCaptureAll(const std::string& cmd, bool allowCudaDiagnostic = false) {
     std::string out;
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
@@ -1347,13 +1499,15 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     // A generated program uses 77 for fail-fast CUDA diagnostics. The
     // caller distinguishes a no-device skip from other CUDA failures.
     if (status == -1 || !WIFEXITED(status) ||
-        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        (WEXITSTATUS(status) != 0 && !(allowCudaDiagnostic && WEXITSTATUS(status) == 77)))
         throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 
 int main() {
@@ -1400,7 +1554,7 @@ int main() {
 
     auto formatArrayLiteral = [](const std::vector<float>& v) {
         std::string out = "{";
-        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
         out += "}";
         return out;
     };
@@ -1424,17 +1578,17 @@ int main() {
     prog += "    CUDA_CHECK(cudaDeviceSynchronize());\n";
     prog += "    float hOut = 0.0f;\n";
     prog += "    CUDA_CHECK(cudaMemcpy(&hOut, dOut, sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result: %f\\n\", hOut);\n";
+    prog += "    printf(\"kernel result: %.9g\\n\", hOut);\n";
     prog += "    CUDA_CHECK(cudaFree(dExt0)); CUDA_CHECK(cudaFree(dOut));\n";
     prog += "    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch18_043.cu", prog);
     std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o /tmp/hammer_ch18_043 /tmp/hammer_ch18_043.cu 2>&1");
-    bool compileClean = compileLog.find("error") == std::string::npos;
-    printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- clean compile)\n" : compileLog.c_str());
+    bool compileClean = true; // checked subprocess returned success; diagnostics are not exit status
+    printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
     printf("self-check: nvcc accepts the generated atomicAdd()-based kernel (%s)\n\n", compileClean ? "confirmed" : "MISMATCH");
 
-    std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_043 2>&1");
+    std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_043 2>&1", true);
     printf("--- Running the compiled binary ---\n\n%s\n", runOutput.c_str());
     bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
     if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
@@ -1442,7 +1596,7 @@ int main() {
     try {
         size_t pos = runOutput.find("kernel result:");
         if (pos == std::string::npos) gpuMatches = false;
-        else gpuMatches = gpuMatches && std::fabs(std::stof(runOutput.substr(pos + std::string("kernel result:").size())) - 11.0f) <= 1e-2f;
+        else gpuMatches = gpuMatches && std::fabs(parseFiniteFloat(runOutput.substr(pos + std::string("kernel result:").size())) - 11.0f) <= 1e-2f;
     } catch (const std::exception&) { gpuMatches = false; }
     printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
@@ -1455,11 +1609,11 @@ int main() {
     cpuProg += "    std::vector<long long> extCounts = {" + std::to_string(reduceExtent) + "};\n";
     cpuProg += "    float out[1];\n";
     cpuProg += "    compute_s_cpu(ext, extCounts, out);\n";
-    cpuProg += "    printf(\"%.6f\\n\", out[0]);\n    return 0;\n}\n";
+    cpuProg += "    printf(\"%.9g\\n\", out[0]);\n    return 0;\n}\n";
     writeFile("/tmp/hammer_ch18_043_cpu.cpp", cpuProg);
     runShellCaptureAll("g++ -std=c++17 -O2 /tmp/hammer_ch18_043_cpu.cpp -o /tmp/hammer_ch18_043_cpu 2>&1");
     std::string cpuOut = runShellCaptureAll("/tmp/hammer_ch18_043_cpu");
-    float cpuVal = std::stof(cpuOut);
+    float cpuVal = parseFiniteFloat(cpuOut);
     printf("x = [-3, 5, -1, 2, 0, 4]  ->  relu(x) = [0, 5, 0, 2, 0, 4]  ->  sum = 11 (hand-derived)\n");
     printf("CPU (actually executed) result: %.6f\n", cpuVal);
     printf("evaluateArrays(fused).s          = %.6f\n", rFusedArrays.at("s")[0]);
@@ -1622,6 +1776,13 @@ UNCAPPED (5 nodes -> 3 kernels)              CAPPED, maxChainLength=3 (6 nodes -
 #define HAMMER_CUDA_ARCH "sm_70"
 #endif
 
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <sys/wait.h>
 #include <string>
@@ -1635,6 +1796,54 @@ UNCAPPED (5 nodes -> 3 kernels)              CAPPED, maxChainLength=3 (6 nodes -
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1721,6 +1930,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -1728,8 +1946,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1742,8 +1970,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -1751,7 +1980,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -1785,12 +2014,25 @@ static std::map<int, long long> computeChainDepths(const Graph& g, const std::ma
 }
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -2125,7 +2367,7 @@ static std::string generateCpuFunctionForNode(const std::string& funcName, const
 
 static std::string formatLiteralArray(const std::vector<float>& v) {
     std::string out = "{";
-    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
     out += "}";
     return out;
 }
@@ -2160,7 +2402,7 @@ static std::string generateFullCudaProgram(const Graph& g, const std::map<int, S
     for (int id : topo.order) {
         const Node* n = g.node(id);
         if (n->op == OpKind::Input) prog += "    float h_" + n->debugName + "[] = " + formatLiteralArray(inputArrays.at(n->debugName)) + ";\n";
-        else if (n->op == OpKind::Const) prog += "    float h_" + n->debugName + "[] = {" + std::to_string(n->constValue) + "f};\n";
+        else if (n->op == OpKind::Const) prog += "    float h_" + n->debugName + "[] = {" + floatLiteral(n->constValue) + "};\n";
     }
     for (int id : topo.order) {
         const Node* n = g.node(id);
@@ -2199,7 +2441,7 @@ static std::string generateFullCudaProgram(const Graph& g, const std::map<int, S
     }
     prog += "    float h_y;\n";
     prog += "    CUDA_CHECK(cudaMemcpy(&h_y, d_y, sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result y: %f\\n\", h_y);\n";
+    prog += "    printf(\"kernel result y: %.9g\\n\", h_y);\n";
     for (int id : topo.order) prog += "    CUDA_CHECK(cudaFree(d_" + g.node(id)->debugName + "));\n";
     prog += "    return 0;\n}\n";
     return prog;
@@ -2233,7 +2475,7 @@ static std::string generateFullCpuProgram(const Graph& g, const std::map<int, Sh
     for (int id : topo.order) {
         const Node* n = g.node(id);
         if (n->op == OpKind::Input) prog += "    buf[\"" + n->debugName + "\"] = " + formatLiteralArray(inputArrays.at(n->debugName)) + ";\n";
-        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + std::to_string(n->constValue) + "f};\n";
+        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + floatLiteral(n->constValue) + "};\n";
     }
     for (int id : topo.order) {
         const Node* n = g.node(id);
@@ -2253,7 +2495,7 @@ static std::string generateFullCpuProgram(const Graph& g, const std::map<int, Sh
     for (int id : topo.order) {
         const Node* n = g.node(id);
         prog += "    printf(\"" + n->debugName + ":\");\n";
-        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.6f\", v);\n";
+        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.9g\", v);\n";
         prog += "    printf(\"\\n\");\n";
     }
     prog += "    return 0;\n}\n";
@@ -2262,7 +2504,7 @@ static std::string generateFullCpuProgram(const Graph& g, const std::map<int, Sh
 
 // ==================== Shell-out / parsing helpers ====================
 
-static std::string runShellCaptureAll(const std::string& cmd) {
+static std::string runShellCaptureAll(const std::string& cmd, bool allowCudaDiagnostic = false) {
     std::string out;
     FILE* pipe = popen(cmd.c_str(), "r");
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
@@ -2272,13 +2514,15 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     // A generated program uses 77 for fail-fast CUDA diagnostics. The
     // caller distinguishes a no-device skip from other CUDA failures.
     if (status == -1 || !WIFEXITED(status) ||
-        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        (WEXITSTATUS(status) != 0 && !(allowCudaDiagnostic && WEXITSTATUS(status) == 77)))
         throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::string& text) {
     std::map<std::string, std::vector<float>> result;
@@ -2291,7 +2535,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
         std::istringstream rest(line.substr(colon + 1));
         std::vector<float> vals;
         float v;
-        while (rest >> v) vals.push_back(v);
+        while (readFloatToken(rest, v)) vals.push_back(v);
         result[name] = vals;
     }
     return result;
@@ -2362,18 +2606,18 @@ int main() {
         std::string cudaStem = std::string("/tmp/hammer_ch18_044_") + (variant == 0 ? "uncapped" : "capped");
         writeFile(cudaStem + ".cu", cudaProg);
         std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o " + cudaStem + " " + cudaStem + ".cu 2>&1");
-        bool compileClean = compileLog.find("error") == std::string::npos;
+        bool compileClean = true; // checked subprocess returned success; diagnostics are not exit status
         if (compileClean) printf("nvcc compile (%zu kernels): clean\n", kernelCount);
         else printf("nvcc compile (%zu kernels): FAILED:\n%s\n", kernelCount, compileLog.c_str());
 
-        std::string runOutput = runShellCaptureAll(cudaStem + " 2>&1");
+        std::string runOutput = runShellCaptureAll(cudaStem + " 2>&1", true);
         bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
         if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
         bool gpuMatches = runOutput.find("CUDA error") == std::string::npos;
         try {
             size_t pos = runOutput.find("kernel result y:");
             if (pos == std::string::npos) gpuMatches = false;
-            else gpuMatches = gpuMatches && std::fabs(std::stof(runOutput.substr(pos + std::string("kernel result y:").size())) - fusedArrays.at("y")[0]) <= 1e-2f;
+            else gpuMatches = gpuMatches && std::fabs(parseFiniteFloat(runOutput.substr(pos + std::string("kernel result y:").size())) - fusedArrays.at("y")[0]) <= 1e-2f;
         } catch (const std::exception&) { gpuMatches = false; }
         printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
@@ -2511,9 +2755,9 @@ None new. This chapter's own shared `emitSteps()` codegen core, CUDA kernel gene
 
 A10 has compute capability 8.6. Run `python3 tools/validate_gpu.py --arch sm_86 --sanitize` from the repository root on a CUDA host. The runner compiles both the generator drivers and their generated child kernels for `sm_86`, captures outputs, rejects no-device skips, and runs Compute Sanitizer across child processes when requested. The historical default `sm_70` is configurable using `HAMMER_CUDA_ARCH`; it is not an assertion that every current toolkit supports that target. Toolkit availability alone does not establish runtime correctness. [NVIDIA GPU capabilities](https://developer.nvidia.com/cuda/gpus)
 
-### Fresh GPU execution: NVIDIA A100, CUDA12.8
+### Previous-revision GPU execution: NVIDIA A100, CUDA12.8
 
-The three generator drivers were built with `-arch=sm_80` and `HAMMER_CUDA_ARCH="sm_80"`, so their runtime-generated CUDA programs used the same target. The generated programs ran on an NVIDIA A100-PCIE-40GB (compute capability8.0):
+Before the second-pass literal/process/cap corrections, the three generator drivers were built with `-arch=sm_80` and `HAMMER_CUDA_ARCH="sm_80"`, so their runtime-generated CUDA programs used the same target. The generated programs ran on an NVIDIA A100-PCIE-40GB (compute capability8.0):
 
 ```text
 042 elementwise kernel:
@@ -2537,3 +2781,5 @@ All four generated CUDA executables were directly instrumented with ComputeSanit
 ```
 
 Directly instrumenting the generated executables matters: this installation did not attach to the host-only driver's `popen` child tree, so wrapper-only runs were rejected as uninstrumented rather than counted as passes. These checks validate the chapter's concrete fixtures and their generated kernels; they do not establish performance or correctness for every possible shape. The A10 command above is a supported target configuration, not a claim that this A100 run used an A10.
+
+> **Current revision scope:** The A100 numeric/sanitizer transcript above belongs to the preceding `69a3b19` baseline. The current literal, subprocess and fusion-cap changes have fresh host regression coverage and host-only CUDA text-generator checks. The GPU remains off; generated CUDA device code has not been recompiled or rerun after these changes.

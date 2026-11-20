@@ -1,0 +1,30 @@
+SOURCE: docs/part2/code/015_constant_folding_replaces_computation_with_its_answer.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part2/code/015_constant_folding_replaces_computation_with_its_answer.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-lgu2hlpy/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 9.1: constantFoldPass(), folding a whole constant chain in one pass ===
+
+Original graph:
+  %0 = Const(c1) [value=2]
+  %1 = Const(c2) [value=3]
+  %2 = Const(c3) [value=4]
+  %3 = Add(t1)
+  %4 = Mul(t2)
+  %5 = Input(x)
+  %6 = Add(out)
+
+After constantFoldPass():
+  %0 = Const(c1) [value=2]
+  %1 = Const(c2) [value=3]
+  %2 = Const(c3) [value=4]
+  %3 = Input(x)
+  %4 = Const(t1) [value=5]
+  %5 = Const(t2) [value=20]
+  %6 = Add(out)
+
+self-check: t1 (2+3) folded to Const(5) (confirmed)
+self-check: t2 ((2+3)*4), using t1's ALREADY-folded value, folded to Const(20) (confirmed)
+self-check: 'out' (20 + x) stays a real Add -- x is not a compile-time constant (confirmed)
+self-check: evaluate(original, x=6.5).out = 26.5, evaluate(folded, x=6.5).out = 26.5 (confirmed)
+self-check: relu(const(-2.5)) folds to Const(0) (confirmed)

@@ -1,0 +1,79 @@
+SOURCE: docs/part5/code/056_combining_both_cost_models_prediction_vs_measurement_for_real_schedules.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part5/code/056_combining_both_cost_models_prediction_vs_measurement_for_real_schedules.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-9skulk10/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 22.3: combining both cost models -- prediction vs. measurement for real schedules ===
+
+--- Part 1: 6 schedules, evenly spaced across Section 21.3's own 128-schedule list ---
+
+enumerateSchedules() produced 128 schedules (confirmed, same count as Section 21.3)
+
+  [  0] tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  [ 25] tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  [ 51] tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  [ 76] tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  [102] tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  [127] tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+
+--- Part 2: estimateScheduleCost() for each of the 6, ranked cheapest to most expensive ---
+
+  predicted #1: [ 51] cost=     448.0  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  predicted #2: [ 25] cost=     568.0  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  predicted #3: [  0] cost=     768.0  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  predicted #4: [127] cost=    2088.0  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  predicted #5: [ 76] cost=    2248.0  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  predicted #6: [102] cost=    2288.0  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+
+--- Part 3: real measurement -- executeSchedule() run 800,000 times per schedule, best-of-7 ---
+
+  [  0] best-of-7 total =  348.337 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+  [ 25] best-of-7 total =  263.871 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  [ 51] best-of-7 total =  246.962 ms  (bit-for-bit correct: yes)  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  [ 76] best-of-7 total =  241.670 ms  (bit-for-bit correct: yes)  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  [102] best-of-7 total =  250.521 ms  (bit-for-bit correct: yes)  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  [127] best-of-7 total =  198.364 ms  (bit-for-bit correct: yes)  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+
+self-check: all 6 schedules, run through the SAME interpreter, produce the exact same
+bit-for-bit output as the untiled, unordered, un-unrolled reference computation (confirmed) --
+every point in this schedule space is a valid answer; only the cost differs.
+
+measured ranking, fastest to slowest:
+  measured #1: [127]  198.364 ms  tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  measured #2: [ 76]  241.670 ms  tiles=[dim0:2,dim1:4] order=dim1>dim0 unroll=1
+  measured #3: [ 51]  246.962 ms  tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  measured #4: [102]  250.521 ms  tiles=[dim0:1,dim1:8] order=dim1>dim0 unroll=4
+  measured #5: [ 25]  263.871 ms  tiles=[dim0:6,dim1:1] order=dim0>dim1 unroll=2
+  measured #6: [  0]  348.337 ms  tiles=[dim0:1,dim1:1] order=dim0>dim1 unroll=1
+
+--- Part 4: does the combined model's ranking match what actually happened? ---
+
+  model's cheapest:    [ 51] tiles=[dim0:4,dim1:2] order=dim0>dim1 unroll=8
+  measurement's fastest: [127] tiles=[dim0:6,dim1:8] order=dim1>dim0 unroll=8
+  same schedule: no
+
+  pairwise ranking agreement: 7 of 15 comparisons agree (47%)
+
+A 47% agreement rate is close to the 50% a coin flip would average on a 6-item ranking, and
+that should not be softened into a vague 'no model is perfect.' There is a real, specific
+reason it lands this weak: this LoopNest has only 48 total elements, far too little real work
+for any single call to executeSchedule() to register on a wall clock, which is exactly why Part
+3 had to run each schedule 800,000 times just to get a measurable duration. At that scale, the
+INTERPRETER's own per-call bookkeeping -- computing tile boundaries, branching on loop order,
+looping over an unroll factor of possibly 1 -- competes with, or outweighs, the cost of the 48
+elements it is actually scheduling, so the measured time partly reflects a cost neither cost
+model was ever told about. Section 22.2 measured a REAL compiled loop at real scale (16.7
+million elements) with no interpreter in the way, and its own ranking held up perfectly; Section
+22.1, at 50 million elements and also with no interpreter, still got its own single best-vs-
+measured comparison wrong, for the different, already-diagnosed reason that its model is simply
+missing real mechanisms (instruction-cache and register pressure) at high unroll factors. This
+section's own weak agreement is best read as a mix of both: some of it is the same kind of
+model incompleteness Section 22.1 already found, and some of it is a confound specific to
+interpreting a tiny schedule instead of compiling it. A production autotuner sidesteps that
+second part the way Chapters 17-20 already do it -- generate and compile real code per candidate
+schedule, the way Chapter 23 will, rather than interpret one -- so the model can be judged
+against the mechanisms it actually claims to predict. What does NOT change is the verdict this
+chapter has built toward the whole way: a cost model, however imperfect, is cheap enough to run
+before compiling anything, which makes it a filter -- narrow 128 candidates (or a far larger
+space, for a real kernel) down to a short list, and only then pay for real measurement. Chapter
+23 builds exactly that hybrid.

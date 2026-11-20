@@ -1,0 +1,11 @@
+COMMAND: ['clang++', '-std=c++17', '-O2', '-Wall', '-Wextra', 'tests/systems_fusion_propagation_regression.cpp', '-o', '/tmp/systems_fusion_propagation_regression']
+In file included from tests/systems_fusion_propagation_regression.cpp:3:
+tests/../docs/part4/code/041_lowering_a_whole_fused_graph.cpp:265:33: warning: unused function 'computeChainDepths' [-Wunused-function]
+  265 | static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
+      |                                 ^~~~~~~~~~~~~~~~~~
+1 warning generated.
+
+balanced-tree fusion bodies obey3-step cap and preserve result36
+later backend rejects invalid leaf shapes and count overflow before allocation/codegen
+
+EXIT: 0

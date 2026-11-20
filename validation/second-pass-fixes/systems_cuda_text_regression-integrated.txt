@@ -1,0 +1,7 @@
+COMMAND: ['clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/tests/systems_cuda_text_regression.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-integrated-regression-mqt01b9j/systems_cuda_text_regression']
+COMPILE EXIT: 0
+
+RUN EXIT: 0
+CUDA text retains exact small constant, round-trip stdout and fail-fast diagnostics
+compiler exit77 rejected; only explicit CUDA diagnostic execution may return77
+host-only test: generated CUDA device code was not compiled or executed

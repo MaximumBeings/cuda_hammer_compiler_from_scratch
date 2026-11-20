@@ -1,0 +1,17 @@
+=== Part 1: real round-trip error, calibrated from real data ===
+Calibrated from 1000 real samples: scale=0.061880, zero_point=23
+Real max abs round-trip error: 0.030918 (theoretical bound scale/2 = 0.030940)
+Real mean abs round-trip error: 0.015629
+Quantized int8 range actually used: [-128, 127] out of the legal [-128, 127]
+Calibration regressions: one-sided, constant, zero, custom subranges, empty and non-finite inputs PASS
+
+=== Part 2: the real reason quantization-aware codegen is a genuinely new problem -- accumulator width ===
+64 real int8 x int8 products, accumulated the WRONG way (int8 accumulator, matching every OTHER op this book has ever generated code for -- same width in, same width out):
+  62 of 64 individual products already overflow int8 on their own (magnitude > 127) before any summation even happens
+  final int8-accumulated sum: -17 (silently wrapped, no exception, no warning at the array level -- real numpy 2.5.5 behavior)
+  final real (int32) sum:     -17169
+  WRONG by: -17152
+
+Real aside: the identical overflow on a single SCALAR int8 pair (53 * 75 -> wrapped to -121) DOES raise a real numpy RuntimeWarning ("overflow encountered in scalar multiply"), even though the array-level version just computed above raises nothing -- numpy's own overflow reporting is genuinely inconsistent between vectorized and scalar integer arithmetic, an honest quirk worth knowing before trusting numpy's silence as proof of correctness.
+
+This is the one real, structural codegen change quantization forces: Part 4's own emitSteps()/generateCudaElementwiseKernel() never had to distinguish an operation's OWN type from its ACCUMULATOR's type, because every prior CUDA Hammer op used the same float type for both. A real quantized-matmul kernel generator has to emit code where the loop's own running sum is declared int32 even though every value it reads is int8 -- a genuinely new codegen requirement, not just a new op kind.

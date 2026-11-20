@@ -1,0 +1,4 @@
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/032_reduction_fusion_through_chapter_8s_pass_manager_measured_in_bytes.cpp:449:25: warning: unused variable 'kBytesPerElement' [-Wunused-const-variable]
+  449 | static constexpr double kBytesPerElement = 4.0;
+      |                         ^~~~~~~~~~~~~~~~
+1 warning generated.

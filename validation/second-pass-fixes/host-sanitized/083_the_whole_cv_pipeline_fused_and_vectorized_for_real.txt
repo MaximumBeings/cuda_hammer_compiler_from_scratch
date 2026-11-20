@@ -1,0 +1,65 @@
+SOURCE: docs/part7/code/083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-dz0t83d3/lesson']
+COMPILE:
+
+EXECUTION:
+=== Chapter 31 (Part 7): Section 31.3 -- the whole CV pipeline, fused and vectorized for real ===
+
+--- Stage 0: normalize first, then im2col-shift the NORMALIZED image (order matters) ---
+
+normalized[0] (dark) = 14.0000, normalized[63] (bright) = 242.0000 (matches File 081 exactly)
+
+--- Stage 1: building the real CUDA Hammer graph (box blur + ReLU'd Sobel + threshold + global-avg-pool) ---
+
+graph built: 69 nodes (9 inputs, 2 unrolled 3x3 weighted sums sharing the same 9 inputs,
+1 ReLU, 1 combine, 1 threshold-shift, 1 threshold-ReLU, 1 Sum, 1 final scale)
+
+evaluateArrays() on the ORIGINAL (unfused) graph: feature = 287.215271
+
+--- Stage 2: Chapter 14/16's real boundedReductionFusionPass(), maxChainLength=3 ---
+
+fused graph: 47 nodes total -- 10 FusedElementwise group(s), 1 FusedReduction group(s),
+7 plain (unfused) compute node(s), down from 40 compute nodes in the original graph
+
+--- Stage 3: Chapter 19's real per-node vectorized dispatcher, compiled and run on NEON ---
+
+per-node dispatch (18 compute nodes):
+  box_partial1     -> VECTOR+FMA
+  box_term3        -> VECTOR+FMA
+  box_term5        -> VECTOR+FMA
+  box_term7        -> VECTOR+FMA
+  sobel_partial1   -> VECTOR+FMA
+  sobel_term3      -> VECTOR+FMA
+  sobel_term5      -> VECTOR+FMA
+  sobel_term7      -> VECTOR+FMA
+  box_partial3     -> VECTOR+FMA
+  sobel_partial3   -> VECTOR+FMA
+  box_partial5     -> VECTOR+FMA
+  sobel_partial5   -> VECTOR+FMA
+  box_partial7     -> VECTOR+FMA
+  sobel_partial7   -> VECTOR+FMA
+  edges_positive   -> VECTOR+FMA
+  combined         -> VECTOR+FMA
+  sum_thresholded  -> VECTOR-REDUCTION
+  feature          -> VECTOR+FMA
+
+self-check: every dispatched node is genuinely vectorizable (no broadcast beyond a scalar
+anywhere in this graph), so 0 of 18 nodes fell back to the scalar path (confirmed)
+self-check: 10 total FMA fold(s) applied across the fused elementwise groups
+
+--- g++ compile (real NEON flags, 18 generated functions) ---
+
+(no output -- successful compile)
+
+--- the real number, computed 3 independent ways ---
+
+evaluateArrays() on the ORIGINAL unfused graph:  feature = 287.215271
+evaluateArrays() on the FUSED graph:              feature = 287.215271
+real vectorized NEON code, compiled and run:       feature = 287.215302
+
+self-check: all three agree -- the fusion pass and the vectorized dispatcher both preserve
+the original graph's own answer exactly (confirmed)
+self-check: every intermediate buffer in the fused graph (not just the final feature) matches
+between evaluateArrays() and the real compiled-and-run vectorized code (confirmed)
+
+=== Section 31.3 complete, Chapter 31 complete: all self-checks confirmed ===

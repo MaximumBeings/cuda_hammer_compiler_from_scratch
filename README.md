@@ -9,7 +9,9 @@ python3 -m pip install -r requirements-docs.txt
 python3 tools/build_diagrams.py
 mkdocs build --strict
 python3 tools/verify_book.py --site site
+python3 tests/validation_coverage.py
 python3 tools/validate_host.py --jobs 3
+python3 tools/validate_host.py --jobs 3 --sanitize --log-dir validation/host-sanitized
 ```
 
 The sources in `docs/part*/code/` and `docs/appendix/code/` are standalone lessons. Their listings are embedded in the corresponding Markdown pages; change both together. Host examples use C++17, with the additional compile/link flags documented in each lesson. JIT examples need a working compiler at runtime and POSIX dynamic loading.
@@ -35,3 +37,5 @@ mkdocs gh-deploy --strict
 ```
 
 The diagram builder is idempotent. All illustrations share a 760-unit deep-blue canvas, accessible labels and responsive full-width embeds. They describe contracts and data flow, not fabricated performance measurements.
+
+Validation coverage is defined by `tools/book-manifest.json`. Update it deliberately when adding or removing a lesson; validators fail on missing, extra or empty input sets. This prevents a missing checkout from being reported as a successful zero-test run.

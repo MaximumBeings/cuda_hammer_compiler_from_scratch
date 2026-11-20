@@ -1,0 +1,25 @@
+=== Section 15.1: buildLoopNest() -- from Shape to real iteration bounds ===
+
+Diamond graph after elementwiseFusionPass() (4 nodes):
+self-check: t1 stayed a plain node and one FusedElementwise node was built, 6 -> 4 (confirmed)
+
+t1's own loop nest (plain Add, shape [3, 4]): [dim0:3, dim1:4], 12 total iterations
+fused node's own loop nest (shape [3, 4]):    [dim0:3, dim1:4], 12 total iterations
+self-check: both loop nests are [dim0:3, dim1:4], 12 iterations, agreeing with Chapter 6's
+own numElements() on the same shape (confirmed)
+
+=== Test 2: a FusedReduction node's own loop nest needs ONE loop shape alone can't supply ===
+
+self-check: t1 inlined into s's own FusedReduction body, 3 -> 2 nodes (confirmed)
+
+s's own output shape: [] (zero dims -- a scalar, zero loops from shape alone)
+s's own loop nest:    [reduce:4], 4 total iterations
+self-check: the loop nest's one loop is a "reduce" loop of extent 4, agreeing exactly
+with the Sum step's own already-baked-in reduceElementCount (confirmed)
+
+=== Test 3: the loop nest's own total iteration count survives fusion unchanged ===
+
+unfused Sum node's own loop nest: [reduce:4], 4 total iterations
+fused   node's own loop nest:     [reduce:4], 4 total iterations
+self-check: fusion changed HOW s is computed but not how many total iterations its own
+reduction needs -- the loop nest itself is invariant across the fusion boundary (confirmed)

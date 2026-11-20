@@ -1,0 +1,75 @@
+=== Section 2.3: a real constant-folding pass over the IR ===
+
+--- source: "a + (2 * 3)" ---
+IR before folding (2 instructions):
+  t0 = 2 * 3
+  t1 = a + t0
+IR after folding (1 instruction):
+  t1 = a + 6
+=================================================================
+==98465==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x6020000002b4 at pc 0x00010021cb6c bp 0x00016fbe5910 sp 0x00016fbe5908
+WRITE of size 4 at 0x6020000002b4 thread T0
+==98465==WARNING: external symbolizer didn't start up correctly!
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x10021cb68"
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x10021a03c"
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x1838f84e0"
+    #0 0x00010021cb68 in interpretIr(std::__1::vector<Instruction, std::__1::allocator<Instruction>> const&, Operand const&, std::__1::map<char, int, std::__1::less<char>, std::__1::allocator<std::__1::pair<char const, int>>> const&)+0x778 (/private/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-re-audit-dpzaxk64/lesson:arm64+0x100004b68)
+    #1 0x00010021a03c in main+0x175c (/private/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-re-audit-dpzaxk64/lesson:arm64+0x10000203c)
+    #2 0x0001838f84e0 in start+0x1b4c (/usr/lib/dyld:arm64e+0x204e0)
+
+0x6020000002b4 is located 0 bytes after 4-byte region [0x6020000002b0,0x6020000002b4)
+allocated by thread T0 here:
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x100a64150"
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x100222d00"
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x10021c560"
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x10021a03c"
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x1838f84e0"
+    #0 0x000100a64150 in _Znwm+0x74 (/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/21/lib/darwin/libclang_rt.asan_osx_dynamic.dylib:arm64e+0x50150)
+    #1 0x000100222d00 in std::__1::vector<int, std::__1::allocator<int>>::__vallocate[abi:nqe220106](unsigned long)+0x40 (/private/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-re-audit-dpzaxk64/lesson:arm64+0x10000ad00)
+    #2 0x00010021c560 in interpretIr(std::__1::vector<Instruction, std::__1::allocator<Instruction>> const&, Operand const&, std::__1::map<char, int, std::__1::less<char>, std::__1::allocator<std::__1::pair<char const, int>>> const&)+0x170 (/private/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-re-audit-dpzaxk64/lesson:arm64+0x100004560)
+    #3 0x00010021a03c in main+0x175c (/private/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-re-audit-dpzaxk64/lesson:arm64+0x10000203c)
+    #4 0x0001838f84e0 in start+0x1b4c (/usr/lib/dyld:arm64e+0x204e0)
+
+==98465==WARNING: Can't read from symbolizer at fd 3
+==98465==WARNING: atos failed to symbolize address "0x10021cb68"
+SUMMARY: AddressSanitizer: heap-buffer-overflow (/private/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-re-audit-dpzaxk64/lesson:arm64+0x100004b68) in interpretIr(std::__1::vector<Instruction, std::__1::allocator<Instruction>> const&, Operand const&, std::__1::map<char, int, std::__1::less<char>, std::__1::allocator<std::__1::pair<char const, int>>> const&)+0x778
+Shadow bytes around the buggy address:
+  0x602000000000: fa fa fd fa fa fa fd fd fa fa fd fd fa fa 00 00
+  0x602000000080: fa fa fd fa fa fa fd fa fa fa fd fa fa fa fd fd
+  0x602000000100: fa fa fd fa fa fa fd fa fa fa fd fa fa fa fd fa
+  0x602000000180: fa fa fd fd fa fa fd fa fa fa fd fa fa fa fd fa
+  0x602000000200: fa fa fd fa fa fa 00 06 fa fa 00 fa fa fa fd fd
+=>0x602000000280: fa fa fd fa fa fa[04]fa fa fa fa fa fa fa fa fa
+  0x602000000300: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x602000000380: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x602000000400: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x602000000480: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x602000000500: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==98465==ABORTING

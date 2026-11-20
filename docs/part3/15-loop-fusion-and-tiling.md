@@ -110,6 +110,7 @@ A NODE'S OWN LOOP NEST, BUILT FROM INFORMATION THE IR ALREADY HAS:
 // Run:     ./033_from_shapes_to_loop_nests_giving_fused_nodes_real_iteration_bounds
 #include <cstdio>
 #include <limits>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -117,6 +118,18 @@ A NODE'S OWN LOOP NEST, BUILT FROM INFORMATION THE IR ALREADY HAS:
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind (from Chapters 13-14, unchanged) ====================
 
@@ -229,6 +242,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -247,6 +269,7 @@ static long long numElements(const Shape& s) {
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -259,7 +282,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -269,7 +292,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            shapes[id] = declaredShapes.at(id);
+            shapes[id] = validatedShape(declaredShapes.at(id));
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else if (n->op == OpKind::ReLU) {
@@ -451,7 +474,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;  // an EMPTY loop list is the empty product: 1 iteration,
                         // the same "scalar means one" convention Chapter 6's
                         // own numElements() already established for shapes.
@@ -735,11 +758,24 @@ TILING A LOOP OF EXTENT 13 BY A TILE SIZE OF 4 (the boundary case):
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary.cpp -o 034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary
 // Run:     ./034_tiling_a_loop_splitting_one_loop_into_two_correctly_at_the_boundary
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <set>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop / LoopNest (from Section 15.1, unchanged) ====================
 
@@ -751,7 +787,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -1046,6 +1082,7 @@ GRAPH B (Chapter 14's own example) -- OPERATOR FUSION already said no, twice:
 // Run:     ./035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion
 #include <cstdio>
 #include <limits>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1053,6 +1090,18 @@ GRAPH B (Chapter 14's own example) -- OPERATOR FUSION already said no, twice:
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1163,6 +1212,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -1181,6 +1239,7 @@ static long long numElements(const Shape& s) {
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1193,7 +1252,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -1203,7 +1262,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            shapes[id] = declaredShapes.at(id);
+            shapes[id] = validatedShape(declaredShapes.at(id));
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else if (n->op == OpKind::ReLU) {
@@ -1378,7 +1437,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };

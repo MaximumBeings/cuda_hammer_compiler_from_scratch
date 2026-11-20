@@ -1,0 +1,3 @@
+exit=-6
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp:215:35: runtime error: 3.68935e+19 is outside the range of representable values of type 'long long'
+SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior /Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp:215:35 

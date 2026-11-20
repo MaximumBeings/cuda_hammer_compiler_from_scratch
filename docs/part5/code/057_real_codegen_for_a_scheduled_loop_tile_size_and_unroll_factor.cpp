@@ -20,6 +20,8 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 057_real_codegen_for_a_scheduled_loop_tile_size_and_unroll_factor.cpp -o 057_driver -ldl
 // Run:     ./057_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -28,6 +30,18 @@
 #include <limits>
 #include <stdexcept>
 #include <dlfcn.h>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop (Chapter 15, unchanged) ====================
 
@@ -72,6 +86,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -79,14 +95,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== Section 23.1: real codegen for tile size + unroll factor ====================
@@ -156,7 +204,7 @@ int main() {
         fn(a.data(), out.data(), extent);
         bool ok = arraysExactlyEqual(out, reference);
         allCorrect = allCorrect && ok && clean;
-        printf("  tileSize=%-2lld unrollFactor=%-2lld  clean compile: %-3s  bit-for-bit correct: %s\n",
+        printf("  tileSize=%-2lld unrollFactor=%-2lld  successful compile: %-3s  bit-for-bit correct: %s\n",
                tileSize, unrollFactor, clean ? "yes" : "no", ok ? "yes" : "NO");
     }
     printf("\nself-check: every one of these 5 real, COMPILED, dlopen-loaded schedules produces the exact\n");

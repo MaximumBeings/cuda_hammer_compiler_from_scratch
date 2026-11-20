@@ -168,7 +168,7 @@ def choose_scale_zero_point(x, qmin=-128, qmax=127):
         raise ValueError("this example emits signed int8 only")
     x_min, x_max = min(float(x.min()), 0.0), max(float(x.max()), 0.0)
     if x_min == x_max:  # all zeros: avoid division by zero
-        return 1.0, 0
+        return 1.0, int(np.clip(0, qmin, qmax))
     scale = (x_max - x_min) / (qmax - qmin)
     zero_point = int(np.clip(qmin - round(x_min / scale), qmin, qmax))
     return scale, zero_point
@@ -199,6 +199,12 @@ if __name__ == "__main__":
         s_test, z_test = choose_scale_zero_point(a_test)
         recovered = dequantize(quantize(a_test, s_test, z_test), s_test, z_test)
         assert np.max(np.abs(recovered - a_test)) <= s_test / 2 + 1e-12
+    for qlo, qhi in ((1, 127), (-128, -1), (-128, 127)):
+        zeros = np.zeros(2)
+        s_zero, z_zero = choose_scale_zero_point(zeros, qlo, qhi)
+        assert qlo <= z_zero <= qhi
+        restored = dequantize(quantize(zeros, s_zero, z_zero, qlo, qhi), s_zero, z_zero)
+        np.testing.assert_array_equal(restored, zeros)
     for samples in ([], [np.nan], [np.inf]):
         try:
             choose_scale_zero_point(np.asarray(samples))
@@ -206,7 +212,7 @@ if __name__ == "__main__":
             pass
         else:
             raise AssertionError("invalid calibration input accepted")
-    print("Calibration regressions: one-sided, constant, zero, empty and non-finite inputs PASS")
+    print("Calibration regressions: one-sided, constant, zero, custom subranges, empty and non-finite inputs PASS")
 
     print()
     print("=== Part 2: the real reason quantization-aware codegen is a "
@@ -281,7 +287,7 @@ if __name__ == "__main__":
 python3 "078_affine_quantization_math_and_why_codegen_needs_a_wider_accumulator.py"
 ```
 
-**Output (cloud sandbox, x86-64 -- real, live-executed output):**
+**Output (current local rerun, Apple Silicon/macOS; one actual host execution):**
 
 ```text
 === Part 1: real round-trip error, calibrated from real data ===
@@ -289,32 +295,12 @@ Calibrated from 1000 real samples: scale=0.061880, zero_point=23
 Real max abs round-trip error: 0.030918 (theoretical bound scale/2 = 0.030940)
 Real mean abs round-trip error: 0.015629
 Quantized int8 range actually used: [-128, 127] out of the legal [-128, 127]
+Calibration regressions: one-sided, constant, zero, custom subranges, empty and non-finite inputs PASS
 
 === Part 2: the real reason quantization-aware codegen is a genuinely new problem -- accumulator width ===
 64 real int8 x int8 products, accumulated the WRONG way (int8 accumulator, matching every OTHER op this book has ever generated code for -- same width in, same width out):
   62 of 64 individual products already overflow int8 on their own (magnitude > 127) before any summation even happens
-  final int8-accumulated sum: -17 (silently wrapped, no exception, no warning at the array level -- real numpy 2.4.4 behavior)
-  final real (int32) sum:     -17169
-  WRONG by: -17152
-
-Real aside: the identical overflow on a single SCALAR int8 pair (53 * 75 -> wrapped to -121) DOES raise a real numpy RuntimeWarning ("overflow encountered in scalar multiply"), even though the array-level version just computed above raises nothing -- numpy's own overflow reporting is genuinely inconsistent between vectorized and scalar integer arithmetic, an honest quirk worth knowing before trusting numpy's silence as proof of correctness.
-
-This is the one real, structural codegen change quantization forces: Part 4's own emitSteps()/generateCudaElementwiseKernel() never had to distinguish an operation's OWN type from its ACCUMULATOR's type, because every prior CUDA Hammer op used the same float type for both. A real quantized-matmul kernel generator has to emit code where the loop's own running sum is declared int32 even though every value it reads is int8 -- a genuinely new codegen requirement, not just a new op kind.
-```
-
-**Output (device, aarch64 Linux VM -- real, live-executed output):**
-
-```text
-=== Part 1: real round-trip error, calibrated from real data ===
-Calibrated from 1000 real samples: scale=0.061880, zero_point=23
-Real max abs round-trip error: 0.030918 (theoretical bound scale/2 = 0.030940)
-Real mean abs round-trip error: 0.015629
-Quantized int8 range actually used: [-128, 127] out of the legal [-128, 127]
-
-=== Part 2: the real reason quantization-aware codegen is a genuinely new problem -- accumulator width ===
-64 real int8 x int8 products, accumulated the WRONG way (int8 accumulator, matching every OTHER op this book has ever generated code for -- same width in, same width out):
-  62 of 64 individual products already overflow int8 on their own (magnitude > 127) before any summation even happens
-  final int8-accumulated sum: -17 (silently wrapped, no exception, no warning at the array level -- real numpy 2.2.6 behavior)
+  final int8-accumulated sum: -17 (silently wrapped, no exception, no warning at the array level -- real numpy 2.5.5 behavior)
   final real (int32) sum:     -17169
   WRONG by: -17152
 
@@ -718,6 +704,7 @@ if __name__ == "__main__":
           f"real arith.extsi/tt.reduce ops directly; its OWN correctness "
           f"is the only evidence available here, honestly, not its "
           f"internal structure)")
+    torch.testing.assert_close(real_out, manual_ref, atol=0, rtol=0, equal_nan=False)
     print(f"Real correctness check: _int_mm vs. manual int32 matmul = "
           f"{torch.equal(real_out, manual_ref)}")
 
@@ -738,9 +725,10 @@ if __name__ == "__main__":
         weights_int8.to(torch.float32) * per_channel_scales[:, None]).T
     print(f"Real schema: "
           f"{torch.ops.aten._weight_int8pack_mm.default._schema}")
+    torch.testing.assert_close(weight_only_out, manual_weight_only_ref, atol=1e-4, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check: _weight_int8pack_mm vs. manual "
           f"dequantize-then-matmul = "
-          f"{torch.allclose(weight_only_out, manual_weight_only_ref, atol=1e-4)}")
+          f"{torch.allclose(weight_only_out, manual_weight_only_ref, atol=1e-4, rtol=1e-5)}")
     print(f"Real, honest scope note: Files 078 and 079 both built the "
           f"FULL-int8 scheme (Part 2's own _int_mm) by hand. This real "
           f"op confirms production systems support a genuinely SEPARATE "
@@ -762,6 +750,7 @@ if __name__ == "__main__":
     compiled_quant_matmul = torch.compile(quant_matmul_fn)
     compiled_out, code = capture_output_code(compiled_quant_matmul, a, b)
     eager_out = quant_matmul_fn(a, b)
+    torch.testing.assert_close(compiled_out, eager_out, atol=0, rtol=0, equal_nan=False)
     print(f"Real correctness check: torch.compile'd vs. eager match = "
           f"{torch.equal(compiled_out, eager_out)}")
 

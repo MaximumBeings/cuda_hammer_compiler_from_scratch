@@ -1,0 +1,38 @@
+SOURCE: docs/part3/code/026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-jeqcfm4t/lesson']
+COMPILE:
+/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part3/code/026_measuring_fusions_effect_on_cuda_hammers_own_graph.cpp:216:25: warning: unused variable 'kBytesPerElement' [-Wunused-const-variable]
+  216 | static constexpr double kBytesPerElement = 4.0;
+      |                         ^~~~~~~~~~~~~~~~
+1 warning generated.
+
+EXECUTION:
+=== Section 12.3: Chapter 4's diamond graph, with Chapter 6's own declared shapes ===
+
+  %0 = Input(a): shape [3, 4] (12 elements)
+  %1 = Input(b): shape [4] (4 elements)
+  %2 = Add(t1): shape [3, 4] (12 elements)
+  %3 = Mul(t2): shape [3, 4] (12 elements)
+  %4 = ReLU(t3): shape [3, 4] (12 elements)
+  %5 = Add(out): shape [3, 4] (12 elements)
+
+Total FLOPs (identical either way, fusion doesn't change the arithmetic): 48
+Bytes moved, UNFUSED (each of t1/t2/t3/out is its own kernel):  496
+Bytes moved, FUSED   (one kernel, each leaf read once, 'out' written once): 112
+
+self-check: the fused kernel moves strictly fewer bytes than the unfused version (confirmed)
+
+AI_unfused = 48 / 496 bytes = 0.096774 FLOPs/byte  (memory-bound)
+AI_fused   = 48 / 112 bytes = 0.428571 FLOPs/byte  (memory-bound)
+(ridge point, same A100 numbers as Section 12.2: 12.5402 FLOPs/byte)
+
+self-check: AI_fused is strictly higher than AI_unfused on this real DAG, not just on
+File 024's hand-picked chain (confirmed) -- fusion's benefit here comes from BOTH eliminating
+chain-style intermediate traffic (t1->t2, t1->t3) AND reading a SHARED value ('a', 't1')
+from memory once instead of once per consumer.
+
+Both land in the same 'memory-bound' classification here -- this diamond is tiny (12 elements
+per node), far below the K=101-per-chain scale Section 12.2 found necessary to cross this
+GPU's ridge point at all. The ratio improvement is real and measured either way; reaching
+compute-bound territory in practice needs the far larger tensors Part 3's actual fusion
+passes (starting next chapter) will be applied to, not a change to this result.

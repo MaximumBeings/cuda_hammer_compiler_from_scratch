@@ -86,6 +86,10 @@ def main():
 
     built["main"](a_tvm, b_tvm, c_tvm)
     ref = a_np + b_np
+    actual = c_tvm.numpy()
+    if not np.isfinite(actual).all():
+        raise AssertionError("non-finite compiled result")
+    np.testing.assert_allclose(actual, ref, atol=0.0, rtol=0.0, equal_nan=False)
     max_err = float(np.max(np.abs(c_tvm.numpy() - ref)))
     print(f"max abs error vs. NumPy reference: {max_err}")
     print(f"bit-exact match: {max_err == 0.0}")

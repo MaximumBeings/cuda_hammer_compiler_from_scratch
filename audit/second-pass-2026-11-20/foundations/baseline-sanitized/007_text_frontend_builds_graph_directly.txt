@@ -1,0 +1,28 @@
+=== Section 5.1 / 5.2: parsing text straight into a Graph, no AST stage ===
+
+Source program:
+a = input()
+b = input()
+t1 = add(a, b)
+t2 = mul(t1, a)
+t3 = relu(t1)
+out = add(t2, t3)
+
+Graph built by PARSING the text above (6 nodes):
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1) <- %0, %1
+  %3 = Mul(t2) <- %2, %0
+  %4 = ReLU(t3) <- %2
+  %5 = Add(out) <- %3, %4
+
+Graph built BY HAND through direct API calls (6 nodes, from Chapter 4):
+  %0 = Input(a)
+  %1 = Input(b)
+  %2 = Add(t1) <- %0, %1
+  %3 = Mul(t2) <- %2, %0
+  %4 = ReLU(t3) <- %2
+  %5 = Add(out) <- %3, %4
+
+self-check: the parsed graph is structurally IDENTICAL to the hand-built one (confirmed)
+self-check: the symbol table resolves 'out' to node %5 (confirmed)

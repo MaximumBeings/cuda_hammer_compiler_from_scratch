@@ -1,0 +1,42 @@
+SOURCE: docs/part4/code/040_generating_real_loop_code_a_textual_c++_backend.cpp
+COMMAND: ['/usr/bin/clang++', '-std=c++17', '-O1', '-g', '-fsanitize=address,undefined,float-cast-overflow', '-fno-sanitize-recover=all', '-Wall', '-Wextra', '/Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part4/code/040_generating_real_loop_code_a_textual_c++_backend.cpp', '-o', '/var/folders/q0/zsbrfz096q9fb5n8qj75qg740000gn/T/hammer-host-cqfu406p/lesson']
+COMPILE:
+
+EXECUTION:
+=== Section 17.2: generateLoopFunction() -- real, compiled, executed loop code ===
+
+--- Target 1: t1 = Add(a, b), a plain (unfused) node -- a:[3,4], b:[4] broadcasts ---
+
+Generated C++ for t1:
+
+void compute_t1(const std::vector<const float*>& ext, const std::vector<long long>& extCounts, float* out) {
+    for (long long i0 = 0; i0 < 3; ++i0) {
+        for (long long i1 = 0; i1 < 4; ++i1) {
+            float step0 = ext[0][(0 + i0 * 4 + i1 * 1) % extCounts[0]] + ext[1][(0 + i0 * 4 + i1 * 1) % extCounts[1]];
+            out[0 + i0 * 4 + i1 * 1] = step0;
+        }
+    }
+}
+
+evaluateArrays().t1   = 11.000000 22.000000 33.000000 44.000000 15.000000 26.000000 37.000000 48.000000 19.000000 30.000000 41.000000 52.000000 
+generated+compiled+run.t1 = 11.000000 22.000000 33.000000 44.000000 15.000000 26.000000 37.000000 48.000000 19.000000 30.000000 41.000000 52.000000 
+self-check: generated code matches evaluateArrays(), broadcasting included (confirmed)
+
+--- Target 2: out (FusedElementwise: ext0=t1, ext1=a; 3 internal steps) ---
+
+Generated C++ for out:
+
+void compute_out(const std::vector<const float*>& ext, const std::vector<long long>& extCounts, float* out) {
+    for (long long i0 = 0; i0 < 3; ++i0) {
+        for (long long i1 = 0; i1 < 4; ++i1) {
+            float step0 = ext[0][(0 + i0 * 4 + i1 * 1) % extCounts[0]] * ext[1][(0 + i0 * 4 + i1 * 1) % extCounts[1]];
+            float step1 = std::max(0.0f, ext[0][(0 + i0 * 4 + i1 * 1) % extCounts[0]]);
+            float step2 = step0 + step1;
+            out[0 + i0 * 4 + i1 * 1] = step2;
+        }
+    }
+}
+
+evaluateArrays(fused).out = 22.000000 66.000000 132.000000 220.000000 90.000000 182.000000 296.000000 432.000000 190.000000 330.000000 492.000000 676.000000 
+generated+compiled+run.out = 22.000000 66.000000 132.000000 220.000000 90.000000 182.000000 296.000000 432.000000 190.000000 330.000000 492.000000 676.000000 
+self-check: generated code for the FUSED node matches evaluateArrays() (confirmed)

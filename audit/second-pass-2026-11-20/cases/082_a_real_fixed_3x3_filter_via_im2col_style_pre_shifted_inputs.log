@@ -1,0 +1,31 @@
+$ clang++ -std=c++17 -Wall -Wextra -O2 /Users/oluwaseyiawoga/Documents/Resume_2026/cuda_hammer_compiler_from_scratch/docs/part7/code/082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs.cpp -o /tmp/hammer-second-cases/082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs/driver
+
+=== Chapter 31 (Part 7): Section 31.2 -- a real fixed 3x3 filter via im2col-style pre-shifted inputs ===
+
+--- Part 1: 3x3 box blur (weight 1/9 on all 9 neighbors) ---
+
+im2col-graph blurred[3] (near the edge, row 0 col 3) = 48.8889, direct-conv2D reference = 48.8889
+im2col-graph blurred[27] (interior of the dark block, row 3 col 3) = 73.3333, direct-conv2D reference = 73.3333
+self-check: all 64 pixels of the im2col-style CUDA Hammer graph match the independent
+direct 2D convolution reference exactly (confirmed)
+
+--- Part 2: Sobel horizontal-gradient edge filter, ReLU'd to positive edges only ---
+
+row 3 (a middle row), all 8 columns of the ReLU'd Sobel response:
+    40.00    0.00    0.00  760.00  760.00    0.00    0.00    0.00 
+(the real vertical edge between columns 3 and 4 produces a strong positive response of
+ 760 at both columns 3 and 4; the small 40 at column 0 is a real zero-padding border
+ artifact, not an edge; every flat interior pixel is exactly 0 after ReLU -- exactly what
+ a horizontal-gradient detector should do to a single vertical step edge)
+
+self-check: all 64 pixels of the im2col-style ReLU'd Sobel graph match the independent
+direct 2D convolution + ReLU reference exactly (confirmed)
+
+--- the real cost this design pays (named by CUTLASS's own docs, not hidden) ---
+
+original image: 64 pixels. im2col-style shifted storage: 9 * 64 = 576 floats --
+a real 9.0x blow-up, matching CUTLASS's own stated tradeoff for this exact technique.
+
+=== Section 31.2 complete: all self-checks confirmed ===
+
+EXIT=0

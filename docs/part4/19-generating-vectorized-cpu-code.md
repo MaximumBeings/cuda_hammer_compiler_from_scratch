@@ -17,9 +17,11 @@
 
  > **Target requirement:** The x86 generator selects AVX2/FMA from architecture macros, not runtime CPU detection. A scalar fallback for unsupported *broadcast shapes* does not protect an older CPU from the globally enabled AVX2/FMA build. Run Appendix A's feature check first; use the scalar backend when those features are unavailable. Native macOS has no `/proc/cpuinfo`; an unavailable Linux feature file is not evidence that the CPU lacks SIMD.
 
+> **Output provenance:** Captures explicitly labeled fresh local output were rerun after the second-pass fixes. Other cloud/device transcripts are historical examples, not fresh measurements of this revision.
+
 ---
 
-Chapter 18 targeted a platform neither machine this book runs on can actually execute -- every CUDA kernel compiled cleanly with a real `nvcc`, and every one of them honestly reported "no CUDA-capable device" the moment it actually ran. This chapter targets something narrower in scope but, for the first time in Part 4, genuinely executable end to end: real SIMD vector instructions, on the real CPU hardware both of this book's own machines actually have. The cloud sandbox this book verifies against is x86-64 and supports AVX2 with FMA; the device this book delivers to is aarch64 (Apple Silicon) and supports NEON. Both are real, physical vector instruction sets -- eight 32-bit lanes per register on AVX2, four on NEON -- and, unlike Chapter 18's own CUDA target, this chapter's own generated code does not just compile. It runs, on both machines, and its numeric result is compared against `evaluateArrays()` on both.
+Chapter 18 originally used no-GPU environments: compilation and diagnostic handling were checked separately from CPU reference arithmetic. A subsequent A100 run validated the preceding revision; the current second-pass code changes have host coverage but no fresh GPU execution. This chapter targets something narrower in scope but, for the first time in Part 4, genuinely executable end to end: real SIMD vector instructions, on the real CPU hardware both of this book's own machines actually have. The cloud sandbox this book verifies against is x86-64 and supports AVX2 with FMA; the device this book delivers to is aarch64 (Apple Silicon) and supports NEON. Both are real, physical vector instruction sets -- eight 32-bit lanes per register on AVX2, four on NEON -- and, unlike Chapter 18's own CUDA target, this chapter's own generated code does not just compile. It runs, on both machines, and its numeric result is compared against `evaluateArrays()` on both.
 
 Before writing a single line of this chapter's own vector codegen, the same honest-toolchain-investigation discipline Chapter 18 opened with applied here too: two tiny, throwaway test programs (written, compiled, run, and deleted before this chapter's own real files were started) settled the facts this whole chapter's own primitives rest on. On the cloud sandbox, `g++ -mavx2 -mfma -dM -E` confirmed that `__AVX2__`, `__FMA__`, and `__x86_64__` are all predefined with those two flags, and a throwaway program calling `_mm256_fmadd_ps(a, b, c)` -- which computes `a*b + c` in one instruction -- compiled and ran correctly (`2*3+1 = 7.0`). On the device, `g++ -dM -E` with NO special flags at all confirmed `__ARM_NEON` and `__aarch64__` are both predefined unconditionally -- NEON is not an optional extension on aarch64 the way AVX2 is on x86-64, it is part of the mandatory baseline instruction set -- and a throwaway program calling `vfmaq_f32(c, a, b)` compiled and ran correctly too, but computing `c + a*b` (`1 + 2*3 = 7.0`): the SAME three operands as `_mm256_fmadd_ps`, but with the accumulator argument FIRST instead of last. That argument-order difference is not a curiosity -- it is the exact fact `vecFma()` in Section 19.2 exists to hide. The same throwaway investigation also surfaced `vaddvq_f32`, a NEON intrinsic that sums all four lanes (the compiler may lower it to multiple instructions); AVX2 has no equivalent single instruction that reduces all eight of its own lanes without reaching for AVX-512, so Section 19.3's own vectorized reduction deliberately does not use it, a stated scope limitation explained where it comes up.
 
@@ -157,6 +159,14 @@ Main loop + scalar tail, n=11 elements, AVX2 (width 8) vs. NEON (width 4):
 // generates a vectorized .cpp program as a string, writes it to disk, and
 // shells out to compile-and-run IT with the matching real intrinsics
 // header and real compiler flags for that architecture.)
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <sys/wait.h>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -168,6 +178,54 @@ Main loop + scalar tail, n=11 elements, AVX2 (width 8) vs. NEON (width 4):
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -254,6 +312,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -261,8 +328,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -275,8 +352,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -284,7 +362,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -642,12 +720,16 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 
 int main() {
@@ -748,7 +830,7 @@ int main() {
 
     auto formatArrayLiteral = [](const std::vector<float>& v) {
         std::string out = "{";
-        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
         out += "}";
         return out;
     };
@@ -762,14 +844,14 @@ int main() {
     prog += "    std::vector<long long> extCounts = {" + std::to_string(aVals.size()) + ", " + std::to_string(bVals.size()) + "};\n";
     prog += "    std::vector<float> out(" + std::to_string(n) + ");\n";
     prog += "    compute_out(ext, extCounts, out.data(), " + std::to_string(n) + ");\n";
-    prog += "    for (float v : out) printf(\"%.6f \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
+    prog += "    for (float v : out) printf(\"%.9g \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch19_045.cpp", prog);
     std::string compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2" + extraFlags +
                                                   " /tmp/hammer_ch19_045.cpp -o /tmp/hammer_ch19_045 2>&1");
-    bool compileClean = compileLog.empty();
+    bool compileClean = true; // checked subprocess returned success; warnings are retained
     printf("--- g++ compile (real %s flags) ---\n\n%s\n", isaName(hostIsa).c_str(),
-           compileClean ? "(no output -- clean compile)\n" : compileLog.c_str());
+           compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
     printf("self-check: this machine's own real compiler accepts the generated %s intrinsics (%s)\n\n",
            isaName(hostIsa).c_str(), compileClean ? "confirmed" : "MISMATCH");
 
@@ -779,7 +861,7 @@ int main() {
     std::istringstream iss(runOutput);
     std::vector<float> vecVals;
     float v;
-    while (iss >> v) vecVals.push_back(v);
+    while (readFloatToken(iss, v)) vecVals.push_back(v);
     const std::vector<float>& expected = fusedArrays.at("out");
     bool matches = (vecVals.size() == expected.size());
     if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (!(std::fabs(vecVals[i] - expected[i]) <= 1e-3f)) matches = false;
@@ -800,7 +882,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "045_from_threads_to_lanes_a_portable_simd_elem
 ./"045_from_threads_to_lanes_a_portable_simd_elementwise_kernel_generator"
 ```
 
-**Output (cloud sandbox, x86-64, AVX2/FMA):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 19.1: from threads to lanes -- a portable SIMD elementwise kernel generator ===
@@ -859,23 +943,23 @@ emitSteps() unchanged) -- only the intrinsic names, the vector width, and the ty
 (__m256 vs. float32x4_t) differ between the two generated bodies (confirmed by reading
 both texts above)
 
---- This machine compiles as AVX2/FMA -- generating, compiling, and RUNNING that path for real ---
+--- This machine compiles as NEON -- generating, compiling, and RUNNING that path for real ---
 
-n=11, vector width=8 -> 1 full vector iteration(s), 3 scalar tail element(s)
+n=11, vector width=4 -> 2 full vector iteration(s), 3 scalar tail element(s)
 
---- g++ compile (real AVX2/FMA flags) ---
+--- g++ compile (real NEON flags) ---
 
-(no output -- clean compile)
+(no output -- successful compile)
 
-self-check: this machine's own real compiler accepts the generated AVX2/FMA intrinsics (confirmed)
+self-check: this machine's own real compiler accepts the generated NEON intrinsics (confirmed)
 
 --- Running the compiled binary FOR REAL on this machine's own hardware ---
 
-6.000000 0.000000 10.000000 0.000000 14.000000 0.000000 18.000000 0.000000 22.000000 0.000000 26.000000 
+6 0 10 0 14 0 18 0 22 0 26
 
 evaluateArrays(fused).out = 6.000000 0.000000 10.000000 0.000000 14.000000 0.000000 18.000000 0.000000 22.000000 0.000000 26.000000 
 self-check: the vector-plus-tail program, ACTUALLY EXECUTED on this machine's own real
-AVX2/FMA hardware, matches evaluateArrays() exactly, element for element (confirmed)
+NEON hardware, matches evaluateArrays() exactly, element for element (confirmed)
 ```
 
 **Output (device, aarch64 Apple Silicon, NEON):**
@@ -1044,6 +1128,14 @@ Why the fold is ALWAYS safe here (not just in this example):
 // Run:     ./046_driver
 // Numerical policy: FMA contraction and vector reductions may change rounding.
 // These teaching backends permit contraction; they are not strict bitwise FP rewrites.
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <sys/wait.h>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -1055,6 +1147,54 @@ Why the fold is ALWAYS safe here (not just in this example):
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1141,6 +1281,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -1148,8 +1297,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1162,8 +1321,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -1171,7 +1331,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -1587,12 +1747,16 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 
 int main() {
@@ -1690,7 +1854,7 @@ int main() {
 
     auto formatArrayLiteral = [](const std::vector<float>& v) {
         std::string out = "{";
-        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+        for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
         out += "}";
         return out;
     };
@@ -1705,14 +1869,14 @@ int main() {
             std::to_string(bVals.size()) + ", " + std::to_string(cVals.size()) + "};\n";
     prog += "    std::vector<float> out(" + std::to_string(n) + ");\n";
     prog += "    compute_out(ext, extCounts, out.data(), " + std::to_string(n) + ");\n";
-    prog += "    for (float v : out) printf(\"%.6f \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
+    prog += "    for (float v : out) printf(\"%.9g \", v);\n    printf(\"\\n\");\n    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch19_046.cpp", prog);
     std::string compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2" + extraFlags +
                                                   " /tmp/hammer_ch19_046.cpp -o /tmp/hammer_ch19_046 2>&1");
-    bool compileClean = compileLog.empty();
+    bool compileClean = true; // checked subprocess returned success; warnings are retained
     printf("--- g++ compile (real %s flags, folded FMA body) ---\n\n%s\n", isaName(hostIsa).c_str(),
-           compileClean ? "(no output -- clean compile)\n" : compileLog.c_str());
+           compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
 
     std::string runOutput = runShellCaptureAll("/tmp/hammer_ch19_046");
     printf("--- Running the folded FMA program FOR REAL on this machine's own %s hardware ---\n\n%s\n",
@@ -1721,7 +1885,7 @@ int main() {
     std::istringstream iss(runOutput);
     std::vector<float> vecVals;
     float v;
-    while (iss >> v) vecVals.push_back(v);
+    while (readFloatToken(iss, v)) vecVals.push_back(v);
     const std::vector<float>& expected = fusedArrays.at("out");
     bool matches = (vecVals.size() == expected.size());
     if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (!(std::fabs(vecVals[i] - expected[i]) <= 1e-3f)) matches = false;
@@ -1752,20 +1916,22 @@ g++ -std=c++17 -Wall -Wextra -O2 "046_fusing_multiply_and_add_a_real_peephole_op
 ./"046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized"
 ```
 
-**Output (cloud sandbox, x86-64, AVX2/FMA):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 19.2: fusing multiply and add -- a real peephole optimization, vectorized ===
 
 Fused "out" node: 2 raw steps (Mul, then Add) -- a fold candidate
 
---- Generated vector body WITH the FMA fold (AVX2/FMA) ---
+--- Generated vector body WITH the FMA fold (NEON) ---
 
 void compute_out(const std::vector<const float*>& ext, const std::vector<long long>& extCounts, float* out, long long n) {
     long long i = 0;
-    for (; i + 8 <= n; i += 8) {
-        __m256 v1 = _mm256_fmadd_ps(_mm256_loadu_ps(ext[0] + i), _mm256_set1_ps(ext[1][0]), _mm256_set1_ps(ext[2][0]));  // fused: v0 folded in
-        _mm256_storeu_ps(out + i, v1);
+    for (; i + 4 <= n; i += 4) {
+        float32x4_t v1 = vfmaq_f32(vdupq_n_f32(ext[2][0]), vld1q_f32(ext[0] + i), vdupq_n_f32(ext[1][0]));  // fused: v0 folded in
+        vst1q_f32(out + i, v1);
     }
     for (; i < n; ++i) {
         float step0 = ext[0][(i) % extCounts[0]] * ext[1][(i) % extCounts[1]];
@@ -1783,17 +1949,18 @@ self-check: 2 raw step(s) (ReLU, Add), 0 fold(s) applied -- the fold rule only e
 fires on an Add whose immediately preceding step is a Mul, and correctly leaves this
 ReLU-then-Add pattern alone (confirmed)
 
---- g++ compile (real AVX2/FMA flags, folded FMA body) ---
+--- g++ compile (real NEON flags, folded FMA body) ---
 
-(no output -- clean compile)
+(no output -- successful compile)
 
---- Running the folded FMA program FOR REAL on this machine's own AVX2/FMA hardware ---
+--- Running the folded FMA program FOR REAL on this machine's own NEON hardware ---
 
-12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000 
+12 14 16 18 20 22 24 26 28
 
 evaluateArrays(fused).out = 12.000000 14.000000 16.000000 18.000000 20.000000 22.000000 24.000000 26.000000 28.000000 
 self-check: folded FMA matches the unfused interpreter for this exact-valued fixture
-mul+add pair would -- confirmed against evaluateArrays() on these fixtures (confirmed)
+mul+add pair would -- confirmed against evaluateArrays() (confirmed)
+rounding regression: separate=0x0p+0 FMA=-0x1p-46; different as expected: yes
 ```
 
 **Output (device, aarch64 Apple Silicon, NEON):**
@@ -1940,6 +2107,14 @@ Chapter 16's own 10-node graph, fused (maxChainLength=3), dispatched:
 // Run:     ./047_driver
 // Numerical policy: FMA contraction and vector reductions may change rounding.
 // These teaching backends permit contraction; they are not strict bitwise FP rewrites.
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <sys/wait.h>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -1952,6 +2127,54 @@ Chapter 16's own 10-node graph, fused (maxChainLength=3), dispatched:
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -2038,6 +2261,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -2045,8 +2277,18 @@ static std::string shapeStr(const Shape& s) {
     out += "]";
     return out;
 }
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static long long numElements(const Shape& s) {
+    long long n = 1;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
+}
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -2059,8 +2301,9 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
+
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("inferShapes: graph is not acyclic");
@@ -2068,7 +2311,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     for (int id : topo.order) {
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -2102,12 +2345,25 @@ static std::map<int, long long> computeChainDepths(const Graph& g, const std::ma
 }
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -2625,7 +2881,7 @@ static const char* backendName(Backend b) {
 
 static std::string formatLiteralArray(const std::vector<float>& v) {
     std::string out = "{";
-    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
     out += "}";
     return out;
 }
@@ -2658,7 +2914,7 @@ static std::string generateFullVectorizedProgram(const Graph& g, const std::map<
     for (int id : topo.order) {
         const Node* n = g.node(id);
         if (n->op == OpKind::Input) prog += "    buf[\"" + n->debugName + "\"] = " + formatLiteralArray(inputArrays.at(n->debugName)) + ";\n";
-        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + std::to_string(n->constValue) + "f};\n";
+        else if (n->op == OpKind::Const) prog += "    buf[\"" + n->debugName + "\"] = {" + floatLiteral(n->constValue) + "};\n";
     }
     for (int id : topo.order) {
         const Node* n = g.node(id);
@@ -2678,7 +2934,7 @@ static std::string generateFullVectorizedProgram(const Graph& g, const std::map<
     for (int id : topo.order) {
         const Node* n = g.node(id);
         prog += "    printf(\"" + n->debugName + ":\");\n";
-        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.6f\", v);\n";
+        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.9g\", v);\n";
         prog += "    printf(\"\\n\");\n";
     }
     prog += "    return 0;\n}\n";
@@ -2693,12 +2949,16 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::string& text) {
     std::map<std::string, std::vector<float>> result;
@@ -2711,7 +2971,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
         std::istringstream rest(line.substr(colon + 1));
         std::vector<float> vals;
         float v;
-        while (rest >> v) vals.push_back(v);
+        while (readFloatToken(rest, v)) vals.push_back(v);
         result[name] = vals;
     }
     return result;
@@ -2786,12 +3046,12 @@ int main() {
         writeFile("/tmp/hammer_ch19_047_fallback.cpp", prog);
         std::string compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 /tmp/hammer_ch19_047_fallback.cpp "
                                                       "-o /tmp/hammer_ch19_047_fallback 2>&1");
-        bool compileClean = compileLog.empty();
+        bool compileClean = true; // checked subprocess returned success; warnings are retained
         std::string runOutput = runShellCaptureAll("/tmp/hammer_ch19_047_fallback");
         std::istringstream iss(runOutput);
         std::vector<float> got;
         float v;
-        while (iss >> v) got.push_back(v);
+        while (readFloatToken(iss, v)) got.push_back(v);
         bool matches = arraysMatch(got, expectedB.at("out"));
         printf("scalar fallback, compiled and run for real: %s. output %s evaluateArrays() (%s)\n\n",
                compileClean ? "clean compile" : "COMPILE FAILED", matches ? "matches" : "does NOT match",
@@ -2872,9 +3132,9 @@ int main() {
     writeFile(cpuStem + ".cpp", prog);
     std::string compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2" + extraFlags + " " + cpuStem +
                                                   ".cpp -o " + cpuStem + " 2>&1");
-    bool compileClean = compileLog.empty();
+    bool compileClean = true; // checked subprocess returned success; warnings are retained
     printf("--- g++ compile (real %s flags, %zu generated functions) ---\n\n%s\n", isaName(hostIsa).c_str(),
-           dispatchLog.size(), compileClean ? "(no output -- clean compile)\n" : compileLog.c_str());
+           dispatchLog.size(), compileLog.empty() ? "(no output -- successful compile)\n" : compileLog.c_str());
 
     std::string runOutput = runShellCaptureAll(cpuStem);
     printf("--- Running the whole vectorized graph FOR REAL on this machine's own %s hardware ---\n\n%s\n",
@@ -2917,7 +3177,9 @@ g++ -std=c++17 -Wall -Wextra -O2 "047_a_whole_graph_vectorized_dispatch_reductio
 ./"047_a_whole_graph_vectorized_dispatch_reduction_and_a_real_fallback"
 ```
 
-**Output (cloud sandbox, x86-64, AVX2/FMA):**
+**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+
+
 
 ```text
 === Section 19.3: a whole graph, vectorized dispatch, reduction, and a real fallback ===
@@ -2938,7 +3200,7 @@ a = [1,-2,3,-4,5,-6,7,-8], b = [2]. evaluateArrays(original).y = 132.000000 124.
 
 fused graph (maxChainLength=3, same cap Section 17.3/18.3 used): a b t3(FE,3st) t5(FE,2st) s(FR,1st) y(FE,2st) 
 
-per-node dispatch (AVX2/FMA):
+per-node dispatch (NEON):
   t3   -> VECTOR+FMA
   t5   -> VECTOR+FMA
   s    -> VECTOR-REDUCTION
@@ -2953,25 +3215,25 @@ self-check: 3 total FMA fold(s) applied across the 3 elementwise groups --
 t3's own ReLU-then-Mul-then-Add folds its trailing Mul+Add, t5's own Mul-then-Add
 folds, and y's own Mul-then-Add (s + t5*b) folds too, for exactly 3 (confirmed)
 
---- g++ compile (real AVX2/FMA flags, 4 generated functions) ---
+--- g++ compile (real NEON flags, 4 generated functions) ---
 
-(no output -- clean compile)
+(no output -- successful compile)
 
---- Running the whole vectorized graph FOR REAL on this machine's own AVX2/FMA hardware ---
+--- Running the whole vectorized graph FOR REAL on this machine's own NEON hardware ---
 
-a: 1.000000 -2.000000 3.000000 -4.000000 5.000000 -6.000000 7.000000 -8.000000
-b: 2.000000
-t3: 4.000000 2.000000 8.000000 2.000000 12.000000 2.000000 16.000000 2.000000
-t5: 10.000000 6.000000 18.000000 6.000000 26.000000 6.000000 34.000000 6.000000
-s: 112.000000
-y: 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000
+a: 1 -2 3 -4 5 -6 7 -8
+b: 2
+t3: 4 2 8 2 12 2 16 2
+t5: 10 6 18 6 26 6 34 6
+s: 112
+y: 132 124 148 124 164 124 180 124
 
 evaluateArrays(original).y = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
 generated (vectorized, 4 functions dispatched, compiled and run for real).y = 132.000000 124.000000 148.000000 124.000000 164.000000 124.000000 180.000000 124.000000 
 
 self-check: y[0] = 132.000000 -- the SAME number Section 17.3's own CPU loop nest and
 Section 18.3's own CPU reference both reported for this exact graph, now produced
-by real vector instructions on real AVX2/FMA hardware (confirmed)
+by real vector instructions on real NEON hardware (confirmed)
 
 self-check: every generated buffer (not just y) matches evaluateArrays() on the
 SAME fused graph -- the vector path and the interpreter agree at every node, not

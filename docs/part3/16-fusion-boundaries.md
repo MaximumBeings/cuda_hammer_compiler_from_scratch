@@ -107,6 +107,7 @@ classifyNode() RETURNS EVERY REASON THAT APPLIES, NOT JUST ONE:
 // Run:     ./036_a_taxonomy_of_fusion_boundaries_explaining_not_just_enforcing
 #include <cstdio>
 #include <limits>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -115,6 +116,18 @@ classifyNode() RETURNS EVERY REASON THAT APPLIES, NOT JUST ONE:
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -225,6 +238,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -243,6 +265,7 @@ static long long numElements(const Shape& s) {
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -255,7 +278,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -265,7 +288,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            shapes[id] = declaredShapes.at(id);
+            shapes[id] = validatedShape(declaredShapes.at(id));
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else if (n->op == OpKind::ReLU) {
@@ -640,7 +663,9 @@ Every boundary before this one exists to keep an answer CORRECT. This one exists
 
 ### Background
 
-The natural first instinct -- check "has this group already gotten too big" live, inside `resolveIntoGroup()`'s own recursion -- runs into a real structural problem worth stating plainly rather than working around silently: that recursion resolves a chain's DEEPEST node FIRST, because every node's own operands are resolved before its own step gets pushed. A check made at ENTRY to each recursive call would see an empty `steps` list for every node in a chain, no matter how long the chain actually is, and only discover the group had grown too large after everything was already inlined -- too late to do anything about it. Rather than threading extra, order-dependent state through that recursion (and rather than trying to patch around it with something fragile), this section computes the cap as a separate, simple PRE-PASS: `computeChainDepths()` walks the graph in topological order and assigns each single-consumer elementwise node a depth -- one more than whatever single-consumer elementwise predecessor feeds it, or `1` if it starts a fresh run -- and `computeSizeCapBoundaries()` marks every node whose own depth is an exact multiple of `maxChainLength` as a forced boundary, BEFORE fusion ever starts. `resolveIntoGroup()` then checks that precomputed set the exact same way it already checks Leaf, Sum, and Shared: as one more static, already-decided property of the node itself, not a dynamic one computed mid-recursion. The one other change this section needs is the same shape Chapter 14 needed for `Sum`: the top-level pass loop's own "consumers == 1, skip, my consumer will build me" shortcut has to ALSO check the size-cap set, or a node the cap marks as a boundary but whose consumer count is still 1 would be skipped here and then refused by `resolveIntoGroup()` when its consumer tries to inline it anyway -- silently vanishing from the output graph exactly the way an unguarded single-consumer `Sum` would have in Chapter 14.
+`computeSizeCapBoundaries()` walks topologically and records the number of operations in each candidate body, including its final operation. For each inlineable predecessor it adds that predecessor's **entire candidate size**, not just the longest path depth. If adding a predecessor would exceed the remaining budget, that producer becomes a materialized boundary. This handles merging trees as well as straight chains. The historical parameter name `maxChainLength` now denotes a positive **body-step budget**; zero and negative budgets are rejected. In the reduction-aware pass, the final Sum consumes one budget slot too.
+
+The resolver and top-level materialization walk both honor the precomputed boundary set. Therefore a producer selected as a cut is emitted before its consumer uses it as an external value. This is a deterministic conservative partition, not an optimal partition or a measured register-pressure model. The regression suite checks a seven-operation branching tree against budgets 1, 2, 3, 4 and 8, preserving results while never emitting an oversized body.
 
 ```text
 WHY A LIVE CHECK INSIDE resolveIntoGroup()'S OWN RECURSION DOESN'T WORK:
@@ -683,6 +708,7 @@ WHY A LIVE CHECK INSIDE resolveIntoGroup()'S OWN RECURSION DOESN'T WORK:
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow.cpp -o 037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow
 // Run:     ./037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -691,6 +717,18 @@ WHY A LIVE CHECK INSIDE resolveIntoGroup()'S OWN RECURSION DOESN'T WORK:
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1000,43 +1038,29 @@ static FusionResult elementwiseFusionPass(const Graph& g) {
 // resolveIntoGroup() the exact same way it already checks Leaf/Shared/Reduction:
 // as one more static, precomputed property of the node itself.
 //
-// chainDepth[n] counts how many single-consumer elementwise nodes deep n is
-// within its own maximal run: 1 for a node whose relevant operand isn't
-// itself such a node (the start of a new chain), or chainDepth[operand] + 1
-// otherwise. A node whose own chainDepth is an exact multiple of
-// maxChainLength is marked as a boundary -- the last member of one
-// maxChainLength-sized segment, forcing the NEXT segment to start fresh.
-static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
-                                                     const TopoResult& topo) {
-    std::map<int, long long> depth;
-    for (int id : topo.order) {
-        const Node* n = g.node(id);
-        bool isChainCandidate = (n->op == OpKind::Add || n->op == OpKind::Mul || n->op == OpKind::ReLU) &&
-                                 consumers.at(id) == 1;
-        if (!isChainCandidate) {
-            depth[id] = 0;  // Leaf, Shared, or a consumers!=1 node -- not part of any chain itself
-            continue;
-        }
-        long long best = 0;
-        for (const Value& in : n->inputs) {
-            const Node* pred = g.node(in.nodeId);
-            bool predIsChainMember = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
-                                      consumers.at(pred->id) == 1;
-            if (predIsChainMember) best = std::max(best, depth.at(pred->id));
-        }
-        depth[id] = best + 1;
-    }
-    return depth;
-}
-
+// Sum all inlineable predecessor group sizes; force a predecessor external
+// when including it would exceed the remaining body-step budget.
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -1157,8 +1181,8 @@ int main() {
     // t4 = Mul(t3,c). Every one of t1..t4 has exactly ONE consumer -- under
     // Chapter 13's own UNCAPPED elementwiseFusionPass(), this entire chain
     // fuses into ONE FusedElementwise node, 4 steps. Hand-derivation for
-    // maxChainLength=2: chainDepth(t1)=1, chainDepth(t2)=2, chainDepth(t3)=3,
-    // chainDepth(t4)=4. Depths divisible by 2: t2 and t4. t4 was ALREADY
+    // Budget 2: t1+t2 fit; adding t3 cuts t2, so t3+t4 form the next body.
+    // t2 is the size boundary. t4 was ALREADY
     // going to be its own root regardless (zero consumers -- Section 16.1's
     // own GraphRoot category) -- t2 is the genuinely NEW boundary the cap
     // introduces, splitting the chain into [t1,t2] and [t3,t4].
@@ -1202,7 +1226,7 @@ int main() {
 
     // ---- Real bytes moved: the honest cost of imposing the cap ----
     printf("\n=== The cap's own real, measured cost ===\n\n");
-    static constexpr double kBytesPerElement = 4.0;
+
     // x=[4], c=scalar (1 element); t1..t4 are all shape [4] (ReLU preserves,
     // Mul/Add broadcast [4] with a scalar unchanged).
     std::map<std::string, long long> elems = {{"x", 4}, {"c", 1}, {"t1", 4}, {"t2", 4}, {"t3", 4}, {"t4", 4}};
@@ -1211,8 +1235,8 @@ int main() {
         long long total = 0;
         for (const auto& n : g.nodes()) {
             if (n->op == OpKind::Input || n->op == OpKind::Const) continue;
-            for (const Value& in : n->inputs) total += elems.at(oldName.at(in.nodeId));
-            total += elems.at(oldName.at(n->id));
+            for (const Value& in : n->inputs) total = checkedCountAdd(total, elems.at(oldName.at(in.nodeId)));
+            total = checkedCountAdd(total, elems.at(oldName.at(n->id)));
         }
         return total;
     };
@@ -1224,9 +1248,9 @@ int main() {
     long long unfusedElems = bytesMovedByName(chain, origNames);
     long long uncappedElems = bytesMovedByName(uncapped.graph, uncappedNames);
     long long cappedElems = bytesMovedByName(capped.graph, cappedNames);
-    long long unfusedBytes = static_cast<long long>(static_cast<double>(unfusedElems) * kBytesPerElement);
-    long long uncappedBytes = static_cast<long long>(static_cast<double>(uncappedElems) * kBytesPerElement);
-    long long cappedBytes = static_cast<long long>(static_cast<double>(cappedElems) * kBytesPerElement);
+    long long unfusedBytes = checkedCountMul(unfusedElems, 4);
+    long long uncappedBytes = checkedCountMul(uncappedElems, 4);
+    long long cappedBytes = checkedCountMul(cappedElems, 4);
 
     printf("Bytes moved, UNFUSED (4 separate kernels):              %lld\n", unfusedBytes);
     printf("Bytes moved, UNCAPPED fusion (1 kernel, all 4 steps):   %lld\n", uncappedBytes);
@@ -1330,7 +1354,7 @@ Part 3 opened with Chapter 12 asking why fusion matters at all, then spent four 
 
 ### Background
 
-`boundedReductionFusionPass()` combines this book's two independent extensions to Chapter 13's original `mustBeExternal` check -- Chapter 14's `Sum` condition and Section 16.2's `sizeCapBoundaries` condition -- into one pass, plugged into Chapter 8's still-completely-unmodified `runPasses()` exactly the way every fusion pass in this book has been. The test graph is built specifically to trigger every boundary category from Section 16.1's own taxonomy in a single structure: a chain of four single-consumer elementwise ops long enough to trigger a size cap of 3 (only the THIRD node in the chain lands on a multiple of 3 and gets cut; the fourth does not, and inlines into whatever comes next), a shared value forcing a `Shared` boundary, a `Sum` forcing a `Reduction` boundary, and the graph's own designated output forcing a `GraphRoot` boundary. Measured through `bytesMoved()` (Chapter 13's own function, unchanged, needing no modification to handle any of this), the honest three-way comparison is exactly what Section 16.2 promised: capped fusion (244 bytes) moves strictly more than uncapped fusion (176 bytes) -- a real, measured cost -- while still moving far less than staying fully unfused (508 bytes). Nothing about the cap makes the graph MORE efficient; it trades away some of fusion's own savings for a bound real compilers need for reasons this book's own byte-counting was never built to measure in the first place.
+`boundedReductionFusionPass()` combines this book's two independent extensions to Chapter 13's original `mustBeExternal` check -- Chapter 14's `Sum` condition and Section 16.2's `sizeCapBoundaries` condition -- into one pass, plugged into Chapter 8's still-completely-unmodified `runPasses()` exactly the way every fusion pass in this book has been. The test graph is built specifically to trigger every boundary category from Section 16.1's own taxonomy in a single structure: a chain of four single-consumer elementwise ops long enough to trigger a size cap of 3 (the first three operations fill the budget; adding the fourth cuts that three-operation producer body, while the fourth can inline downstream), a shared value forcing a `Shared` boundary, a `Sum` forcing a `Reduction` boundary, and the graph's own designated output forcing a `GraphRoot` boundary. Measured through `bytesMoved()` (the same logical-access model with checked integer accounting), the honest three-way comparison is exactly what Section 16.2 promised: capped fusion (244 bytes) moves strictly more than uncapped fusion (176 bytes) -- a real, measured cost -- while still moving far less than staying fully unfused (508 bytes). Nothing about the cap makes the graph MORE efficient; it trades away some of fusion's own savings for a bound real compilers need for reasons this book's own byte-counting was never built to measure in the first place.
 
 ```text
 ONE GRAPH, EVERY BOUNDARY CATEGORY AT ONCE (a=[8], b=scalar):
@@ -1340,8 +1364,8 @@ ONE GRAPH, EVERY BOUNDARY CATEGORY AT ONCE (a=[8], b=scalar):
   ReLU(t1) - Mul(t2) - Add(t3) - Mul(t4) - Add(t5) -+-- 2 consumers:
    depth1     depth2    depth3    depth4              s AND y2 -- SHARED
                           ^
-                    SizeCap (3 % 3 == 0) -- t4 is NOT
-                    (depth 4, not a multiple of 3)
+                    SizeCap: t1+t2+t3 fill budget 3
+                    t4 starts a new candidate body
 
   t5 --- Sum(s) --------- 1 consumer: y, but Sum --- REDUCTION
   t5 --- Mul(y2) -------- 1 consumer: y
@@ -1374,6 +1398,7 @@ ONE GRAPH, EVERY BOUNDARY CATEGORY AT ONCE (a=[8], b=scalar):
 // Run:     ./038_putting_it_together_a_full_fusion_report_through_chapter_8s_pass_manager
 #include <cstdio>
 #include <limits>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -1383,6 +1408,18 @@ ONE GRAPH, EVERY BOUNDARY CATEGORY AT ONCE (a=[8], b=scalar):
 #include <functional>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -1506,6 +1543,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -1524,6 +1570,7 @@ static long long numElements(const Shape& s) {
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -1536,7 +1583,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -1546,7 +1593,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            shapes[id] = declaredShapes.at(id);
+            shapes[id] = validatedShape(declaredShapes.at(id));
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else if (n->op == OpKind::ReLU) {
@@ -1662,36 +1709,27 @@ struct FusionResult {
     std::map<int, int> representativeOldId;
 };
 
-static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
-                                                     const TopoResult& topo) {
-    std::map<int, long long> depth;
-    for (int id : topo.order) {
-        const Node* n = g.node(id);
-        bool isChainCandidate = (n->op == OpKind::Add || n->op == OpKind::Mul || n->op == OpKind::ReLU) &&
-                                 consumers.at(id) == 1;
-        if (!isChainCandidate) {
-            depth[id] = 0;
-            continue;
-        }
-        long long best = 0;
-        for (const Value& in : n->inputs) {
-            const Node* pred = g.node(in.nodeId);
-            bool predIsChainMember = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
-                                      consumers.at(pred->id) == 1;
-            if (predIsChainMember) best = std::max(best, depth.at(pred->id));
-        }
-        depth[id] = best + 1;
-    }
-    return depth;
-}
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -1874,15 +1912,14 @@ static Graph runPasses(const Graph& initial, const std::vector<NamedPass>& passe
 
 // ==================== bytesMoved() (from Chapter 13/14, unchanged) ====================
 
-static constexpr double kBytesPerElement = 4.0;
 static long long bytesMoved(const Graph& g, const std::map<int, long long>& elementCounts) {
     long long totalElements = 0;
     for (const auto& n : g.nodes()) {
         if (n->op == OpKind::Input || n->op == OpKind::Const) continue;
-        for (const Value& in : n->inputs) totalElements += elementCounts.at(in.nodeId);
-        totalElements += elementCounts.at(n->id);
+        for (const Value& in : n->inputs) totalElements = checkedCountAdd(totalElements, elementCounts.at(in.nodeId));
+        totalElements = checkedCountAdd(totalElements, elementCounts.at(n->id));
     }
-    return static_cast<long long>(static_cast<double>(totalElements) * kBytesPerElement);
+    return checkedCountMul(totalElements, 4);
 }
 
 int main() {
@@ -1892,10 +1929,9 @@ int main() {
     // enough (depth 4) to trigger a size cap of 3. t5: SHARED (2 consumers:
     // s and y2). s: Sum(t5) -- REDUCTION. y2: Mul(t5,b), single consumer.
     // y: Add(s,y2) -- the graph's own designated output, GraphRoot (0
-    // consumers). Hand-derivation for maxChainLength=3: chainDepth(t1..t4)
-    // = 1,2,3,4 -- only t3 (depth 3) is a multiple of 3, so t3 is the ONE
-    // new SizeCap boundary; t4 is not (depth 4, not a multiple of 3), so it
-    // inlines into t5's own group instead.
+    // consumers). With budget 3, t1+t2+t3 fit together. Including them
+    // in t4 would require four operations, so t3 is cut and materialized.
+    // t4 can then inline into the t5 body without exceeding the budget.
     Graph g;
     Value a  = g.addInput("a");
     Value b  = g.addInput("b");
@@ -1934,8 +1970,8 @@ int main() {
         if (n->debugName == "t4" && std::find(reasons.begin(), reasons.end(), BoundaryReason::SizeCap) != reasons.end())
             t4IsNotSizeCap = false;
     }
-    printf("\nself-check: t3 alone carries SizeCap (chainDepth 3, a multiple of maxChainLength=3);\n");
-    printf("t4 (chainDepth 4) does not (%s)\n", (t3IsSizeCap && t4IsNotSizeCap) ? "confirmed" : "MISMATCH");
+    printf("\nself-check: t3 alone carries SizeCap (a producer cut needed to keep every body within 3 steps);\n");
+    printf("t4 fits in its downstream group and does not (%s)\n", (t3IsSizeCap && t4IsNotSizeCap) ? "confirmed" : "MISMATCH");
 
     // ---- UNFUSED bytes ----
     long long unfusedBytes = bytesMoved(g, elementCounts);
@@ -2032,8 +2068,8 @@ g++ -std=c++17 -Wall -Wextra -O2 038_putting_it_together_a_full_fusion_report_th
   %8 y2   consumers=1  reasons=[NotABoundary]
   %9 y    consumers=0  reasons=[GraphRoot]
 
-self-check: t3 alone carries SizeCap (chainDepth 3, a multiple of maxChainLength=3);
-t4 (chainDepth 4) does not (confirmed)
+self-check: t3 alone carries SizeCap (a producer cut needed to keep every body within 3 steps);
+t4 fits in its downstream group and does not (confirmed)
 
 --- UNCAPPED (boundedReductionFusionPass with no effective size limit) ---
 
@@ -2134,7 +2170,7 @@ This chapter closed Part 3 by gathering, extending, and finally exercising every
 1. `classifyNode()` is described as adding no new fusion LOGIC. What, precisely, does it add, and why does `verifyClassificationAgreesWithPass()` matter for that claim to be trustworthy rather than just plausible?
 2. Section 16.1's own Graph 2 (Chapter 14's Graph B) has two nodes classified `GraphRoot` rather than one. Why does this graph have two, and what does that reveal about a claim this chapter deliberately did NOT make about `GraphRoot`?
 3. Section 16.2 considered, and rejected, checking the size cap live inside `resolveIntoGroup()`'s own recursion. What specifically goes wrong with that approach, and why does it fail silently rather than obviously?
-4. `computeSizeCapBoundaries()` marks a node as a boundary when its own chain depth is an exact multiple of `maxChainLength`. In Section 16.2's own isolated chain example (`t1`-`t4`, `maxChainLength=2`), which node gets marked, and why does `t4` NOT need the cap to already be forced external?
+4. `computeSizeCapBoundaries()` cuts a predecessor when adding its candidate body would exceed the consumer body's operation budget. In Section 16.2's own isolated chain example (`t1`-`t4`, `maxChainLength=2`), which node gets marked, and why does `t4` NOT need the cap to already be forced external?
 5. `boundedFusionPass()`'s own top-level walk needs a change beyond just `resolveIntoGroup()`'s new condition. What is that change, and what specific bug would appear without it -- and which earlier chapter needed the exact same KIND of fix, for a different reason?
 6. Section 16.2's own [COMMON TRAP] warns against treating `maxChainLength` as a correctness dial. What evidence, specifically, backs up the claim that it isn't one?
 7. Section 16.3's own capstone graph is deliberately built to trigger every category from Section 16.1's own taxonomy at once. Name each category and the specific node (or part of the graph) responsible for it.
@@ -2149,10 +2185,10 @@ Part 3 is complete: fusion now has a real IR (Chapters 13-14), a real measured p
 1. It adds a NAME and a single, reusable ENTRY POINT for logic that Chapters 13-14 already computed as a side effect of deciding whether to inline a node -- nothing about WHICH nodes are boundaries, or why, changes. `verifyClassificationAgreesWithPass()` matters because a diagnostic function that merely LOOKS plausible but has quietly drifted out of sync with the real pass's own actual behavior would be actively misleading -- worse than having no diagnostic at all, since it would confidently give wrong answers. Checking it against the pass's own real, executed output on real graphs is what turns "this looks right" into "this is right."
 2. This graph was never run through Chapter 9's own `deadCodeEliminationPass()`, so nothing has ever enforced that only ONE node has zero consumers -- `y` and `y2` are both independent, unconsumed sinks, and `reductionFusionPass()` (like `boundedReductionFusionPass()` later) materializes both as their own roots without caring how many there are. This reveals that `GraphRoot` does NOT mean "the graph's one true designated output" -- that uniqueness is a property Chapter 9's own convention assumes for LIVENESS purposes, not one fusion itself was ever told to enforce, and `classifyNode()` deliberately doesn't overclaim it.
 3. `resolveIntoGroup()`'s own recursion resolves a chain's DEEPEST node FIRST, because every node's operands are resolved before its own step gets pushed. A check made at the START of each recursive call would see `steps.size() == 0` for every node on the way down a chain, no matter how deep -- it would never observe the group "getting big" during the descent, only discover it after everything had already been inlined on the way back up. It fails silently rather than obviously because the resulting fused group would simply be larger than the cap intended, with no crash, no wrong answer, and no signal that the cap was never actually enforced.
-4. In the `t1`-`t4` example with `maxChainLength=2`: `chainDepth(t1)=1`, `chainDepth(t2)=2`, `chainDepth(t3)=3`, `chainDepth(t4)=4`. Both `t2` (depth 2) and `t4` (depth 4) are multiples of 2, so both get marked -- but `t4` was ALREADY going to be its own root regardless, because it has zero consumers (`GraphRoot`, Section 16.1's own category), independent of the cap entirely. `t2` is the one node where the cap is the ONLY reason it becomes a boundary -- without it, `t2` would have inlined into `t3`, which would have inlined into `t4`, producing one 4-step group instead of two 2-step groups.
+4. With a body budget of 2, t1 and t2 fit together. When t3 would add their two-operation body to its own operation, the budget would be exceeded, so t2 is materialized. t3 and t4 then fit into the second body. The zero-consumer t4 is already a graph root; it need not be added to the size-cap set.
 5. The top-level pass loop's own "consumers == 1, skip" shortcut has to ALSO check the size-cap set (`consumers.at(oldId) == 1 && sizeCapBoundaries.count(oldId) == 0`), not just `resolveIntoGroup()`'s own new condition. Without it, a node the cap marks as a boundary but whose consumer count is still exactly 1 would be skipped by this loop (deferring to its one consumer to build it), and then REFUSED by `resolveIntoGroup()` when that consumer tries to inline it (since the cap condition now says external) -- with nothing left to materialize it at all, it would silently vanish from the output graph. Chapter 14 needed the exact same kind of fix for `Sum`: a new `resolveIntoGroup()` condition alone was not enough: the top-level walk needed a matching change too, or a single-consumer `Sum` node would have vanished the same way.
 6. Every structure `boundedReductionFusionPass()` produces, at any `maxChainLength`, passes an `evaluate()` agreement check against the original, unfused graph -- Section 16.2's own isolated chain (`t4 = 27` at `x=2`, all three variants agreeing) and Section 16.3's own capstone graph (`y = 330` at `a=2,b=3`, all three variants agreeing) both confirm this directly, by actually running the computation and comparing real numbers, not by inspecting the code and asserting it should be fine.
-7. `Leaf`: `a` and `b`, the two `Input` nodes. `SizeCap`: `t3` (chain depth 3, a multiple of `maxChainLength=3`). `Shared`: `t5` (two consumers, `s` and `y2`). `Reduction`: `s` (a `Sum` node, regardless of its own single consumer). `GraphRoot`: `y` (zero consumers, the graph's own designated output). `NotABoundary`: `t1`, `t2`, `t4`, and `y2` -- each inlines into its own single consumer.
+7. `Leaf`: `a` and `b`, the two `Input` nodes. `SizeCap`: `t3` (its producer group must be cut to keep the next body within three steps). `Shared`: `t5` (two consumers, `s` and `y2`). `Reduction`: `s` (a `Sum` node, regardless of its own single consumer). `GraphRoot`: `y` (zero consumers, the graph's own designated output). `NotABoundary`: `t1`, `t2`, `t4`, and `y2` -- each inlines into its own single consumer.
 8. This book's standing discipline, since at least Chapter 10's own commutativity discussion and Chapter 13's own single-consumer limitation, has been to state a real limitation explicitly rather than let a chapter's own scope quietly stand in for completeness it was never claiming. Memory layout, control flow, and multi-output kernels are real reasons production compilers refuse to fuse that CUDA Hammer's own IR has simply never needed to represent (no layouts, no control flow, one output per node) -- naming them keeps this chapter's own taxonomy honest about being a taxonomy of what CUDA HAMMER can currently reason about, not a claim that the list is exhaustive for tensor compilers in general.
 
 ---

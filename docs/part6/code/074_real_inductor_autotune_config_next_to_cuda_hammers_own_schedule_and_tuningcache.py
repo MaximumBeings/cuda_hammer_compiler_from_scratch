@@ -117,8 +117,9 @@ if __name__ == "__main__":
         eager_out = matmul(x, y)
         print(f"  max_autotune_gemm_backends temporarily set to "
               f"{inductor_config.max_autotune_gemm_backends!r}")
+        torch.testing.assert_close(out, eager_out, atol=1e-4, rtol=1e-5, equal_nan=False)
         print(f"  Real correctness check: compiled vs. eager match = "
-              f"{torch.allclose(out, eager_out, atol=1e-4)}")
+              f"{torch.allclose(out, eager_out, atol=1e-4, rtol=1e-5)}")
     finally:
         inductor_config.max_autotune_gemm_backends = old_backends
 
