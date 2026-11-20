@@ -19,6 +19,7 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 003_parsing_lowering_and_ir.cpp -o 003_parsing_lowering_and_ir
 // Run:     ./003_parsing_lowering_and_ir
 #include <cstdio>
+#include <limits>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -45,7 +46,10 @@ static std::vector<Token> lex(const std::string& src) {
         if (isdigit(static_cast<unsigned char>(c))) {
             int value = 0;
             while (i < src.size() && isdigit(static_cast<unsigned char>(src[i]))) {
-                value = value * 10 + (src[i] - '0');
+                int digit = src[i] - '0';
+                if (value > (std::numeric_limits<int>::max() - digit) / 10)
+                    throw std::overflow_error("integer literal out of range");
+                value = value * 10 + digit;
                 ++i;
             }
             toks.push_back({TokKind::Num, value, 0});
@@ -214,20 +218,30 @@ static void printIr(const std::vector<Instruction>& ir, std::string& out) {
 
 // ============================ Interpreter ============================
 
-static int resolveOperand(const Operand& o, const std::vector<int>& temps,
+static int resolveOperand(const Operand& o, const std::map<int, int>& temps,
                            const std::map<char, int>& env) {
     if (o.kind == OperandKind::Literal) return o.literalValue;
     if (o.kind == OperandKind::Variable) return env.at(o.varName);
-    return temps[o.tempIndex];
+    return temps.at(o.tempIndex);
 }
 
 static int applyOp(char op, int a, int b) {
-    switch (op) {
-        case '+': return a + b;
-        case '-': return a - b;
-        case '*': return a * b;
-        default:  return a / b;
+    if (op == '/') {
+        if (b == 0) throw std::domain_error("integer division by zero");
+        if (a == std::numeric_limits<int>::min() && b == -1)
+            throw std::overflow_error("integer division overflow");
+        return a / b;
     }
+    long long result;
+    switch (op) {
+        case '+': result = static_cast<long long>(a) + b; break;
+        case '-': result = static_cast<long long>(a) - b; break;
+        case '*': result = static_cast<long long>(a) * b; break;
+        default: throw std::invalid_argument("unknown arithmetic operator");
+    }
+    if (result < std::numeric_limits<int>::min() || result > std::numeric_limits<int>::max())
+        throw std::overflow_error("integer arithmetic overflow");
+    return static_cast<int>(result);
 }
 
 // Interprets the IR in order, returning the final expression's value.
@@ -235,7 +249,7 @@ static int applyOp(char op, int a, int b) {
 // for a bare literal or variable (zero instructions), it IS the answer.
 static int interpretIr(const std::vector<Instruction>& ir, const Operand& resultOperand,
                         const std::map<char, int>& env) {
-    std::vector<int> temps(ir.size(), 0);
+    std::map<int, int> temps; // surviving instruction ids need not be dense
     for (const auto& ins : ir) {
         int a = resolveOperand(ins.lhs, temps, env);
         int b = resolveOperand(ins.rhs, temps, env);

@@ -99,8 +99,9 @@ if __name__ == "__main__":
     max_abs_diff = (out_math - out_flash).abs().max().item()
     print(f"MATH backend output shape: {tuple(out_math.shape)}")
     print(f"FLASH_ATTENTION backend output shape: {tuple(out_flash.shape)}")
+    torch.testing.assert_close(out_math, out_flash, atol=1e-5, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check: MATH vs. FLASH_ATTENTION match = "
-          f"{torch.allclose(out_math, out_flash, atol=1e-5)} "
+          f"{torch.allclose(out_math, out_flash, atol=1e-5, rtol=1e-5)} "
           f"(max abs diff {max_abs_diff:.3e}) -- two independently "
           f"implemented real kernels inside the SAME torch build agree, "
           f"a CPU numerical comparison. File 075 checks NumPy; File 076 "
@@ -118,9 +119,10 @@ if __name__ == "__main__":
           f"File 075's own running_max/running_sum accumulator shape "
           f"(N,), confirming this real op tracks the SAME online "
           f"log-sum-exp quantity Files 075 and 076 both computed by hand")
+    torch.testing.assert_close(real_output, out_math, atol=1e-5, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check: this op's own output vs. MATH "
           f"backend = "
-          f"{torch.allclose(real_output, out_math, atol=1e-5)}")
+          f"{torch.allclose(real_output, out_math, atol=1e-5, rtol=1e-5)}")
 
     print()
     print("=== Part 4 (capstone): what TorchInductor (Ch28) does with "
@@ -128,8 +130,9 @@ if __name__ == "__main__":
     compiled_attention = torch.compile(attention_fn)
     compiled_out, code = capture_output_code(compiled_attention, q, k, v)
     eager_out = attention_fn(q, k, v)
+    torch.testing.assert_close(compiled_out, eager_out, atol=1e-5, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check: torch.compile'd vs. eager match = "
-          f"{torch.allclose(compiled_out, eager_out, atol=1e-5)}")
+          f"{torch.allclose(compiled_out, eager_out, atol=1e-5, rtol=1e-5)}")
 
     generated_kernel_count = len(re.findall(r"async_compile\.cpp_pybinding", code))
     dispatches_to_real_flash_op = (

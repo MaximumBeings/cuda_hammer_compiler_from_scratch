@@ -91,6 +91,13 @@ def main():
     b_tvm = tvm.runtime.tensor(rng.uniform(size=n).astype("float32"), dev)
     c_tvm = tvm.runtime.tensor(np.zeros(n, dtype="float32"), dev)
 
+    built["main"](a_tvm, b_tvm, c_tvm)
+    actual = c_tvm.numpy()
+    ref = a_tvm.numpy() + b_tvm.numpy()
+    if not np.isfinite(actual).all():
+        raise AssertionError("non-finite compiled result")
+    np.testing.assert_allclose(actual, ref, atol=0.0, rtol=0.0, equal_nan=False)
+
     reps = 200_000
     start = time.perf_counter()
     for _ in range(reps):

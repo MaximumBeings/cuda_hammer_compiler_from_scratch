@@ -55,7 +55,7 @@ def choose_scale_zero_point(x, qmin=-128, qmax=127):
         raise ValueError("this example emits signed int8 only")
     x_min, x_max = min(float(x.min()), 0.0), max(float(x.max()), 0.0)
     if x_min == x_max:  # all zeros: avoid division by zero
-        return 1.0, 0
+        return 1.0, int(np.clip(0, qmin, qmax))
     scale = (x_max - x_min) / (qmax - qmin)
     zero_point = int(np.clip(qmin - round(x_min / scale), qmin, qmax))
     return scale, zero_point
@@ -86,6 +86,12 @@ if __name__ == "__main__":
         s_test, z_test = choose_scale_zero_point(a_test)
         recovered = dequantize(quantize(a_test, s_test, z_test), s_test, z_test)
         assert np.max(np.abs(recovered - a_test)) <= s_test / 2 + 1e-12
+    for qlo, qhi in ((1, 127), (-128, -1), (-128, 127)):
+        zeros = np.zeros(2)
+        s_zero, z_zero = choose_scale_zero_point(zeros, qlo, qhi)
+        assert qlo <= z_zero <= qhi
+        restored = dequantize(quantize(zeros, s_zero, z_zero, qlo, qhi), s_zero, z_zero)
+        np.testing.assert_array_equal(restored, zeros)
     for samples in ([], [np.nan], [np.inf]):
         try:
             choose_scale_zero_point(np.asarray(samples))
@@ -93,7 +99,7 @@ if __name__ == "__main__":
             pass
         else:
             raise AssertionError("invalid calibration input accepted")
-    print("Calibration regressions: one-sided, constant, zero, empty and non-finite inputs PASS")
+    print("Calibration regressions: one-sided, constant, zero, custom subranges, empty and non-finite inputs PASS")
 
     print()
     print("=== Part 2: the real reason quantization-aware codegen is a "

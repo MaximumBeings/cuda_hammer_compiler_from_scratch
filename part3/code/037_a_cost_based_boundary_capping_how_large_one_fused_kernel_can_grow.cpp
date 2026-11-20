@@ -18,6 +18,7 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow.cpp -o 037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow
 // Run:     ./037_a_cost_based_boundary_capping_how_large_one_fused_kernel_can_grow
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -26,6 +27,18 @@
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -335,43 +348,29 @@ static FusionResult elementwiseFusionPass(const Graph& g) {
 // resolveIntoGroup() the exact same way it already checks Leaf/Shared/Reduction:
 // as one more static, precomputed property of the node itself.
 //
-// chainDepth[n] counts how many single-consumer elementwise nodes deep n is
-// within its own maximal run: 1 for a node whose relevant operand isn't
-// itself such a node (the start of a new chain), or chainDepth[operand] + 1
-// otherwise. A node whose own chainDepth is an exact multiple of
-// maxChainLength is marked as a boundary -- the last member of one
-// maxChainLength-sized segment, forcing the NEXT segment to start fresh.
-static std::map<int, long long> computeChainDepths(const Graph& g, const std::map<int, int>& consumers,
-                                                     const TopoResult& topo) {
-    std::map<int, long long> depth;
-    for (int id : topo.order) {
-        const Node* n = g.node(id);
-        bool isChainCandidate = (n->op == OpKind::Add || n->op == OpKind::Mul || n->op == OpKind::ReLU) &&
-                                 consumers.at(id) == 1;
-        if (!isChainCandidate) {
-            depth[id] = 0;  // Leaf, Shared, or a consumers!=1 node -- not part of any chain itself
-            continue;
-        }
-        long long best = 0;
-        for (const Value& in : n->inputs) {
-            const Node* pred = g.node(in.nodeId);
-            bool predIsChainMember = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
-                                      consumers.at(pred->id) == 1;
-            if (predIsChainMember) best = std::max(best, depth.at(pred->id));
-        }
-        depth[id] = best + 1;
-    }
-    return depth;
-}
-
+// Sum all inlineable predecessor group sizes; force a predecessor external
+// when including it would exceed the remaining body-step budget.
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -492,8 +491,8 @@ int main() {
     // t4 = Mul(t3,c). Every one of t1..t4 has exactly ONE consumer -- under
     // Chapter 13's own UNCAPPED elementwiseFusionPass(), this entire chain
     // fuses into ONE FusedElementwise node, 4 steps. Hand-derivation for
-    // maxChainLength=2: chainDepth(t1)=1, chainDepth(t2)=2, chainDepth(t3)=3,
-    // chainDepth(t4)=4. Depths divisible by 2: t2 and t4. t4 was ALREADY
+    // Budget 2: t1+t2 fit; adding t3 cuts t2, so t3+t4 form the next body.
+    // t2 is the size boundary. t4 was ALREADY
     // going to be its own root regardless (zero consumers -- Section 16.1's
     // own GraphRoot category) -- t2 is the genuinely NEW boundary the cap
     // introduces, splitting the chain into [t1,t2] and [t3,t4].
@@ -537,7 +536,7 @@ int main() {
 
     // ---- Real bytes moved: the honest cost of imposing the cap ----
     printf("\n=== The cap's own real, measured cost ===\n\n");
-    static constexpr double kBytesPerElement = 4.0;
+
     // x=[4], c=scalar (1 element); t1..t4 are all shape [4] (ReLU preserves,
     // Mul/Add broadcast [4] with a scalar unchanged).
     std::map<std::string, long long> elems = {{"x", 4}, {"c", 1}, {"t1", 4}, {"t2", 4}, {"t3", 4}, {"t4", 4}};
@@ -546,8 +545,8 @@ int main() {
         long long total = 0;
         for (const auto& n : g.nodes()) {
             if (n->op == OpKind::Input || n->op == OpKind::Const) continue;
-            for (const Value& in : n->inputs) total += elems.at(oldName.at(in.nodeId));
-            total += elems.at(oldName.at(n->id));
+            for (const Value& in : n->inputs) total = checkedCountAdd(total, elems.at(oldName.at(in.nodeId)));
+            total = checkedCountAdd(total, elems.at(oldName.at(n->id)));
         }
         return total;
     };
@@ -559,9 +558,9 @@ int main() {
     long long unfusedElems = bytesMovedByName(chain, origNames);
     long long uncappedElems = bytesMovedByName(uncapped.graph, uncappedNames);
     long long cappedElems = bytesMovedByName(capped.graph, cappedNames);
-    long long unfusedBytes = static_cast<long long>(static_cast<double>(unfusedElems) * kBytesPerElement);
-    long long uncappedBytes = static_cast<long long>(static_cast<double>(uncappedElems) * kBytesPerElement);
-    long long cappedBytes = static_cast<long long>(static_cast<double>(cappedElems) * kBytesPerElement);
+    long long unfusedBytes = checkedCountMul(unfusedElems, 4);
+    long long uncappedBytes = checkedCountMul(uncappedElems, 4);
+    long long cappedBytes = checkedCountMul(cappedElems, 4);
 
     printf("Bytes moved, UNFUSED (4 separate kernels):              %lld\n", unfusedBytes);
     printf("Bytes moved, UNCAPPED fusion (1 kernel, all 4 steps):   %lld\n", uncappedBytes);

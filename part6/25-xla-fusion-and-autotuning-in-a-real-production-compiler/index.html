@@ -3063,120 +3063,116 @@ sharing.</p>
 <a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="c1">#      block_m, block_n, block_k, num_stages, num_warps, num_ctas -- a GPU</span>
 <a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="c1">#      GEMM&#39;s own tile-shape-and-launch-configuration analogue of Ch21&#39;s own</span>
 <a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="c1">#      Schedule{tileSizePerLoop, loopOrder, unrollFactor}.</span>
-<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="c1">#   3. XLA persists autotuning results keyed by real target context --an</span>
-<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="c1">#      AutotuningLog carries cudnn_version, compute_capability, and</span>
-<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="c1">#      device_pci_bus_id alongside the winning config (xla/autotuning.proto)</span>
-<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="c1">#      -- the same (workload, target) shape Ch24.3&#39;s own</span>
-<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a><span class="c1">#      loopNestKeyForTarget() arrived at by direct measurement on two real</span>
-<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="c1">#      machines, not by reading XLA&#39;s source first.</span>
+<a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="c1">#   3. AutotuningLog records context, not the cache key or a reuse guarantee.</span>
+<a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="c1">#      Current AutotuneCacheKey uses a device-model description, canonical HLO</span>
+<a id="__codelineno-14-27" name="__codelineno-14-27" href="#__codelineno-14-27"></a><span class="c1">#      and a cache version. Persisted cache compatibility also has user-managed</span>
+<a id="__codelineno-14-28" name="__codelineno-14-28" href="#__codelineno-14-28"></a><span class="c1">#      version/invalidation requirements (OpenXLA persisted_autotuning docs).</span>
+<a id="__codelineno-14-29" name="__codelineno-14-29" href="#__codelineno-14-29"></a>
+<a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">fields</span>
 <a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a>
-<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">fields</span>
-<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a>
-<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a>
-<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="c1"># --- CUDA Hammer&#39;s own Ch21 Schedule, transcribed field-for-field from the</span>
-<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="c1"># real C++ struct (docs/part5/code/051-053) -----------------------------</span>
-<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a><span class="nd">@dataclass</span>
-<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a><span class="k">class</span><span class="w"> </span><span class="nc">CudaHammerSchedule</span><span class="p">:</span>
-<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a>    <span class="n">tile_size_per_loop</span><span class="p">:</span> <span class="nb">list</span>   <span class="c1"># one tile size per loop dimension</span>
-<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a>    <span class="n">loop_order</span><span class="p">:</span> <span class="nb">list</span>           <span class="c1"># a permutation of loop indices</span>
-<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a>    <span class="n">unroll_factor</span><span class="p">:</span> <span class="nb">int</span>         <span class="c1"># innermost-loop unroll factor</span>
-<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a>
-<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a>
-<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="c1"># --- XLA&#39;s real TritonGemmKey, transcribed field-for-field from</span>
-<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="c1"># xla/autotuning.proto (openxla/xla, fetched 2026) ------------------------</span>
-<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a><span class="nd">@dataclass</span>
-<a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a><span class="k">class</span><span class="w"> </span><span class="nc">XlaTritonGemmKey</span><span class="p">:</span>
-<a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a>    <span class="n">block_m</span><span class="p">:</span> <span class="nb">int</span>
-<a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a>    <span class="n">block_n</span><span class="p">:</span> <span class="nb">int</span>
-<a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a>    <span class="n">block_k</span><span class="p">:</span> <span class="nb">int</span>
-<a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a>    <span class="n">num_stages</span><span class="p">:</span> <span class="nb">int</span>
-<a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a>    <span class="n">num_warps</span><span class="p">:</span> <span class="nb">int</span>
-<a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a>    <span class="n">num_ctas</span><span class="p">:</span> <span class="nb">int</span>
-<a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a>    <span class="n">is_tma_allowed</span><span class="p">:</span> <span class="nb">bool</span>
-<a id="__codelineno-14-55" name="__codelineno-14-55" href="#__codelineno-14-55"></a>
-<a id="__codelineno-14-56" name="__codelineno-14-56" href="#__codelineno-14-56"></a>
-<a id="__codelineno-14-57" name="__codelineno-14-57" href="#__codelineno-14-57"></a><span class="c1"># --- CUDA Hammer&#39;s own Ch24.3 cache key -----------------------------------</span>
-<a id="__codelineno-14-58" name="__codelineno-14-58" href="#__codelineno-14-58"></a><span class="k">def</span><span class="w"> </span><span class="nf">loop_nest_key_for_target</span><span class="p">(</span><span class="n">shape_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-14-59" name="__codelineno-14-59" href="#__codelineno-14-59"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">shape_str</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span>
-<a id="__codelineno-14-60" name="__codelineno-14-60" href="#__codelineno-14-60"></a>
-<a id="__codelineno-14-61" name="__codelineno-14-61" href="#__codelineno-14-61"></a>
-<a id="__codelineno-14-62" name="__codelineno-14-62" href="#__codelineno-14-62"></a><span class="c1"># --- XLA&#39;s real AutotuningLog target-context fields, transcribed from</span>
-<a id="__codelineno-14-63" name="__codelineno-14-63" href="#__codelineno-14-63"></a><span class="c1"># xla/autotuning.proto (the fields that accompany a persisted result) -----</span>
-<a id="__codelineno-14-64" name="__codelineno-14-64" href="#__codelineno-14-64"></a><span class="nd">@dataclass</span>
-<a id="__codelineno-14-65" name="__codelineno-14-65" href="#__codelineno-14-65"></a><span class="k">class</span><span class="w"> </span><span class="nc">XlaAutotuningLogContext</span><span class="p">:</span>
-<a id="__codelineno-14-66" name="__codelineno-14-66" href="#__codelineno-14-66"></a>    <span class="n">cudnn_version</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-14-67" name="__codelineno-14-67" href="#__codelineno-14-67"></a>    <span class="n">compute_capability</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-14-68" name="__codelineno-14-68" href="#__codelineno-14-68"></a>    <span class="n">device_pci_bus_id</span><span class="p">:</span> <span class="nb">str</span>
-<a id="__codelineno-14-69" name="__codelineno-14-69" href="#__codelineno-14-69"></a>
-<a id="__codelineno-14-70" name="__codelineno-14-70" href="#__codelineno-14-70"></a>
-<a id="__codelineno-14-71" name="__codelineno-14-71" href="#__codelineno-14-71"></a><span class="k">def</span><span class="w"> </span><span class="nf">print_fields</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
-<a id="__codelineno-14-72" name="__codelineno-14-72" href="#__codelineno-14-72"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-73" name="__codelineno-14-73" href="#__codelineno-14-73"></a>    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
-<a id="__codelineno-14-74" name="__codelineno-14-74" href="#__codelineno-14-74"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-75" name="__codelineno-14-75" href="#__codelineno-14-75"></a>
-<a id="__codelineno-14-76" name="__codelineno-14-76" href="#__codelineno-14-76"></a>
-<a id="__codelineno-14-77" name="__codelineno-14-77" href="#__codelineno-14-77"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a>
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="c1"># --- CUDA Hammer&#39;s own Ch21 Schedule, transcribed field-for-field from the</span>
+<a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="c1"># real C++ struct (docs/part5/code/051-053) -----------------------------</span>
+<a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="nd">@dataclass</span>
+<a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="k">class</span><span class="w"> </span><span class="nc">CudaHammerSchedule</span><span class="p">:</span>
+<a id="__codelineno-14-37" name="__codelineno-14-37" href="#__codelineno-14-37"></a>    <span class="n">tile_size_per_loop</span><span class="p">:</span> <span class="nb">list</span>   <span class="c1"># one tile size per loop dimension</span>
+<a id="__codelineno-14-38" name="__codelineno-14-38" href="#__codelineno-14-38"></a>    <span class="n">loop_order</span><span class="p">:</span> <span class="nb">list</span>           <span class="c1"># a permutation of loop indices</span>
+<a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a>    <span class="n">unroll_factor</span><span class="p">:</span> <span class="nb">int</span>         <span class="c1"># innermost-loop unroll factor</span>
+<a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a>
+<a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a>
+<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="c1"># --- XLA&#39;s real TritonGemmKey, transcribed field-for-field from</span>
+<a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a><span class="c1"># xla/autotuning.proto (openxla/xla, fetched 2026) ------------------------</span>
+<a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="nd">@dataclass</span>
+<a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="k">class</span><span class="w"> </span><span class="nc">XlaTritonGemmKey</span><span class="p">:</span>
+<a id="__codelineno-14-46" name="__codelineno-14-46" href="#__codelineno-14-46"></a>    <span class="n">block_m</span><span class="p">:</span> <span class="nb">int</span>
+<a id="__codelineno-14-47" name="__codelineno-14-47" href="#__codelineno-14-47"></a>    <span class="n">block_n</span><span class="p">:</span> <span class="nb">int</span>
+<a id="__codelineno-14-48" name="__codelineno-14-48" href="#__codelineno-14-48"></a>    <span class="n">block_k</span><span class="p">:</span> <span class="nb">int</span>
+<a id="__codelineno-14-49" name="__codelineno-14-49" href="#__codelineno-14-49"></a>    <span class="n">num_stages</span><span class="p">:</span> <span class="nb">int</span>
+<a id="__codelineno-14-50" name="__codelineno-14-50" href="#__codelineno-14-50"></a>    <span class="n">num_warps</span><span class="p">:</span> <span class="nb">int</span>
+<a id="__codelineno-14-51" name="__codelineno-14-51" href="#__codelineno-14-51"></a>    <span class="n">num_ctas</span><span class="p">:</span> <span class="nb">int</span>
+<a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a>    <span class="n">is_tma_allowed</span><span class="p">:</span> <span class="nb">bool</span>
+<a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a>
+<a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a>
+<a id="__codelineno-14-55" name="__codelineno-14-55" href="#__codelineno-14-55"></a><span class="c1"># --- CUDA Hammer&#39;s own Ch24.3 cache key -----------------------------------</span>
+<a id="__codelineno-14-56" name="__codelineno-14-56" href="#__codelineno-14-56"></a><span class="k">def</span><span class="w"> </span><span class="nf">loop_nest_key_for_target</span><span class="p">(</span><span class="n">shape_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-14-57" name="__codelineno-14-57" href="#__codelineno-14-57"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">shape_str</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-14-58" name="__codelineno-14-58" href="#__codelineno-14-58"></a>
+<a id="__codelineno-14-59" name="__codelineno-14-59" href="#__codelineno-14-59"></a>
+<a id="__codelineno-14-60" name="__codelineno-14-60" href="#__codelineno-14-60"></a><span class="c1"># --- XLA&#39;s real AutotuningLog target-context fields, transcribed from</span>
+<a id="__codelineno-14-61" name="__codelineno-14-61" href="#__codelineno-14-61"></a><span class="c1"># xla/autotuning.proto (the fields that accompany a logged result) -----</span>
+<a id="__codelineno-14-62" name="__codelineno-14-62" href="#__codelineno-14-62"></a><span class="nd">@dataclass</span>
+<a id="__codelineno-14-63" name="__codelineno-14-63" href="#__codelineno-14-63"></a><span class="k">class</span><span class="w"> </span><span class="nc">XlaAutotuningLogContext</span><span class="p">:</span>
+<a id="__codelineno-14-64" name="__codelineno-14-64" href="#__codelineno-14-64"></a>    <span class="n">cudnn_version</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-14-65" name="__codelineno-14-65" href="#__codelineno-14-65"></a>    <span class="n">compute_capability</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-14-66" name="__codelineno-14-66" href="#__codelineno-14-66"></a>    <span class="n">device_pci_bus_id</span><span class="p">:</span> <span class="nb">str</span>
+<a id="__codelineno-14-67" name="__codelineno-14-67" href="#__codelineno-14-67"></a>
+<a id="__codelineno-14-68" name="__codelineno-14-68" href="#__codelineno-14-68"></a>
+<a id="__codelineno-14-69" name="__codelineno-14-69" href="#__codelineno-14-69"></a><span class="k">def</span><span class="w"> </span><span class="nf">print_fields</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
+<a id="__codelineno-14-70" name="__codelineno-14-70" href="#__codelineno-14-70"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-71" name="__codelineno-14-71" href="#__codelineno-14-71"></a>    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
+<a id="__codelineno-14-72" name="__codelineno-14-72" href="#__codelineno-14-72"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-73" name="__codelineno-14-73" href="#__codelineno-14-73"></a>
+<a id="__codelineno-14-74" name="__codelineno-14-74" href="#__codelineno-14-74"></a>
+<a id="__codelineno-14-75" name="__codelineno-14-75" href="#__codelineno-14-75"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<a id="__codelineno-14-76" name="__codelineno-14-76" href="#__codelineno-14-76"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-14-77" name="__codelineno-14-77" href="#__codelineno-14-77"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 1: the tuning-knob record itself&quot;</span><span class="p">)</span>
 <a id="__codelineno-14-78" name="__codelineno-14-78" href="#__codelineno-14-78"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-14-79" name="__codelineno-14-79" href="#__codelineno-14-79"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 1: the tuning-knob record itself&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-80" name="__codelineno-14-80" href="#__codelineno-14-80"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-14-81" name="__codelineno-14-81" href="#__codelineno-14-81"></a>    <span class="n">ch_sched</span> <span class="o">=</span> <span class="n">CudaHammerSchedule</span><span class="p">(</span>
-<a id="__codelineno-14-82" name="__codelineno-14-82" href="#__codelineno-14-82"></a>        <span class="n">tile_size_per_loop</span><span class="o">=</span><span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="n">loop_order</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">unroll_factor</span><span class="o">=</span><span class="mi">4</span>
-<a id="__codelineno-14-83" name="__codelineno-14-83" href="#__codelineno-14-83"></a>    <span class="p">)</span>  <span class="c1"># this book&#39;s own real Chapter 23.3 cloud-sandbox winner</span>
-<a id="__codelineno-14-84" name="__codelineno-14-84" href="#__codelineno-14-84"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;CudaHammerSchedule (Ch21, this book&#39;s own struct)&quot;</span><span class="p">,</span> <span class="n">ch_sched</span><span class="p">)</span>
-<a id="__codelineno-14-85" name="__codelineno-14-85" href="#__codelineno-14-85"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">ch_sched</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-86" name="__codelineno-14-86" href="#__codelineno-14-86"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-14-87" name="__codelineno-14-87" href="#__codelineno-14-87"></a>
-<a id="__codelineno-14-88" name="__codelineno-14-88" href="#__codelineno-14-88"></a>    <span class="n">xla_key</span> <span class="o">=</span> <span class="n">XlaTritonGemmKey</span><span class="p">(</span>
-<a id="__codelineno-14-89" name="__codelineno-14-89" href="#__codelineno-14-89"></a>        <span class="n">block_m</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">block_n</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">block_k</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
-<a id="__codelineno-14-90" name="__codelineno-14-90" href="#__codelineno-14-90"></a>        <span class="n">num_stages</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_warps</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">num_ctas</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">is_tma_allowed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-<a id="__codelineno-14-91" name="__codelineno-14-91" href="#__codelineno-14-91"></a>    <span class="p">)</span>
-<a id="__codelineno-14-92" name="__codelineno-14-92" href="#__codelineno-14-92"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: the field NAMES below are real (xla/autotuning.proto); the &quot;</span>
-<a id="__codelineno-14-93" name="__codelineno-14-93" href="#__codelineno-14-93"></a>          <span class="s2">&quot;VALUES are representative placeholders, not a measured result -- &quot;</span>
-<a id="__codelineno-14-94" name="__codelineno-14-94" href="#__codelineno-14-94"></a>          <span class="s2">&quot;this sandbox has no GPU for XLA&#39;s real autotuner to search on.&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-95" name="__codelineno-14-95" href="#__codelineno-14-95"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;XlaTritonGemmKey (real field names, xla/autotuning.proto)&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-96" name="__codelineno-14-96" href="#__codelineno-14-96"></a>                 <span class="n">xla_key</span><span class="p">)</span>
-<a id="__codelineno-14-97" name="__codelineno-14-97" href="#__codelineno-14-97"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">xla_key</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-98" name="__codelineno-14-98" href="#__codelineno-14-98"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-14-99" name="__codelineno-14-99" href="#__codelineno-14-99"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- both records answer the exact same question for their own &quot;</span>
-<a id="__codelineno-14-100" name="__codelineno-14-100" href="#__codelineno-14-100"></a>          <span class="s2">&quot;system: how should ONE loop nest / GEMM be tiled and launched. &quot;</span>
-<a id="__codelineno-14-101" name="__codelineno-14-101" href="#__codelineno-14-101"></a>          <span class="s2">&quot;CUDA Hammer&#39;s Schedule generalizes over ANY LoopNest shape (Ch21&#39;s &quot;</span>
-<a id="__codelineno-14-102" name="__codelineno-14-102" href="#__codelineno-14-102"></a>          <span class="s2">&quot;own enumerateSchedules()); XLA&#39;s TritonGemmKey is specific to one &quot;</span>
-<a id="__codelineno-14-103" name="__codelineno-14-103" href="#__codelineno-14-103"></a>          <span class="s2">&quot;matmul-shaped Triton kernel template -- CUDA Hammer&#39;s toy IR never &quot;</span>
-<a id="__codelineno-14-104" name="__codelineno-14-104" href="#__codelineno-14-104"></a>          <span class="s2">&quot;grew a matmul op (Ch4&#39;s own scope, unchanged through Ch24).&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-105" name="__codelineno-14-105" href="#__codelineno-14-105"></a>
-<a id="__codelineno-14-106" name="__codelineno-14-106" href="#__codelineno-14-106"></a>    <span class="nb">print</span><span class="p">()</span>
+<a id="__codelineno-14-79" name="__codelineno-14-79" href="#__codelineno-14-79"></a>    <span class="n">ch_sched</span> <span class="o">=</span> <span class="n">CudaHammerSchedule</span><span class="p">(</span>
+<a id="__codelineno-14-80" name="__codelineno-14-80" href="#__codelineno-14-80"></a>        <span class="n">tile_size_per_loop</span><span class="o">=</span><span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="n">loop_order</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">unroll_factor</span><span class="o">=</span><span class="mi">4</span>
+<a id="__codelineno-14-81" name="__codelineno-14-81" href="#__codelineno-14-81"></a>    <span class="p">)</span>  <span class="c1"># this book&#39;s own real Chapter 23.3 cloud-sandbox winner</span>
+<a id="__codelineno-14-82" name="__codelineno-14-82" href="#__codelineno-14-82"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;CudaHammerSchedule (Ch21, this book&#39;s own struct)&quot;</span><span class="p">,</span> <span class="n">ch_sched</span><span class="p">)</span>
+<a id="__codelineno-14-83" name="__codelineno-14-83" href="#__codelineno-14-83"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">ch_sched</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-84" name="__codelineno-14-84" href="#__codelineno-14-84"></a>    <span class="nb">print</span><span class="p">()</span>
+<a id="__codelineno-14-85" name="__codelineno-14-85" href="#__codelineno-14-85"></a>
+<a id="__codelineno-14-86" name="__codelineno-14-86" href="#__codelineno-14-86"></a>    <span class="n">xla_key</span> <span class="o">=</span> <span class="n">XlaTritonGemmKey</span><span class="p">(</span>
+<a id="__codelineno-14-87" name="__codelineno-14-87" href="#__codelineno-14-87"></a>        <span class="n">block_m</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">block_n</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">block_k</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+<a id="__codelineno-14-88" name="__codelineno-14-88" href="#__codelineno-14-88"></a>        <span class="n">num_stages</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_warps</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">num_ctas</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">is_tma_allowed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="__codelineno-14-89" name="__codelineno-14-89" href="#__codelineno-14-89"></a>    <span class="p">)</span>
+<a id="__codelineno-14-90" name="__codelineno-14-90" href="#__codelineno-14-90"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: the field NAMES below are real (xla/autotuning.proto); the &quot;</span>
+<a id="__codelineno-14-91" name="__codelineno-14-91" href="#__codelineno-14-91"></a>          <span class="s2">&quot;VALUES are representative placeholders, not a measured result -- &quot;</span>
+<a id="__codelineno-14-92" name="__codelineno-14-92" href="#__codelineno-14-92"></a>          <span class="s2">&quot;this sandbox has no GPU for XLA&#39;s real autotuner to search on.&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-93" name="__codelineno-14-93" href="#__codelineno-14-93"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;XlaTritonGemmKey (real field names, xla/autotuning.proto)&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-94" name="__codelineno-14-94" href="#__codelineno-14-94"></a>                 <span class="n">xla_key</span><span class="p">)</span>
+<a id="__codelineno-14-95" name="__codelineno-14-95" href="#__codelineno-14-95"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">xla_key</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-96" name="__codelineno-14-96" href="#__codelineno-14-96"></a>    <span class="nb">print</span><span class="p">()</span>
+<a id="__codelineno-14-97" name="__codelineno-14-97" href="#__codelineno-14-97"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- both records answer the exact same question for their own &quot;</span>
+<a id="__codelineno-14-98" name="__codelineno-14-98" href="#__codelineno-14-98"></a>          <span class="s2">&quot;system: how should ONE loop nest / GEMM be tiled and launched. &quot;</span>
+<a id="__codelineno-14-99" name="__codelineno-14-99" href="#__codelineno-14-99"></a>          <span class="s2">&quot;CUDA Hammer&#39;s Schedule generalizes over ANY LoopNest shape (Ch21&#39;s &quot;</span>
+<a id="__codelineno-14-100" name="__codelineno-14-100" href="#__codelineno-14-100"></a>          <span class="s2">&quot;own enumerateSchedules()); XLA&#39;s TritonGemmKey is specific to one &quot;</span>
+<a id="__codelineno-14-101" name="__codelineno-14-101" href="#__codelineno-14-101"></a>          <span class="s2">&quot;matmul-shaped Triton kernel template -- CUDA Hammer&#39;s toy IR never &quot;</span>
+<a id="__codelineno-14-102" name="__codelineno-14-102" href="#__codelineno-14-102"></a>          <span class="s2">&quot;grew a matmul op (Ch4&#39;s own scope, unchanged through Ch24).&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-103" name="__codelineno-14-103" href="#__codelineno-14-103"></a>
+<a id="__codelineno-14-104" name="__codelineno-14-104" href="#__codelineno-14-104"></a>    <span class="nb">print</span><span class="p">()</span>
+<a id="__codelineno-14-105" name="__codelineno-14-105" href="#__codelineno-14-105"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-14-106" name="__codelineno-14-106" href="#__codelineno-14-106"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 2: target context is not a complete cache key&quot;</span><span class="p">)</span>
 <a id="__codelineno-14-107" name="__codelineno-14-107" href="#__codelineno-14-107"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-14-108" name="__codelineno-14-108" href="#__codelineno-14-108"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 2: the (workload, target) cache key shape&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-109" name="__codelineno-14-109" href="#__codelineno-14-109"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-14-110" name="__codelineno-14-110" href="#__codelineno-14-110"></a>    <span class="n">ch_key</span> <span class="o">=</span> <span class="n">loop_nest_key_for_target</span><span class="p">(</span><span class="s2">&quot;dim0:6,dim1:8&quot;</span><span class="p">,</span> <span class="s2">&quot;aarch64&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-111" name="__codelineno-14-111" href="#__codelineno-14-111"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CUDA Hammer&#39;s own Ch24.3 key: </span><span class="si">{</span><span class="n">ch_key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-112" name="__codelineno-14-112" href="#__codelineno-14-112"></a>
-<a id="__codelineno-14-113" name="__codelineno-14-113" href="#__codelineno-14-113"></a>    <span class="n">xla_ctx</span> <span class="o">=</span> <span class="n">XlaAutotuningLogContext</span><span class="p">(</span>
-<a id="__codelineno-14-114" name="__codelineno-14-114" href="#__codelineno-14-114"></a>        <span class="n">cudnn_version</span><span class="o">=</span><span class="s2">&quot;9.x&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-115" name="__codelineno-14-115" href="#__codelineno-14-115"></a>        <span class="n">compute_capability</span><span class="o">=</span><span class="s2">&quot;sm_90&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-116" name="__codelineno-14-116" href="#__codelineno-14-116"></a>        <span class="n">device_pci_bus_id</span><span class="o">=</span><span class="s2">&quot;0000:00:00.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-117" name="__codelineno-14-117" href="#__codelineno-14-117"></a>    <span class="p">)</span>
-<a id="__codelineno-14-118" name="__codelineno-14-118" href="#__codelineno-14-118"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: again, real field names, placeholder values -- no GPU here &quot;</span>
-<a id="__codelineno-14-119" name="__codelineno-14-119" href="#__codelineno-14-119"></a>          <span class="s2">&quot;to read real ones from.&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-120" name="__codelineno-14-120" href="#__codelineno-14-120"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;XLA&#39;s own real AutotuningLog context fields &quot;</span>
-<a id="__codelineno-14-121" name="__codelineno-14-121" href="#__codelineno-14-121"></a>                 <span class="s2">&quot;(xla/autotuning.proto)&quot;</span><span class="p">,</span> <span class="n">xla_ctx</span><span class="p">)</span>
-<a id="__codelineno-14-122" name="__codelineno-14-122" href="#__codelineno-14-122"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-14-123" name="__codelineno-14-123" href="#__codelineno-14-123"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- Ch24.3&#39;s own loopNestKeyForTarget() was built by direct &quot;</span>
-<a id="__codelineno-14-124" name="__codelineno-14-124" href="#__codelineno-14-124"></a>          <span class="s2">&quot;measurement on two real machines (a cloud sandbox and a real &quot;</span>
-<a id="__codelineno-14-125" name="__codelineno-14-125" href="#__codelineno-14-125"></a>          <span class="s2">&quot;device disagreeing on the fastest schedule for the identical &quot;</span>
-<a id="__codelineno-14-126" name="__codelineno-14-126" href="#__codelineno-14-126"></a>          <span class="s2">&quot;LoopNest shape) BEFORE this chapter ever looked at XLA&#39;s own &quot;</span>
-<a id="__codelineno-14-127" name="__codelineno-14-127" href="#__codelineno-14-127"></a>          <span class="s2">&quot;source. XLA&#39;s own AutotuningLog arrives at the same shape -- a &quot;</span>
-<a id="__codelineno-14-128" name="__codelineno-14-128" href="#__codelineno-14-128"></a>          <span class="s2">&quot;winning config is only valid for the (workload, target) pair &quot;</span>
-<a id="__codelineno-14-129" name="__codelineno-14-129" href="#__codelineno-14-129"></a>          <span class="s2">&quot;that produced it -- at production scale, with three real target &quot;</span>
-<a id="__codelineno-14-130" name="__codelineno-14-130" href="#__codelineno-14-130"></a>          <span class="s2">&quot;fields where Ch24.3&#39;s own key used one string.&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-131" name="__codelineno-14-131" href="#__codelineno-14-131"></a>
-<a id="__codelineno-14-132" name="__codelineno-14-132" href="#__codelineno-14-132"></a>
-<a id="__codelineno-14-133" name="__codelineno-14-133" href="#__codelineno-14-133"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
-<a id="__codelineno-14-134" name="__codelineno-14-134" href="#__codelineno-14-134"></a>    <span class="n">main</span><span class="p">()</span>
+<a id="__codelineno-14-108" name="__codelineno-14-108" href="#__codelineno-14-108"></a>    <span class="n">ch_key</span> <span class="o">=</span> <span class="n">loop_nest_key_for_target</span><span class="p">(</span><span class="s2">&quot;dim0:6,dim1:8&quot;</span><span class="p">,</span> <span class="s2">&quot;aarch64&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-109" name="__codelineno-14-109" href="#__codelineno-14-109"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CUDA Hammer&#39;s own Ch24.3 key: </span><span class="si">{</span><span class="n">ch_key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-110" name="__codelineno-14-110" href="#__codelineno-14-110"></a>
+<a id="__codelineno-14-111" name="__codelineno-14-111" href="#__codelineno-14-111"></a>    <span class="n">xla_ctx</span> <span class="o">=</span> <span class="n">XlaAutotuningLogContext</span><span class="p">(</span>
+<a id="__codelineno-14-112" name="__codelineno-14-112" href="#__codelineno-14-112"></a>        <span class="n">cudnn_version</span><span class="o">=</span><span class="s2">&quot;9.x&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-113" name="__codelineno-14-113" href="#__codelineno-14-113"></a>        <span class="n">compute_capability</span><span class="o">=</span><span class="s2">&quot;sm_90&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-114" name="__codelineno-14-114" href="#__codelineno-14-114"></a>        <span class="n">device_pci_bus_id</span><span class="o">=</span><span class="s2">&quot;0000:00:00.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-115" name="__codelineno-14-115" href="#__codelineno-14-115"></a>    <span class="p">)</span>
+<a id="__codelineno-14-116" name="__codelineno-14-116" href="#__codelineno-14-116"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: again, real field names, placeholder values -- no GPU here &quot;</span>
+<a id="__codelineno-14-117" name="__codelineno-14-117" href="#__codelineno-14-117"></a>          <span class="s2">&quot;to read real ones from.&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-118" name="__codelineno-14-118" href="#__codelineno-14-118"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;XLA&#39;s own real AutotuningLog context fields &quot;</span>
+<a id="__codelineno-14-119" name="__codelineno-14-119" href="#__codelineno-14-119"></a>                 <span class="s2">&quot;(xla/autotuning.proto)&quot;</span><span class="p">,</span> <span class="n">xla_ctx</span><span class="p">)</span>
+<a id="__codelineno-14-120" name="__codelineno-14-120" href="#__codelineno-14-120"></a>    <span class="nb">print</span><span class="p">()</span>
+<a id="__codelineno-14-121" name="__codelineno-14-121" href="#__codelineno-14-121"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- AutotuningLog retains diagnostic context; these placeholder fields &quot;</span>
+<a id="__codelineno-14-122" name="__codelineno-14-122" href="#__codelineno-14-122"></a>          <span class="s2">&quot;do not specify cache equality or guarantee exact-device reuse. &quot;</span>
+<a id="__codelineno-14-123" name="__codelineno-14-123" href="#__codelineno-14-123"></a>          <span class="s2">&quot;Current XLA AutotuneCacheKey combines a device-model description, &quot;</span>
+<a id="__codelineno-14-124" name="__codelineno-14-124" href="#__codelineno-14-124"></a>          <span class="s2">&quot;canonical HLO and a cache version. Persisted cache version separation &quot;</span>
+<a id="__codelineno-14-125" name="__codelineno-14-125" href="#__codelineno-14-125"></a>          <span class="s2">&quot;and invalidation also require user care. CUDA Hammer&#39;s simple target &quot;</span>
+<a id="__codelineno-14-126" name="__codelineno-14-126" href="#__codelineno-14-126"></a>          <span class="s2">&quot;string is an educational comparison, not XLA&#39;s full reuse policy.&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-127" name="__codelineno-14-127" href="#__codelineno-14-127"></a>
+<a id="__codelineno-14-128" name="__codelineno-14-128" href="#__codelineno-14-128"></a>
+<a id="__codelineno-14-129" name="__codelineno-14-129" href="#__codelineno-14-129"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-14-130" name="__codelineno-14-130" href="#__codelineno-14-130"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python3<span class="w"> </span><span class="s2">&quot;065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py&quot;</span>
 </code></pre></div>
-<p><strong>Output (cloud sandbox, x86-64 -- real, live-generated XLA output):</strong></p>
+<p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>==============================================================================
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>PART 1: the tuning-knob record itself
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>==============================================================================
@@ -3200,7 +3196,7 @@ sharing.</p>
 <a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>-- both records answer the exact same question for their own system: how should ONE loop nest / GEMM be tiled and launched. CUDA Hammer&#39;s Schedule generalizes over ANY LoopNest shape (Ch21&#39;s own enumerateSchedules()); XLA&#39;s TritonGemmKey is specific to one matmul-shaped Triton kernel template -- CUDA Hammer&#39;s toy IR never grew a matmul op (Ch4&#39;s own scope, unchanged through Ch24).
 <a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>
 <a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>==============================================================================
-<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>PART 2: the (workload, target) cache key shape
+<a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>PART 2: target context is not a complete cache key
 <a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a>==============================================================================
 <a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>CUDA Hammer&#39;s own Ch24.3 key: &#39;dim0:6,dim1:8@aarch64&#39;
 <a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a>NOTE: again, real field names, placeholder values -- no GPU here to read real ones from.
@@ -3209,42 +3205,7 @@ sharing.</p>
 <a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>    compute_capability = &#39;sm_90&#39;
 <a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a>    device_pci_bus_id = &#39;0000:00:00.0&#39;
 <a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a>
-<a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a>-- Ch24.3&#39;s own loopNestKeyForTarget() was built by direct measurement on two real machines (a cloud sandbox and a real device disagreeing on the fastest schedule for the identical LoopNest shape) BEFORE this chapter ever looked at XLA&#39;s own source. XLA&#39;s own AutotuningLog arrives at the same shape -- a winning config is only valid for the (workload, target) pair that produced it -- at production scale, with three real target fields where Ch24.3&#39;s own key used one string.
-</code></pre></div>
-<p><strong>Output (device, aarch64 Linux VM -- real, live-generated XLA output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>==============================================================================
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>PART 1: the tuning-knob record itself
-<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>==============================================================================
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>CudaHammerSchedule (Ch21, this book&#39;s own struct):
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>    tile_size_per_loop = [6, 8]
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>    loop_order = [0, 1]
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>    unroll_factor = 4
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>    -- 3 fields
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>
-<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>NOTE: the field NAMES below are real (xla/autotuning.proto); the VALUES are representative placeholders, not a measured result -- this sandbox has no GPU for XLA&#39;s real autotuner to search on.
-<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>XlaTritonGemmKey (real field names, xla/autotuning.proto):
-<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>    block_m = 128
-<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>    block_n = 128
-<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>    block_k = 32
-<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>    num_stages = 3
-<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>    num_warps = 4
-<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>    num_ctas = 1
-<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>    is_tma_allowed = False
-<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>    -- 7 fields
-<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>
-<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>-- both records answer the exact same question for their own system: how should ONE loop nest / GEMM be tiled and launched. CUDA Hammer&#39;s Schedule generalizes over ANY LoopNest shape (Ch21&#39;s own enumerateSchedules()); XLA&#39;s TritonGemmKey is specific to one matmul-shaped Triton kernel template -- CUDA Hammer&#39;s toy IR never grew a matmul op (Ch4&#39;s own scope, unchanged through Ch24).
-<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>
-<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>==============================================================================
-<a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a>PART 2: the (workload, target) cache key shape
-<a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>==============================================================================
-<a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a>CUDA Hammer&#39;s own Ch24.3 key: &#39;dim0:6,dim1:8@aarch64&#39;
-<a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>NOTE: again, real field names, placeholder values -- no GPU here to read real ones from.
-<a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a>XLA&#39;s own real AutotuningLog context fields (xla/autotuning.proto):
-<a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a>    cudnn_version = &#39;9.x&#39;
-<a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>    compute_capability = &#39;sm_90&#39;
-<a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a>    device_pci_bus_id = &#39;0000:00:00.0&#39;
-<a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a>
-<a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a>-- Ch24.3&#39;s own loopNestKeyForTarget() was built by direct measurement on two real machines (a cloud sandbox and a real device disagreeing on the fastest schedule for the identical LoopNest shape) BEFORE this chapter ever looked at XLA&#39;s own source. XLA&#39;s own AutotuningLog arrives at the same shape -- a winning config is only valid for the (workload, target) pair that produced it -- at production scale, with three real target fields where Ch24.3&#39;s own key used one string.
+<a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a>-- AutotuningLog retains diagnostic context; these placeholder fields do not specify cache equality or guarantee exact-device reuse. Current XLA AutotuneCacheKey combines a device-model description, canonical HLO and a cache version. Persisted cache version separation and invalidation also require user care. CUDA Hammer&#39;s simple target string is an educational comparison, not XLA&#39;s full reuse policy.
 </code></pre></div>
 <p><em>This file calls no XLA API at all -- it is deterministic Python -- so both machines' output matches exactly, as expected; it is included here for the same cross-machine-verification discipline every other chapter in this book has followed since Chapter 17.</em></p>
 <h2 id="253-a-real-production-autotuners-own-tuning-knob-and-cache-key-records">25.3 A Real Production Autotuner's Own Tuning-Knob and Cache-Key Records<a class="headerlink" href="#253-a-real-production-autotuners-own-tuning-knob-and-cache-key-records" title="Permanent link">&para;</a></h2>
@@ -3269,7 +3230,7 @@ scale this book's own toy 48-element <code>LoopNest</code> never approached.</p>
 <p>This sandbox has no GPU, so there is no real autotuning <em>run</em> to execute
 the way Files 063/064 executed real fusion. What File 065 does instead is
 lay this book's own real Chapter 21/24 types directly next to the real
-record types XLA's own autotuner persists, field for field, using names
+record types used by XLA's autotuning tooling, including diagnostic logs, using names
 taken verbatim from XLA's own public source (<code>xla/autotuning.proto</code>) --
 inspectable rather than merely asserted, even without a GPU to fill the
 values in for real.</p>
@@ -3284,18 +3245,19 @@ grew a matmul op at all, an honest scope limit unchanged since Chapter 4)
 with a record shaped exactly to that problem's own real launch
 parameters -- a thread block's tile dimensions, its pipelining depth, its
 warp and cooperative-thread-array counts.</p>
-<p><strong><code>AutotuningLog</code> vs. <code>loopNestKeyForTarget()</code>.</strong> Chapter 24.3's own
-<code>loopNestKeyForTarget()</code> was built by direct measurement on two real
-machines -- a cloud sandbox and a real device that genuinely disagreed on
-the fastest schedule for the identical <code>LoopNest</code> shape -- <em>before</em> this
-chapter ever looked at XLA's own source for comparison. XLA's real
-<code>AutotuningLog</code> arrives at the same shape independently: a persisted
-result carries <code>cudnn_version</code>, <code>compute_capability</code>, and
-<code>device_pci_bus_id</code> alongside the winning config, so a cached config is
-only ever reused for the exact (workload, target) pair that produced it
--- Chapter 24.3's own one-string key, at production scale, with three
-real fields standing in for "target."</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>python3<span class="w"> </span><span class="s2">&quot;065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py&quot;</span>
+<p><strong><code>AutotuningLog</code> vs. <code>loopNestKeyForTarget()</code>.</strong> Log fields such as
+<code>cudnn_version</code>, <code>compute_capability</code> and <code>device_pci_bus_id</code> retain diagnostic
+context. They are not a specification of cache-key equality and do not prove
+that reuse is restricted to one physical device. The current
+<a href="https://github.com/openxla/xla/blob/main/xla/service/gpu/autotuning/autotune_cache_key.h">AutotuneCacheKey</a>
+combines a device-model description, canonicalized HLO and a cache version;
+the <a href="https://github.com/openxla/xla/blob/main/xla/service/gpu/autotuning/autotune_cache_key.cc">device description</a>
+includes performance-relevant properties and DNN version. These details are
+version-specific. OpenXLA's <a href="https://openxla.org/xla/persisted_autotuning">persisted-autotuning guidance</a>
+also requires user-managed version separation/invalidation. CUDA Hammer's
+one-string target key illustrates why context matters, without implementing
+or experimentally verifying XLA's complete cache-reuse policy.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>python3<span class="w"> </span><span class="s2">&quot;065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py&quot;</span>
 </code></pre></div>
 <h3 id="what-a-real-independent-mature-fusion-engine-still-leaves-on-the-table">What a real, independent, mature fusion engine still leaves on the table<a class="headerlink" href="#what-a-real-independent-mature-fusion-engine-still-leaves-on-the-table" title="Permanent link">&para;</a></h3>
 <p>Snider and Liang's 2023 paper "Operator Fusion in XLA: Analysis and

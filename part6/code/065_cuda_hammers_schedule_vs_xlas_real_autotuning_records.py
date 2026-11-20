@@ -22,12 +22,10 @@
 #      block_m, block_n, block_k, num_stages, num_warps, num_ctas -- a GPU
 #      GEMM's own tile-shape-and-launch-configuration analogue of Ch21's own
 #      Schedule{tileSizePerLoop, loopOrder, unrollFactor}.
-#   3. XLA persists autotuning results keyed by real target context --an
-#      AutotuningLog carries cudnn_version, compute_capability, and
-#      device_pci_bus_id alongside the winning config (xla/autotuning.proto)
-#      -- the same (workload, target) shape Ch24.3's own
-#      loopNestKeyForTarget() arrived at by direct measurement on two real
-#      machines, not by reading XLA's source first.
+#   3. AutotuningLog records context, not the cache key or a reuse guarantee.
+#      Current AutotuneCacheKey uses a device-model description, canonical HLO
+#      and a cache version. Persisted cache compatibility also has user-managed
+#      version/invalidation requirements (OpenXLA persisted_autotuning docs).
 
 from dataclasses import dataclass, fields
 
@@ -60,7 +58,7 @@ def loop_nest_key_for_target(shape_str: str, target: str) -> str:
 
 
 # --- XLA's real AutotuningLog target-context fields, transcribed from
-# xla/autotuning.proto (the fields that accompany a persisted result) -----
+# xla/autotuning.proto (the fields that accompany a logged result) -----
 @dataclass
 class XlaAutotuningLogContext:
     cudnn_version: str
@@ -105,7 +103,7 @@ def main():
 
     print()
     print("=" * 78)
-    print("PART 2: the (workload, target) cache key shape")
+    print("PART 2: target context is not a complete cache key")
     print("=" * 78)
     ch_key = loop_nest_key_for_target("dim0:6,dim1:8", "aarch64")
     print(f"CUDA Hammer's own Ch24.3 key: {ch_key!r}")
@@ -120,14 +118,12 @@ def main():
     print_fields("XLA's own real AutotuningLog context fields "
                  "(xla/autotuning.proto)", xla_ctx)
     print()
-    print("-- Ch24.3's own loopNestKeyForTarget() was built by direct "
-          "measurement on two real machines (a cloud sandbox and a real "
-          "device disagreeing on the fastest schedule for the identical "
-          "LoopNest shape) BEFORE this chapter ever looked at XLA's own "
-          "source. XLA's own AutotuningLog arrives at the same shape -- a "
-          "winning config is only valid for the (workload, target) pair "
-          "that produced it -- at production scale, with three real target "
-          "fields where Ch24.3's own key used one string.")
+    print("-- AutotuningLog retains diagnostic context; these placeholder fields "
+          "do not specify cache equality or guarantee exact-device reuse. "
+          "Current XLA AutotuneCacheKey combines a device-model description, "
+          "canonical HLO and a cache version. Persisted cache version separation "
+          "and invalidation also require user care. CUDA Hammer's simple target "
+          "string is an educational comparison, not XLA's full reuse policy.")
 
 
 if __name__ == "__main__":

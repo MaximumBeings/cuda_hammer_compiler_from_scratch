@@ -2636,14 +2636,14 @@
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Array size: 1000 float32 elements (4000 bytes)
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>num_ops  eager_bytes_moved      fused_bytes_moved      reduction_x    outputs_match
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>1        8000                   8000                   1.00           yes       
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>2        16000                  8000                   2.00           yes       
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>3        24000                  8000                   3.00           yes       
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>4        32000                  8000                   4.00           yes       
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>5        40000                  8000                   5.00           yes       
-<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>6        48000                  8000                   6.00           yes       
-<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>7        56000                  8000                   7.00           yes       
-<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>8        64000                  8000                   8.00           yes       
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>1        8000                   8000                   1.00           yes
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>2        16000                  8000                   2.00           yes
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>3        24000                  8000                   3.00           yes
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>4        32000                  8000                   4.00           yes
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>5        40000                  8000                   5.00           yes
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>6        48000                  8000                   6.00           yes
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>7        56000                  8000                   7.00           yes
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>8        64000                  8000                   8.00           yes
 <a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
 <a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>self-check: every row&#39;s counted bytes match the closed-form formula
 <a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>eager(N) = N * 2 * array_bytes, fused = 2 * array_bytes (confirmed); eager and
@@ -2796,20 +2796,20 @@ included, not subtracted out.)</p>
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>of how many operations were fused into it.
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>
 <a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>num_ops  eager_model_us           one_kernel_model_us      reduction_x
-<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>1        9.60                     9.60                     1.00        
-<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>2        19.20                    9.60                     2.00        
-<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>3        28.80                    9.60                     3.00        
-<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>4        38.40                    9.60                     4.00        
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>5        48.00                    9.60                     5.00        
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>6        57.60                    9.60                     6.00        
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>7        67.20                    9.60                     7.00        
-<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>8        76.80                    9.60                     8.00        
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>1        9.60                     9.60                     1.00
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>2        19.20                    9.60                     2.00
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>3        28.80                    9.60                     3.00
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>4        38.40                    9.60                     4.00
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>5        48.00                    9.60                     5.00
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>6        57.60                    9.60                     6.00
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>7        67.20                    9.60                     7.00
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>8        76.80                    9.60                     8.00
 <a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>
 <a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>=== Synthesis: a concrete 4-operation chain on a 1,000,000-element tensor ===
 <a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>
 <a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>Chain length: 4 operations. Tensor: 1000000 float32 elements (3.81 MiB).
 <a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>
-<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>                               eager           fused          
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>                               eager           fused
 <a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>synchronized latency model     38.40           9.60             (us, from NVIDIA&#39;s cited synchronized-kernel figure)
 <a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>memory traffic                 30.52           7.63             (MiB, logically counted from array sizes)
 <a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>

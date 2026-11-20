@@ -15,6 +15,14 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 041_lowering_a_whole_fused_graph.cpp -o 041_lowering_a_whole_fused_graph
 // Run:     ./041_lowering_a_whole_fused_graph
+#include <cctype>
+#include <cstdlib>
+#include <cerrno>
+#include <locale.h>
+#include <limits>
+#include <sys/wait.h>
+#include <iomanip>
+#include <locale>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -27,6 +35,54 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+
+// Parse finite decimal comparison output without iostream float underflow
+// truncation or std::stof's ERANGE exception for representable subnormals.
+static float parseFiniteFloat(const std::string& text) {
+    const char* start = text.c_str();
+    char* end = nullptr;
+    locale_t numericLocale = newlocale(LC_NUMERIC_MASK, "C", nullptr);
+    if (!numericLocale) throw std::runtime_error("cannot create C numeric locale");
+    errno = 0;
+    float value = strtof_l(start, &end, numericLocale);
+    int conversionError = errno;
+    freelocale(numericLocale);
+    if (conversionError == ERANGE && value == 0.0f)
+        throw std::runtime_error("float comparison token underflows to zero: " + text);
+    if (end == start) throw std::runtime_error("invalid float comparison token: " + text);
+    while (*end && std::isspace(static_cast<unsigned char>(*end))) ++end;
+    if (*end || !std::isfinite(value))
+        throw std::runtime_error("non-finite or malformed float comparison token: " + text);
+    return value;
+}
+static bool readFloatToken(std::istream& input, float& value) {
+    std::string token;
+    if (!(input >> token)) return false;
+    value = parseFiniteFloat(token);
+    return true;
+}
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
+// Locale-independent exact finite-float source literal. Hexadecimal output
+// preserves every float bit (including negative zero) without fixed-decimal loss.
+static std::string floatLiteral(float value) {
+    if (!std::isfinite(value)) throw std::invalid_argument("codegen requires finite float literals");
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    out << std::hexfloat << value;
+    return out.str() + "f";
+}
 
 // ==================== Value / OpKind / FusedStep / Node / Graph (from Chapters 13-14, unchanged) ====================
 
@@ -137,6 +193,15 @@ static TopoResult topologicalSort(const Graph& g) {
 // ==================== Shape / broadcastShapes / inferShapes (from Chapters 6 and 14, unchanged) ====================
 
 struct Shape { std::vector<int> dims; };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -146,10 +211,16 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -162,7 +233,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         else throw std::runtime_error(context + ": shapes " + shapeStr(a) + " and " + shapeStr(b) + " incompatible");
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -172,7 +243,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            shapes[id] = declaredShapes.at(id);
+            shapes[id] = validatedShape(declaredShapes.at(id));
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else if (n->op == OpKind::ReLU) {
@@ -212,12 +283,25 @@ static std::map<int, long long> computeChainDepths(const Graph& g, const std::ma
 }
 static std::set<int> computeSizeCapBoundaries(const Graph& g, const std::map<int, int>& consumers,
                                                long long maxChainLength) {
+    if (maxChainLength <= 0) throw std::invalid_argument("fusion body step budget must be positive");
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("computeSizeCapBoundaries: graph is not acyclic");
-    std::map<int, long long> depth = computeChainDepths(g, consumers, topo);
+    std::map<int, long long> groupSize;
     std::set<int> boundaries;
-    for (const auto& kv : depth) {
-        if (kv.second > 0 && kv.second % maxChainLength == 0) boundaries.insert(kv.first);
+    for (int id : topo.order) {
+        const Node* n = g.node(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) { groupSize[id] = 0; continue; }
+        long long size = 1; // this group's own final operation, including Sum
+        for (const Value& in : n->inputs) {
+            const Node* pred = g.node(in.nodeId);
+            bool canInline = (pred->op == OpKind::Add || pred->op == OpKind::Mul || pred->op == OpKind::ReLU) &&
+                             consumers.at(pred->id) == 1 && boundaries.count(pred->id) == 0;
+            if (!canInline) continue;
+            long long childSize = groupSize.at(pred->id);
+            if (childSize > maxChainLength - size) boundaries.insert(pred->id);
+            else size += childSize;
+        }
+        groupSize[id] = size;
     }
     return boundaries;
 }
@@ -441,7 +525,7 @@ static std::string generateLoopFunction(const std::string& funcName, const Lower
     std::vector<long long> strides(outerCount);
     {
         long long stride = 1;
-        for (int i = static_cast<int>(outerCount) - 1; i >= 0; --i) { strides[i] = stride; stride *= nest.loops[i].extent; }
+        for (int i = static_cast<int>(outerCount) - 1; i >= 0; --i) { strides[i] = stride; stride = checkedCountMul(stride, nest.loops[i].extent); }
     }
     std::string src = "void " + funcName + "(const std::vector<const float*>& ext, "
                        "const std::vector<long long>& extCounts, float* out) {\n";
@@ -499,7 +583,7 @@ static std::string generateLoopFunction(const std::string& funcName, const Lower
 
 static std::string formatLiteralArray(const std::vector<float>& v) {
     std::string out = "{";
-    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += std::to_string(v[i]) + "f"; }
+    for (size_t i = 0; i < v.size(); ++i) { if (i) out += ", "; out += floatLiteral(v[i]); }
     out += "}";
     return out;
 }
@@ -532,7 +616,7 @@ static std::string generateFullProgram(const Graph& g, const std::map<int, Shape
         if (n->op == OpKind::Input) {
             prog += "    buf[\"" + n->debugName + "\"] = " + formatLiteralArray(inputArrays.at(n->debugName)) + ";\n";
         } else if (n->op == OpKind::Const) {
-            prog += "    buf[\"" + n->debugName + "\"] = {" + std::to_string(n->constValue) + "f};\n";
+            prog += "    buf[\"" + n->debugName + "\"] = {" + floatLiteral(n->constValue) + "};\n";
         }
     }
     for (int id : topo.order) {
@@ -550,7 +634,7 @@ static std::string generateFullProgram(const Graph& g, const std::map<int, Shape
     for (int id : topo.order) {
         const Node* n = g.node(id);
         prog += "    printf(\"" + n->debugName + ":\");\n";
-        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.6f\", v);\n";
+        prog += "    for (float v : buf[\"" + n->debugName + "\"]) printf(\" %.9g\", v);\n";
         prog += "    printf(\"\\n\");\n";
     }
     prog += "    return 0;\n}\n";
@@ -578,7 +662,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
         std::istringstream rest(line.substr(colon + 1));
         std::vector<float> vals;
         float v;
-        while (rest >> v) vals.push_back(v);
+        while (readFloatToken(rest, v)) vals.push_back(v);
         result[name] = vals;
     }
     return result;
@@ -592,6 +676,7 @@ static std::map<std::string, std::vector<float>> compileAndRunFullProgram(const 
     std::ofstream f(srcPath);
     f << prog;
     f.close();
+    if (!f) throw std::runtime_error("cannot write generated source: " + srcPath);
     runShellCaptureStdout("g++ -std=c++17 -O2 " + srcPath + " -o " + binPath + " 2>&1");
     std::string stdoutText = runShellCaptureStdout(binPath);
     return parseNamedBuffers(stdoutText);

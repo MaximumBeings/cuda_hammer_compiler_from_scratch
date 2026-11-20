@@ -17,11 +17,24 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 055_a_memory_stride_cost_model_for_loop_order.cpp -o 055_driver
 // Run:     ./055_driver
+#include <stdexcept>
 #include <cstdio>
 #include <string>
 #include <vector>
 #include <chrono>
 #include <limits>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop / LoopNest / LoopOrder (Chapter 15 / 21.2, unchanged) ====================
 
@@ -55,7 +68,7 @@ using LoopOrder = std::vector<int>;
 static double estimateLoopOrderCost(const LoopNest& nest, const LoopOrder& order,
                                      long long cacheLineElements, double perLineCost, double perElementWork) {
     long long totalIterations = 1;
-    for (const Loop& l : nest.loops) totalIterations *= l.extent;
+    for (const Loop& l : nest.loops) totalIterations = checkedCountMul(totalIterations, l.extent);
 
     int contiguousDim = static_cast<int>(nest.loops.size()) - 1;  // last loop dim = row-major-contiguous
     int innermostDim = order.back();                              // last entry in the ORDER = innermost trip

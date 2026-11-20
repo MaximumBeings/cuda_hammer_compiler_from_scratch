@@ -22,6 +22,7 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 053_unrolling_and_the_full_schedule_search_space_this_chapter_built_toward.cpp -o 053_driver
 // Run:     ./053_driver
+#include <limits>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -30,6 +31,18 @@
 #include <numeric>
 #include <cmath>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Loop / LoopNest (Chapter 15, unchanged) ====================
 
@@ -41,7 +54,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };

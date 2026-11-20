@@ -108,8 +108,9 @@ if __name__ == "__main__":
     eager_out = diamond(a, b, c)
 
     print(f"Real torch.cuda.is_available(): {torch.cuda.is_available()}")
+    torch.testing.assert_close(out, eager_out, atol=1e-8, rtol=1e-5, equal_nan=False)
     print(f"Real correctness check: compiled vs. eager match = "
-          f"{torch.allclose(out, eager_out)}")
+          f"{torch.allclose(out, eager_out, atol=1e-8, rtol=1e-5)}")
 
     print()
     print("=== Real Inductor-generated C++ (one real kernel function) ===")

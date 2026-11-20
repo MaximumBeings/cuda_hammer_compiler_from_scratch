@@ -1,33 +1,21 @@
 // Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer
 // 091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp
 //
-// Section 34.2 -- the harder part: backward induction. A real N-step
-// CRR tree's own price is `V_i[j] = disc * (p*V_{i+1}[j+1] +
-// (1-p)*V_{i+1}[j])`, computed backward from the terminal payoffs
-// (Section 34.1) down to the root. Every earlier chapter in Part 7
-// that needed a "read my neighbor" shape (Section 31.2's im2col
-// filters, Section 33.1's 1D stencil) built it as a REGULAR, offset-
-// based array operation -- shift a whole array by a fixed offset, host-
-// side, since the neighbor relationship was uniform across a flat
-// grid. A binomial tree's own parent-child relationship is different:
-// it is IRREGULAR but completely, statically known at build time --
-// node `V_i[j]`'s two children are always exactly `V_{i+1}[j]` and
-// `V_{i+1}[j+1]`, a fixed graph edge, not an array offset.
-//
-// That is exactly what an ordinary CUDA Hammer `Value` reference
-// already expresses -- the same mechanism Chapter 4's own diamond
-// graph used to make one node feed two different consumers. So this
-// section needs NO im2col-style staging and NO host-orchestrated
-// per-step re-evaluation (unlike Section 33.2's own fixed-depth
-// chain): the ENTIRE tree, all 5 terminal payoffs and all 10 backward-
-// induction nodes, is built as ONE ordinary static CUDA Hammer graph,
-// wired up with plain Value references in a host-side loop, and
-// evaluated in a single call to evaluateArrays().
+// Section 34.2: statically expanded scalar backward induction for a CRR put.
+// Both a fixed-grid stencil and the recombining CRR lattice have connectivity
+// known before input values exist. Earlier stencil examples chose array-valued
+// nodes and host-side shifts because the IR has no gather/shift operation.
+// This example instead expands each lattice entry as a scalar Value and wires
+// all dependencies at build time. A fixed stencil could be expanded similarly,
+// at the cost of more graph nodes; this is a representation/granularity choice,
+// not a distinction between regular runtime data and irregular static edges.
+// The entire fixed-depth lattice is evaluated in one graph call.
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp -o 091_driver
 // Run:     ./091_driver
 #include <cstdio>
 #include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -35,6 +23,18 @@
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / OpKind / Node / Graph (from File 090, unchanged) ====================
 
@@ -101,16 +101,27 @@ static TopoResult topologicalSort(const Graph& g) {
 }
 
 struct Shape { std::vector<int> dims; };
-static long long numElements(const Shape& s) { long long n = 1; for (int d : s.dims) n *= d; return n; }
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
+static long long numElements(const Shape& s) { (void)validatedShape(s); long long n = 1; for (int d : s.dims) n = checkedCountMul(n, d); return n; }
 static Shape broadcastShapes(const Shape& a, const Shape& b) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
         int da = (i < a.dims.size()) ? a.dims[a.dims.size() - 1 - i] : 1;
         int db = (i < b.dims.size()) ? b.dims[b.dims.size() - 1 - i] : 1;
+        if (da != db && da != 1 && db != 1) throw std::invalid_argument("incompatible broadcast dimensions");
         result[rank - 1 - i] = (da == db) ? da : (da == 1 ? db : da);
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
     TopoResult topo = topologicalSort(g);
@@ -118,7 +129,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
     std::map<int, Shape> shapes;
     for (int id : topo.order) {
         const Node* n = g.node(id);
-        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = declaredShapes.at(id);
+        if (n->op == OpKind::Input || n->op == OpKind::Const) shapes[id] = validatedShape(declaredShapes.at(id));
         else if (n->op == OpKind::Add || n->op == OpKind::Mul)
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId));
         else if (n->op == OpKind::ReLU) shapes[id] = shapes.at(n->inputs[0].nodeId);
@@ -258,16 +269,11 @@ int main() {
     const float dt = T / static_cast<float>(n);
     CrrParams crr = computeCrrParams(sigma, r, dt);
 
-    printf("real gap named directly, and the real finding this section is actually about: Section\n");
-    printf("31.2's im2col shifts and Section 33.1's 1D stencil shifts both worked because their own\n");
-    printf("neighbor relationship was REGULAR -- a fixed offset across a flat array, known only once\n");
-    printf("that array's own real data existed. A binomial tree's own parent-child relationship is\n");
-    printf("IRREGULAR but completely, statically known at BUILD time: V_i[j]'s two children are\n");
-    printf("always exactly V_{i+1}[j] and V_{i+1}[j+1]. That is exactly what an ordinary CUDA Hammer\n");
-    printf("Value reference already expresses -- the SAME mechanism Chapter 4's own diamond graph used\n");
-    printf("for one node feeding two consumers. So this section needs NO im2col-style staging and NO\n");
-    printf("host-orchestrated re-evaluation between levels (unlike Section 33.2's own fixed-depth\n");
-    printf("chain): the WHOLE tree is built as ONE static graph, evaluated once.\n\n");
+    printf("Both the fixed-grid stencil and CRR lattice have statically known connectivity.\n");
+    printf("Sections 31/33 chose array-valued nodes and host-side shifts; this section expands\n");
+    printf("one scalar Value per lattice entry and wires its children at graph-build time.\n");
+    printf("A fixed stencil could also be expanded as scalar nodes, trading staging for graph size.\n");
+    printf("This fixed-depth CRR graph therefore uses no im2col staging or per-level host calls.\n\n");
 
     TreeBuildResult built = buildEuropeanPutTree(s0, k, crr, n);
     const Graph& g = built.graph;
@@ -302,9 +308,9 @@ int main() {
     allOk = allOk && boundedAbove && positivePrice;
 
     printf("--- what this section actually shows ---\n\n");
-    printf("unlike Section 33.2's own honest workaround (unroll a fixed step count into the host\n");
-    printf("driver, because this IR has no loop), this section needed no workaround for the tree's\n");
-    printf("own recursive structure at all: a fixed, finite, completely statically-known DAG -- which\n");
+    printf("Section 33.2 chose array-valued nodes and fixed-depth host orchestration in its\n");
+    printf("driver. This section expands the fixed CRR depth into scalar nodes; its lattice's\n");
+    printf("dependencies form a fixed, finite, statically known DAG -- a representation which\n");
     printf("is exactly what a binomial tree of depth N already is -- is exactly the shape CUDA\n");
     printf("Hammer's own graph model was built for since Chapter 4. Section 34.3 extends this SAME\n");
     printf("static graph to a harder real problem: American-style early exercise.\n\n");

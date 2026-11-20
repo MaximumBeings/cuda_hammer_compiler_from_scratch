@@ -23,6 +23,8 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp -o 059_driver -ldl
 // Run:     ./059_driver
+#include <unistd.h>
+#include <sys/wait.h>
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -35,6 +37,18 @@
 #include <stdexcept>
 #include <dlfcn.h>
 
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
+
 // ==================== Loop / LoopNest / Schedule machinery (Chapters 15/21, unchanged) ====================
 
 struct Loop {
@@ -45,7 +59,7 @@ struct LoopNest {
     std::vector<Loop> loops;
     long long totalIterations() const {
         long long total = 1;
-        for (const Loop& l : loops) total *= l.extent;
+        for (const Loop& l : loops) total = checkedCountMul(total, l.extent);
         return total;
     }
 };
@@ -182,6 +196,8 @@ private:
 static void writeFile(const std::string& path, const std::string& content) {
     std::ofstream f(path);
     f << content;
+    f.close();
+    if (!f) throw std::runtime_error("cannot write source file: " + path);
 }
 static std::string runShellCaptureAll(const std::string& cmd) {
     std::string out;
@@ -189,14 +205,46 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
+// Each candidate has its own source and output path. Failed compilation
+// throws before callers can load/time an older shared object at the final path.
+static std::string shellQuote(const std::string& value) {
+    std::string result = "'";
+    for (char c : value) result += (c == '\'') ? "'\\''" : std::string(1, c);
+    return result + "'";
+}
+class StagedFile {
+public:
+    explicit StagedFile(const std::string& base) {
+        std::string pattern = base + ".candidate.XXXXXX";
+        std::vector<char> name(pattern.begin(), pattern.end());
+        name.push_back('\0');
+        int fd = mkstemp(name.data());
+        if (fd == -1) throw std::runtime_error("cannot create staged file for " + base);
+        close(fd);
+        path_ = name.data();
+    }
+    ~StagedFile() { std::remove(path_.c_str()); }
+    StagedFile(const StagedFile&) = delete;
+    StagedFile& operator=(const StagedFile&) = delete;
+    const std::string& path() const { return path_; }
+private:
+    std::string path_;
+};
 static bool compileToSharedLibrary(const std::string& source, const std::string& cppPath, const std::string& soPath,
                                     std::string& compileLog) {
-    writeFile(cppPath, source);
-    compileLog = runShellCaptureAll("g++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC " + cppPath + " -o " + soPath + " 2>&1");
-    return compileLog.empty();
+    writeFile(cppPath, source); // stable review copy; compilation uses its private source
+    StagedFile input(cppPath), output(soPath);
+    writeFile(input.path(), source);
+    compileLog = runShellCaptureAll(std::string("g++ -x c++ -std=c++17 -Wall -Wextra -O2 -shared -fPIC") + " " +
+                                     shellQuote(input.path()) + " -o " + shellQuote(output.path()) + " 2>&1");
+    if (std::rename(output.path().c_str(), soPath.c_str()) != 0)
+        throw std::runtime_error("cannot promote compiled shared library to " + soPath);
+    return true; // successful process; compiler warnings are diagnostic text, not failure
 }
 
 // ==================== Section 23.2's own generateScheduleFunction() (unchanged) ====================

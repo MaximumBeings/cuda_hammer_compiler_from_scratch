@@ -24,6 +24,7 @@
 // Run:     ./026_measuring_fusions_effect_on_cuda_hammers_own_graph
 #include <cstdio>
 #include <limits>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -31,6 +32,18 @@
 #include <deque>
 #include <algorithm>
 #include <stdexcept>
+
+// Nonnegative logical counts: fail before arithmetic exceeds the representation.
+[[maybe_unused]] static long long checkedCountAdd(long long a, long long b) {
+    if (a < 0 || b < 0 || a > std::numeric_limits<long long>::max() - b)
+        throw std::overflow_error("logical count addition overflow or negative count");
+    return a + b;
+}
+[[maybe_unused]] static long long checkedCountMul(long long a, long long b) {
+    if (a < 0 || b < 0 || (b != 0 && a > std::numeric_limits<long long>::max() / b))
+        throw std::overflow_error("logical count multiplication overflow or negative count");
+    return a * b;
+}
 
 // ==================== Value / Node / Graph (from Chapter 4, unchanged) ====================
 
@@ -126,6 +139,15 @@ static TopoResult topologicalSort(const Graph& g) {
 struct Shape {
     std::vector<int> dims;
 };
+static Shape validatedShape(const Shape& shape) {
+    long long count = 1;
+    for (int d : shape.dims) {
+        if (d <= 0) throw std::invalid_argument("shape dimensions must be positive");
+        count = checkedCountMul(count, d);
+    }
+    return shape;
+}
+
 
 static std::string shapeStr(const Shape& s) {
     std::string out = "[";
@@ -149,6 +171,7 @@ static long long numElements(const Shape& s) {
 }
 
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
+    (void)validatedShape(a); (void)validatedShape(b);
     size_t rank = std::max(a.dims.size(), b.dims.size());
     std::vector<int> result(rank);
     for (size_t i = 0; i < rank; ++i) {
@@ -167,7 +190,7 @@ static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& 
         }
         result[rank - 1 - i] = outDim;
     }
-    return Shape{result};
+    return validatedShape(Shape{result});
 }
 
 static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shape>& declaredShapes) {
@@ -178,7 +201,7 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
         const Node* n = g.node(id);
         std::string context = "node %" + std::to_string(id) + " (" + n->debugName + ")";
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            shapes[id] = declaredShapes.at(id);
+            shapes[id] = validatedShape(declaredShapes.at(id));
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             shapes[id] = broadcastShapes(shapes.at(n->inputs[0].nodeId), shapes.at(n->inputs[1].nodeId), context);
         } else {  // ReLU -- shape-preserving
@@ -208,11 +231,11 @@ static long long unfusedBytesMoved(const Graph& g, const std::map<int, Shape>& s
     for (const auto& n : g.nodes()) {
         if (n->op == OpKind::Input || n->op == OpKind::Const) continue;  // a leaf has nothing to compute
         for (const Value& in : n->inputs) {
-            totalElements += numElements(shapes.at(in.nodeId));  // read each operand from memory
+            totalElements = checkedCountAdd(totalElements, numElements(shapes.at(in.nodeId)));  // read each operand from memory
         }
-        totalElements += numElements(shapes.at(n->id));  // write this node's own output
+        totalElements = checkedCountAdd(totalElements, numElements(shapes.at(n->id)));  // write this node's own output
     }
-    return static_cast<long long>(static_cast<double>(totalElements) * kBytesPerElement);
+    return checkedCountMul(totalElements, 4);
 }
 
 // FUSED: a single kernel reads each DISTINCT leaf (Input/Const) from
@@ -225,12 +248,12 @@ static long long fusedBytesMoved(const Graph& g, const std::map<int, Shape>& sha
     long long leafElements = 0;
     for (const auto& n : g.nodes()) {
         if (n->op == OpKind::Input || n->op == OpKind::Const) {
-            leafElements += numElements(shapes.at(n->id));
+            leafElements = checkedCountAdd(leafElements, numElements(shapes.at(n->id)));
         }
     }
     const Node* outputNode = g.nodes().back().get();  // Chapter 9's own convention
     long long outputElements = numElements(shapes.at(outputNode->id));
-    return static_cast<long long>(static_cast<double>(leafElements + outputElements) * kBytesPerElement);
+    return checkedCountMul(checkedCountAdd(leafElements, outputElements), 4);
 }
 
 // Total FLOPs is IDENTICAL either way -- fusion changes where and how
@@ -239,7 +262,7 @@ static long long totalFlops(const Graph& g, const std::map<int, Shape>& shapes) 
     long long total = 0;
     for (const auto& n : g.nodes()) {
         if (n->op == OpKind::Input || n->op == OpKind::Const) continue;
-        total += numElements(shapes.at(n->id));  // one FLOP per output element, same simplification as File 024
+        total = checkedCountAdd(total, numElements(shapes.at(n->id)));  // one FLOP per output element, same simplification as File 024
     }
     return total;
 }
