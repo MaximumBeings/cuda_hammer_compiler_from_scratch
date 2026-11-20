@@ -4,7 +4,7 @@
 // Section 18.1 -- Chapter 17 lowered a node's own LoopNest + FusedStep body
 // into a SERIAL C++ for-loop. This section targets a genuinely different
 // execution model: a CUDA grid, where every loop ITERATION becomes its own
-// THREAD running concurrently, not one more pass through a shared loop
+// THREAD eligible for concurrent scheduling, not one more pass through a shared loop
 // variable. emitSteps() is the shared core this shares with Chapter 17's
 // own generateLoopFunction(): the SAME step-sequencing logic (which op
 // happens in which order, how a PriorStep operand chains to an earlier
@@ -16,21 +16,24 @@
 // std::vector<const float*>'s own internal buffer lives in HOST memory and
 // would be an invalid address if a __global__ kernel tried to dereference
 // it directly), and how ReLU's own max gets spelled (std::max vs fmaxf).
-// The generated .cu program is compiled with real nvcc and then actually
-// RUN, honestly reporting this toolchain's real constraint: no physical
-// GPU exists on either side of this book's own toolchain, so every CUDA
-// API call reports "no CUDA-capable device is detected" -- checked, not
-// glossed over, the same way Chapter 12's roofline model or Chapter 14's
-// FLOPs convention were checked against real published or real measured
-// numbers rather than assumed correct.
+// Generated programs are compiled by nvcc and compared numerically on a
+// physical CUDA device. The original environment had no GPU; that historical
+// diagnostic did not validate device arithmetic. No-device now skips with77.
+// The later A100 run validates this fixture on actual GPU hardware.
 //
-// Compile: g++ -std=c++17 -Wall -Wextra -O2 042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.cu -o 042_driver
+// Compile: g++ -x c++ -std=c++17 -Wall -Wextra -O2 042_from_loops_to_threads_a_cuda_elementwise_kernel_generator.cu -o 042_driver
 // Run:     ./042_driver
 // (This file's own main() is plain C++: it GENERATES a .cu program as a
 // string, writes it to disk, and shells out to nvcc to compile and run IT.
 // The driver itself needs no CUDA toolchain to build -- only the .cu file
 // it writes does.)
+// Override for the test GPU, including kernels compiled by this generator.
+#ifndef HAMMER_CUDA_ARCH
+#define HAMMER_CUDA_ARCH "sm_70"
+#endif
+
 #include <cstdio>
+#include <sys/wait.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -472,7 +475,12 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    // A generated program uses 77 for fail-fast CUDA diagnostics. The
+    // caller distinguishes a no-device skip from other CUDA failures.
+    if (status == -1 || !WIFEXITED(status) ||
+        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
@@ -547,8 +555,8 @@ int main() {
     };
 
     std::string prog = "#include <cstdio>\n#include <cuda_runtime.h>\n\n";
-    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) "
-            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); } while (0)\n\n";
+    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) { "
+            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); return 77; } } while (0)\n\n";
     prog += kernelSrc + "\n";
     prog += "int main() {\n";
     prog += "    float hExt0[] = " + formatArrayLiteral(t1Concrete) + ";\n";
@@ -567,28 +575,41 @@ int main() {
     prog += "    CUDA_CHECK(cudaDeviceSynchronize());\n";
     prog += "    float hOut[" + std::to_string(n) + "];\n";
     prog += "    CUDA_CHECK(cudaMemcpy(hOut, dOut, n * sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result (garbage/zero without a real GPU): \");\n";
+    prog += "    printf(\"kernel result: \");\n";
     prog += "    for (long long i = 0; i < n; ++i) printf(\"%.6f \", hOut[i]);\n";
     prog += "    printf(\"\\n\");\n";
     prog += "    CUDA_CHECK(cudaFree(dExt0)); CUDA_CHECK(cudaFree(dExt1)); CUDA_CHECK(cudaFree(dOut));\n";
     prog += "    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch18_042.cu", prog);
-    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=sm_70 -o /tmp/hammer_ch18_042 /tmp/hammer_ch18_042.cu 2>&1");
+    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o /tmp/hammer_ch18_042 /tmp/hammer_ch18_042.cu 2>&1");
     bool compileClean = compileLog.find("error") == std::string::npos;
     printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- clean compile)\n" : compileLog.c_str());
     printf("self-check: nvcc accepts the generated .cu file as valid CUDA C++ (%s)\n\n",
            compileClean ? "confirmed" : "MISMATCH");
 
     std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_042 2>&1");
-    printf("--- Running the compiled binary (this toolchain has no physical GPU, on either side) ---\n\n");
+    printf("--- Running the compiled CUDA binary ---\n\n");
     printf("%s\n", runOutput.c_str());
-    bool honestlyReportsNoDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
-    printf("self-check: checked CUDA error codes honestly report \"no CUDA-capable device is\n");
-    printf("detected\" at every API call, rather than silently returning garbage (%s)\n\n",
-           honestlyReportsNoDevice ? "confirmed" : "MISMATCH");
+    bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
+    if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
+    bool gpuMatches = runOutput.find("CUDA error") == std::string::npos;
+    try {
+        size_t pos = runOutput.find("kernel result:");
+        if (pos == std::string::npos) gpuMatches = false;
+        else {
+            std::istringstream values(runOutput.substr(pos + std::string("kernel result:").size()));
+            std::vector<float> got; float value;
+            while (values >> value) got.push_back(value);
+            const auto& expectedGpu = fusedArrays.at("out");
+            gpuMatches = gpuMatches && got.size() == expectedGpu.size();
+            for (size_t i = 0; gpuMatches && i < got.size(); ++i)
+                gpuMatches = std::fabs(got[i] - expectedGpu[i]) <= 1e-3f;
+        }
+    } catch (const std::exception&) { gpuMatches = false; }
+    printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
-    // ---- What this kernel's arithmetic WOULD compute, proven the only way this toolchain allows: real CPU execution ----
+    // ---- Independent CPU reference for the shared emitted arithmetic ----
     printf("--- The host-side reference: same emitSteps() body, run for real on the CPU ---\n\n");
     std::string cpuFuncSrc = generateCpuElementwiseFunction("compute_out_cpu", outLowered);
     std::string cpuProg = "#include <cstdio>\n#include <vector>\n#include <algorithm>\n\n" + cpuFuncSrc + "\n";
@@ -613,10 +634,10 @@ int main() {
     float v;
     while (iss >> v) cpuVals.push_back(v);
     bool cpuMatches = (cpuVals.size() == fusedArrays.at("out").size());
-    if (cpuMatches) for (size_t i = 0; i < cpuVals.size(); ++i) if (std::fabs(cpuVals[i] - fusedArrays.at("out")[i]) > 1e-3f) cpuMatches = false;
+    if (cpuMatches) for (size_t i = 0; i < cpuVals.size(); ++i) if (!(std::fabs(cpuVals[i] - fusedArrays.at("out")[i]) <= 1e-3f)) cpuMatches = false;
     printf("self-check: this IS the number the kernel's own arithmetic computes -- proven by real\n");
     printf("execution of the identical emitSteps() body on the CPU (%s)\n", cpuMatches ? "confirmed" : "MISMATCH");
 
-    bool allOk = sameStepCount && compileClean && honestlyReportsNoDevice && cpuMatches;
+    bool allOk = sameStepCount && compileClean && gpuMatches && cpuMatches;
     return allOk ? 0 : 1;
 }

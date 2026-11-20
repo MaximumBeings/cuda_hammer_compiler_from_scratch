@@ -10,7 +10,7 @@
 // emits REAL C++ text -- a tiled, unrolled loop, honoring a schedule's own
 // tile size and unroll factor exactly the way Section 21.1/21.3 defined
 // them -- compiled with the real g++ this book has shelled out to since
-// Chapter 18, and loaded in-process with Chapter 20's own JitModule. Every
+// Chapter 17, and loaded in-process with Chapter 20's own JitModule. Every
 // schedule this section tests is now a REAL compiled function, not an
 // interpreted one, and this section's own honest finding is a new one Part
 // 5 has not yet had to face: compiling a schedule has a real, nonzero cost

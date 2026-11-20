@@ -198,6 +198,8 @@ static std::map<int, Shape> inferShapes(const Graph& g, const std::map<int, Shap
             if (it == declaredShapes.end()) {
                 throw std::runtime_error(context + ": no declared shape was provided for this leaf node");
             }
+            for (int d : it->second.dims)
+                if (d <= 0) throw std::runtime_error(context + ": dimensions must be positive");
             shapes[id] = it->second;
         } else if (n->op == OpKind::Add || n->op == OpKind::Mul) {
             const Shape& lhs = shapes.at(n->inputs[0].nodeId);

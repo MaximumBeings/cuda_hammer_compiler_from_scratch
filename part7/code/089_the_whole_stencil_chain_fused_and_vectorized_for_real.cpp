@@ -776,6 +776,7 @@ int main() {
 
         bool stepMatches = true;
         for (int i = 0; i < n; ++i) {
+            if (!std::isfinite(wInterpreted[static_cast<size_t>(i)]) || !std::isfinite(wFusedInterpreted[static_cast<size_t>(i)]) || !std::isfinite(wVectorized[static_cast<size_t>(i)])) stepMatches = false;
             if (std::fabs(wInterpreted[static_cast<size_t>(i)] - wFusedInterpreted[static_cast<size_t>(i)]) > 1e-3f) stepMatches = false;
             if (std::fabs(wInterpreted[static_cast<size_t>(i)] - wVectorized[static_cast<size_t>(i)]) > 1e-2f) stepMatches = false;
         }

@@ -2,8 +2,8 @@
 # capability boundary, genuinely different from the fusion boundary File 072
 # already confirmed Inductor draws automatically. Run on the same
 # Ch4/13/25/26/27/72 diamond graph, split by inserting exactly one real
-# Python construct Dynamo cannot trace through: converting a tensor to a
-# plain Python float with `.item()`.
+# Python operation that breaks the graph with scalar capture disabled:
+# converting a tensor to a Python scalar with `.item()`.
 #
 # Compiled with:   python3 "073_graph_breaks_a_real_tracing_boundary_distinct_from_inductors_own_fusion_decision.py"
 
@@ -59,8 +59,8 @@ def diamond_no_break(a, b, c):
 def diamond_with_break(a, b, c):
     t1 = a + b
     # Tensor.item() forces a real value out of the traced graph and into a
-    # plain Python float -- Dynamo's own bytecode tracer cannot represent
-    # that inside one FX graph, so it stops tracing here and resumes with a
+    # plain Python float. With capture_scalar_outputs=False, Dynamo stops
+    # tracing here and resumes with a
     # SECOND graph for what follows. Nothing about FUSION changed; this is
     # a tracing-capability boundary, not a cost or correctness decision.
     _t1_sum_as_python_float = t1.sum().item()
@@ -70,6 +70,7 @@ def diamond_with_break(a, b, c):
 
 
 if __name__ == "__main__":
+    torch._dynamo.config.capture_scalar_outputs = False
     a = torch.randn(8)
     b = torch.randn(8)
     c = torch.randn(8)

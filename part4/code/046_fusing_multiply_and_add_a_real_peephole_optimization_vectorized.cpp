@@ -24,6 +24,8 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 046_fusing_multiply_and_add_a_real_peephole_optimization_vectorized.cpp -o 046_driver
 // Run:     ./046_driver
+// Numerical policy: FMA contraction and vector reductions may change rounding.
+// These teaching backends permit contraction; they are not strict bitwise FP rewrites.
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -704,13 +706,24 @@ int main() {
     while (iss >> v) vecVals.push_back(v);
     const std::vector<float>& expected = fusedArrays.at("out");
     bool matches = (vecVals.size() == expected.size());
-    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (std::fabs(vecVals[i] - expected[i]) > 1e-3f) matches = false;
+    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (!(std::fabs(vecVals[i] - expected[i]) <= 1e-3f)) matches = false;
     printf("evaluateArrays(fused).out = ");
     for (float ev : expected) printf("%.6f ", ev);
     printf("\n");
-    printf("self-check: a single fmadd/vfma instruction computes the identical result an unfused\n");
+    printf("self-check: folded FMA matches the unfused interpreter for this exact-valued fixture\n");
     printf("mul+add pair would -- confirmed against evaluateArrays() (%s)\n", matches ? "confirmed" : "MISMATCH");
 
-    bool allOk = compileClean && matches && (foldCount == 1) && (foldCount2 == 0);
+    // FMA rounds once, so contraction is a numerical-policy decision, not
+    // a generally bit-preserving rewrite. Force two distinct roundings here.
+    volatile float fa = 1.0f + std::ldexp(1.0f, -23);
+    volatile float fb = 1.0f - std::ldexp(1.0f, -23);
+    volatile float product = fa * fb;
+    float separate = product - 1.0f;
+    float contracted = std::fma(static_cast<float>(fa), static_cast<float>(fb), -1.0f);
+    bool roundingDiffers = separate == 0.0f && contracted != separate;
+    printf("rounding regression: separate=%a FMA=%a; different as expected: %s\n",
+           separate, contracted, roundingDiffers ? "yes" : "NO");
+
+    bool allOk = roundingDiffers && compileClean && matches && (foldCount == 1) && (foldCount2 == 0);
     return allOk ? 0 : 1;
 }

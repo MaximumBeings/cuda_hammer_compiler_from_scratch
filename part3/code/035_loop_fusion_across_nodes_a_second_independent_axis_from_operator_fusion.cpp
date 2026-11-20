@@ -19,6 +19,7 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion.cpp -o 035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion
 // Run:     ./035_loop_fusion_across_nodes_a_second_independent_axis_from_operator_fusion
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -145,7 +146,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {

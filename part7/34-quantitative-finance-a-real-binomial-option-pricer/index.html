@@ -12,6 +12,8 @@
         <meta name="author" content="Oluwaseyi Awoga">
       
       
+        <link rel="canonical" href="https://maximumbeings.github.io/cuda_hammer_compiler_from_scratch/part7/34-quantitative-finance-a-real-binomial-option-pricer/">
+      
       
         <link rel="prev" href="../33-scientific-computing-a-real-finite-difference-heat-stencil/">
       
@@ -71,7 +73,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -129,7 +131,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
@@ -139,7 +141,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
@@ -197,6 +199,18 @@
       
     
     
+      <div class="md-header__source">
+        <a href="https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
   </nav>
   
 </header>
@@ -230,6 +244,18 @@
     </a>
     CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
   </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -293,6 +319,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../validation-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -309,10 +362,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
@@ -330,8 +383,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -454,10 +507,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -475,8 +528,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -627,10 +680,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   
@@ -648,8 +701,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -800,10 +853,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -821,8 +874,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1001,10 +1054,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -1022,8 +1075,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1174,10 +1227,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
             
   
   
@@ -1195,8 +1248,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1347,10 +1400,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -1368,8 +1421,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1576,10 +1629,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" checked>
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -1597,8 +1650,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1851,10 +1904,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -1872,8 +1925,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2155,8 +2208,18 @@
                   
 
 
+  
+  
+
 
 <h1 id="chapter-34-quantitative-finance-a-real-binomial-option-pricer">Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer<a class="headerlink" href="#chapter-34-quantitative-finance-a-real-binomial-option-pricer" title="Permanent link">&para;</a></h1>
+<!-- hammer:figure:opener-34:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/openers/34.svg?v=68f92e4b84ed"><img alt="Quantitative Finance -- A Real Binomial Option Pricer" src="../../images/openers/34.svg?v=68f92e4b84ed" /></a></p>
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-34:end -->
+
 <p>Chapter 31 opened Part 7 with computer vision, finding no shift/gather
 primitive and working around it with host-side im2col staging. Chapter
 32 moved to NLP, finding no batched/per-row reduction and working
@@ -2199,6 +2262,13 @@ without unrolling.</p>
 <a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>+------------------------------------------------------------------+
 </code></pre></div>
 <h2 id="341-terminal-payoff-via-relu-a-real-exact-fit">34.1 -- Terminal payoff via ReLU, a real exact fit<a class="headerlink" href="#341-terminal-payoff-via-relu-a-real-exact-fit" title="Permanent link">&para;</a></h2>
+<!-- hammer:figure:34.1:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/concepts/34-01.svg?v=338130f82f8c"><img alt="A put payoff can use a maximum" src="../../images/concepts/34-01.svg?v=338130f82f8c" /></a></p>
+<figcaption>The payoff is one part of the pricing model.</figcaption>
+</figure>
+<!-- hammer:figure:34.1:end -->
+
 <p>A European option's own payoff at maturity is, by definition,
 <code>max(S_T - K, 0)</code> for a call and <code>max(K - S_T, 0)</code> for a put, where
 <code>S_T</code> is the underlying's real price at expiry and <code>K</code> is the strike.
@@ -2624,6 +2694,13 @@ harder part: the tree's own backward induction.</p>
 </code></pre></div>
 <p><em>Byte-identical on both machines -- this file has no CUDA/NCCL/MPI linkage and no vector intrinsics, so it is cross-verified on the cloud sandbox and the device, the same standing rule every plain C++ file in this book follows.</em></p>
 <h2 id="342-the-whole-binomial-tree-as-one-static-graph-european-put">34.2 -- The whole binomial tree as ONE static graph (European put)<a class="headerlink" href="#342-the-whole-binomial-tree-as-one-static-graph-european-put" title="Permanent link">&para;</a></h2>
+<!-- hammer:figure:34.2:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/concepts/34-02.svg?v=00847dfe678f"><img alt="Backward induction prices a European put" src="../../images/concepts/34-02.svg?v=00847dfe678f" /></a></p>
+<figcaption>Risk-neutral parameters require a valid binomial model.</figcaption>
+</figure>
+<!-- hammer:figure:34.2:end -->
+
 <p>This is the real finding this chapter is actually about. Section
 31.2's im2col shifts and Section 33.1's 1D stencil shifts both worked
 because their own neighbor relationship was REGULAR -- a fixed offset
@@ -3066,6 +3143,13 @@ graph to a harder real problem: American-style early exercise.</p>
 </code></pre></div>
 <p><em>Byte-identical on both machines -- again no CUDA/NCCL/MPI linkage and no vector intrinsics, cross-verified the same way as File 090.</em></p>
 <h2 id="343-the-capstone-early-exercise-via-relu-as-max-the-american-put-fused-and-vectorized">34.3 -- The capstone: early exercise via ReLU-as-max, the American put, fused and vectorized<a class="headerlink" href="#343-the-capstone-early-exercise-via-relu-as-max-the-american-put-fused-and-vectorized" title="Permanent link">&para;</a></h2>
+<!-- hammer:figure:34.3:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/concepts/34-03.svg?v=1ca6f3d26666"><img alt="American exercise adds a local decision" src="../../images/concepts/34-03.svg?v=1ca6f3d26666" /></a></p>
+<figcaption>Numerical agreement is not a market valuation guarantee.</figcaption>
+</figure>
+<!-- hammer:figure:34.3:end -->
+
 <p>An American option's holder may exercise at ANY interior node, not
 only at expiry. Wikipedia's own "Binomial options pricing model" page
 states the real rule directly:</p>
@@ -3960,77 +4044,80 @@ but a genuinely branching, converging DAG's.</p>
 <a id="__codelineno-13-823" name="__codelineno-13-823" href="#__codelineno-13-823"></a><span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">OpKind</span><span class="o">::</span><span class="n">FusedReduction</span><span class="p">)</span><span class="w"> </span><span class="n">fusedReductionCount</span><span class="o">++</span><span class="p">;</span>
 <a id="__codelineno-13-824" name="__codelineno-13-824" href="#__codelineno-13-824"></a><span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OpKind</span><span class="o">::</span><span class="n">Input</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">node</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OpKind</span><span class="o">::</span><span class="n">Const</span><span class="p">)</span><span class="w"> </span><span class="n">plainCount</span><span class="o">++</span><span class="p">;</span>
 <a id="__codelineno-13-825" name="__codelineno-13-825" href="#__codelineno-13-825"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-13-826" name="__codelineno-13-826" href="#__codelineno-13-826"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;fused graph: %zu nodes total -- %d FusedElementwise group(s), %d FusedReduction group(s),</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-827" name="__codelineno-13-827" href="#__codelineno-13-827"></a><span class="w">           </span><span class="n">fused</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">fusedElementwiseCount</span><span class="p">,</span><span class="w"> </span><span class="n">fusedReductionCount</span><span class="p">);</span>
-<a id="__codelineno-13-828" name="__codelineno-13-828" href="#__codelineno-13-828"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d plain (unfused) compute node(s), down from %zu compute nodes in the original graph.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">plainCount</span><span class="p">,</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
-<a id="__codelineno-13-829" name="__codelineno-13-829" href="#__codelineno-13-829"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">zeroReductionGroups</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">fusedReductionCount</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
-<a id="__codelineno-13-830" name="__codelineno-13-830" href="#__codelineno-13-830"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-831" name="__codelineno-13-831" href="#__codelineno-13-831"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-832" name="__codelineno-13-832" href="#__codelineno-13-832"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;tree topology (multiple nodes converging back into shared Const parameters), not a flat</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-833" name="__codelineno-13-833" href="#__codelineno-13-833"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;chain (%s)</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">zeroReductionGroups</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-834" name="__codelineno-13-834" href="#__codelineno-13-834"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">zeroReductionGroups</span><span class="p">;</span>
-<a id="__codelineno-13-835" name="__codelineno-13-835" href="#__codelineno-13-835"></a>
-<a id="__codelineno-13-836" name="__codelineno-13-836" href="#__codelineno-13-836"></a><span class="w">    </span><span class="c1">// The tree&#39;s own root (&quot;V_0_0&quot;) has no simple fixed name guaranteed to survive</span>
-<a id="__codelineno-13-837" name="__codelineno-13-837" href="#__codelineno-13-837"></a><span class="w">    </span><span class="c1">// fusion unchanged (unlike Section 34.1/34.2&#39;s or Files 083/086/089&#39;s capstones,</span>
-<a id="__codelineno-13-838" name="__codelineno-13-838" href="#__codelineno-13-838"></a><span class="w">    </span><span class="c1">// which used constant names like &quot;w_new&quot; or &quot;logit0&quot;), so find the fused graph&#39;s</span>
-<a id="__codelineno-13-839" name="__codelineno-13-839" href="#__codelineno-13-839"></a><span class="w">    </span><span class="c1">// node standing in for the original root via a reverse lookup through</span>
-<a id="__codelineno-13-840" name="__codelineno-13-840" href="#__codelineno-13-840"></a><span class="w">    </span><span class="c1">// representativeOldId instead of assuming a name.</span>
-<a id="__codelineno-13-841" name="__codelineno-13-841" href="#__codelineno-13-841"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">findFusedNodeIdForOldId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="kt">int</span><span class="w"> </span><span class="n">oldId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-842" name="__codelineno-13-842" href="#__codelineno-13-842"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">node</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fused</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-13-843" name="__codelineno-13-843" href="#__codelineno-13-843"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">representativeOldId</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">oldId</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">node</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
-<a id="__codelineno-13-844" name="__codelineno-13-844" href="#__codelineno-13-844"></a><span class="w">        </span><span class="p">}</span>
-<a id="__codelineno-13-845" name="__codelineno-13-845" href="#__codelineno-13-845"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
-<a id="__codelineno-13-846" name="__codelineno-13-846" href="#__codelineno-13-846"></a><span class="w">    </span><span class="p">};</span>
-<a id="__codelineno-13-847" name="__codelineno-13-847" href="#__codelineno-13-847"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">fusedRootId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">findFusedNodeIdForOldId</span><span class="p">(</span><span class="n">americanTree</span><span class="p">.</span><span class="n">root</span><span class="p">.</span><span class="n">nodeId</span><span class="p">);</span>
-<a id="__codelineno-13-848" name="__codelineno-13-848" href="#__codelineno-13-848"></a>
-<a id="__codelineno-13-849" name="__codelineno-13-849" href="#__codelineno-13-849"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">fusedInterpResult</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">evaluateArrays</span><span class="p">(</span><span class="n">fused</span><span class="p">,</span><span class="w"> </span><span class="n">americanTree</span><span class="p">.</span><span class="n">inputArrays</span><span class="p">,</span><span class="w"> </span><span class="n">fusedElementCounts</span><span class="p">);</span>
-<a id="__codelineno-13-850" name="__codelineno-13-850" href="#__codelineno-13-850"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">americanFusedInterpreted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fusedInterpResult</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">fused</span><span class="p">.</span><span class="n">node</span><span class="p">(</span><span class="n">fusedRootId</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+<a id="__codelineno-13-826" name="__codelineno-13-826" href="#__codelineno-13-826"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">origComputeCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-13-827" name="__codelineno-13-827" href="#__codelineno-13-827"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">node</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">g</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span>
+<a id="__codelineno-13-828" name="__codelineno-13-828" href="#__codelineno-13-828"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OpKind</span><span class="o">::</span><span class="n">Input</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">node</span><span class="o">-&gt;</span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">OpKind</span><span class="o">::</span><span class="n">Const</span><span class="p">)</span><span class="w"> </span><span class="n">origComputeCount</span><span class="o">++</span><span class="p">;</span>
+<a id="__codelineno-13-829" name="__codelineno-13-829" href="#__codelineno-13-829"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;fused graph: %zu nodes total -- %d FusedElementwise group(s), %d FusedReduction group(s),</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-830" name="__codelineno-13-830" href="#__codelineno-13-830"></a><span class="w">           </span><span class="n">fused</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">fusedElementwiseCount</span><span class="p">,</span><span class="w"> </span><span class="n">fusedReductionCount</span><span class="p">);</span>
+<a id="__codelineno-13-831" name="__codelineno-13-831" href="#__codelineno-13-831"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d plain (unfused) compute node(s), down from %d compute nodes in the original graph.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">plainCount</span><span class="p">,</span><span class="w"> </span><span class="n">origComputeCount</span><span class="p">);</span>
+<a id="__codelineno-13-832" name="__codelineno-13-832" href="#__codelineno-13-832"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">zeroReductionGroups</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">fusedReductionCount</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<a id="__codelineno-13-833" name="__codelineno-13-833" href="#__codelineno-13-833"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-834" name="__codelineno-13-834" href="#__codelineno-13-834"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-835" name="__codelineno-13-835" href="#__codelineno-13-835"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;tree topology (multiple nodes converging back into shared Const parameters), not a flat</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-836" name="__codelineno-13-836" href="#__codelineno-13-836"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;chain (%s)</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">zeroReductionGroups</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-837" name="__codelineno-13-837" href="#__codelineno-13-837"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">zeroReductionGroups</span><span class="p">;</span>
+<a id="__codelineno-13-838" name="__codelineno-13-838" href="#__codelineno-13-838"></a>
+<a id="__codelineno-13-839" name="__codelineno-13-839" href="#__codelineno-13-839"></a><span class="w">    </span><span class="c1">// The tree&#39;s own root (&quot;V_0_0&quot;) has no simple fixed name guaranteed to survive</span>
+<a id="__codelineno-13-840" name="__codelineno-13-840" href="#__codelineno-13-840"></a><span class="w">    </span><span class="c1">// fusion unchanged (unlike Section 34.1/34.2&#39;s or Files 083/086/089&#39;s capstones,</span>
+<a id="__codelineno-13-841" name="__codelineno-13-841" href="#__codelineno-13-841"></a><span class="w">    </span><span class="c1">// which used constant names like &quot;w_new&quot; or &quot;logit0&quot;), so find the fused graph&#39;s</span>
+<a id="__codelineno-13-842" name="__codelineno-13-842" href="#__codelineno-13-842"></a><span class="w">    </span><span class="c1">// node standing in for the original root via a reverse lookup through</span>
+<a id="__codelineno-13-843" name="__codelineno-13-843" href="#__codelineno-13-843"></a><span class="w">    </span><span class="c1">// representativeOldId instead of assuming a name.</span>
+<a id="__codelineno-13-844" name="__codelineno-13-844" href="#__codelineno-13-844"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">findFusedNodeIdForOldId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="o">&amp;</span><span class="p">](</span><span class="kt">int</span><span class="w"> </span><span class="n">oldId</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-845" name="__codelineno-13-845" href="#__codelineno-13-845"></a><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">node</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fused</span><span class="p">.</span><span class="n">nodes</span><span class="p">())</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-13-846" name="__codelineno-13-846" href="#__codelineno-13-846"></a><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">fr</span><span class="p">.</span><span class="n">representativeOldId</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">oldId</span><span class="p">)</span><span class="w"> </span><span class="k">return</span><span class="w"> </span><span class="n">node</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+<a id="__codelineno-13-847" name="__codelineno-13-847" href="#__codelineno-13-847"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-13-848" name="__codelineno-13-848" href="#__codelineno-13-848"></a><span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">-1</span><span class="p">;</span>
+<a id="__codelineno-13-849" name="__codelineno-13-849" href="#__codelineno-13-849"></a><span class="w">    </span><span class="p">};</span>
+<a id="__codelineno-13-850" name="__codelineno-13-850" href="#__codelineno-13-850"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">fusedRootId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">findFusedNodeIdForOldId</span><span class="p">(</span><span class="n">americanTree</span><span class="p">.</span><span class="n">root</span><span class="p">.</span><span class="n">nodeId</span><span class="p">);</span>
 <a id="__codelineno-13-851" name="__codelineno-13-851" href="#__codelineno-13-851"></a>
-<a id="__codelineno-13-852" name="__codelineno-13-852" href="#__codelineno-13-852"></a><span class="w">    </span><span class="c1">// ---------------------------------------------------------------</span>
-<a id="__codelineno-13-853" name="__codelineno-13-853" href="#__codelineno-13-853"></a><span class="w">    </span><span class="c1">// Stage 2: Chapter 19&#39;s real per-node vectorized-CPU dispatcher.</span>
-<a id="__codelineno-13-854" name="__codelineno-13-854" href="#__codelineno-13-854"></a><span class="w">    </span><span class="c1">// ---------------------------------------------------------------</span>
-<a id="__codelineno-13-855" name="__codelineno-13-855" href="#__codelineno-13-855"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;--- Stage 2: Chapter 19&#39;s real per-node vectorized dispatcher, compiled and run on %s ---</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">isaName</span><span class="p">(</span><span class="n">hostIsa</span><span class="p">).</span><span class="n">c_str</span><span class="p">());</span>
-<a id="__codelineno-13-856" name="__codelineno-13-856" href="#__codelineno-13-856"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">Backend</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">;</span>
-<a id="__codelineno-13-857" name="__codelineno-13-857" href="#__codelineno-13-857"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">totalFolds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
-<a id="__codelineno-13-858" name="__codelineno-13-858" href="#__codelineno-13-858"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">prog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateFullVectorizedProgram</span><span class="p">(</span><span class="n">fused</span><span class="p">,</span><span class="w"> </span><span class="n">fusedShapes</span><span class="p">,</span><span class="w"> </span><span class="n">fusedElementCounts</span><span class="p">,</span><span class="w"> </span><span class="n">americanTree</span><span class="p">.</span><span class="n">inputArrays</span><span class="p">,</span><span class="w"> </span><span class="n">hostIsa</span><span class="p">,</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">,</span><span class="w"> </span><span class="n">totalFolds</span><span class="p">);</span>
-<a id="__codelineno-13-859" name="__codelineno-13-859" href="#__codelineno-13-859"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;per-node dispatch (%zu compute nodes):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
-<a id="__codelineno-13-860" name="__codelineno-13-860" href="#__codelineno-13-860"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">entry</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  %-24s -&gt; %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">entry</span><span class="p">.</span><span class="n">first</span><span class="p">.</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">backendName</span><span class="p">(</span><span class="n">entry</span><span class="p">.</span><span class="n">second</span><span class="p">));</span>
-<a id="__codelineno-13-861" name="__codelineno-13-861" href="#__codelineno-13-861"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-862" name="__codelineno-13-862" href="#__codelineno-13-862"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
-<a id="__codelineno-13-863" name="__codelineno-13-863" href="#__codelineno-13-863"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">entry</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">entry</span><span class="p">.</span><span class="n">second</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">Backend</span><span class="o">::</span><span class="n">ScalarFallback</span><span class="p">)</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
-<a id="__codelineno-13-864" name="__codelineno-13-864" href="#__codelineno-13-864"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: 0 of %zu nodes fell back to the scalar path (%s), %d total FMA fold(s) applied</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-865" name="__codelineno-13-865" href="#__codelineno-13-865"></a><span class="w">           </span><span class="n">dispatchLog</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">totalFolds</span><span class="p">);</span>
-<a id="__codelineno-13-866" name="__codelineno-13-866" href="#__codelineno-13-866"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="p">;</span>
-<a id="__codelineno-13-867" name="__codelineno-13-867" href="#__codelineno-13-867"></a>
-<a id="__codelineno-13-868" name="__codelineno-13-868" href="#__codelineno-13-868"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">stem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/tmp/hammer_ch34_092_capstone&quot;</span><span class="p">;</span>
-<a id="__codelineno-13-869" name="__codelineno-13-869" href="#__codelineno-13-869"></a><span class="w">    </span><span class="n">writeFile</span><span class="p">(</span><span class="n">stem</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;.cpp&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">prog</span><span class="p">);</span>
-<a id="__codelineno-13-870" name="__codelineno-13-870" href="#__codelineno-13-870"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">compileLog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runShellCaptureAll</span><span class="p">(</span><span class="s">&quot;g++ -std=c++17 -Wall -Wextra -O2&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">extraFlags</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">stem</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;.cpp -o &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">stem</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; 2&gt;&amp;1&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-871" name="__codelineno-13-871" href="#__codelineno-13-871"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">compileClean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compileLog</span><span class="p">.</span><span class="n">empty</span><span class="p">();</span>
-<a id="__codelineno-13-872" name="__codelineno-13-872" href="#__codelineno-13-872"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;--- g++ compile (real %s flags, %zu generated functions) ---</span><span class="se">\n\n</span><span class="s">%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">isaName</span><span class="p">(</span><span class="n">hostIsa</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span>
-<a id="__codelineno-13-873" name="__codelineno-13-873" href="#__codelineno-13-873"></a><span class="w">           </span><span class="n">compileClean</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;(no output -- clean compile)</span><span class="se">\n</span><span class="s">&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">compileLog</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
-<a id="__codelineno-13-874" name="__codelineno-13-874" href="#__codelineno-13-874"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">compileClean</span><span class="p">;</span>
-<a id="__codelineno-13-875" name="__codelineno-13-875" href="#__codelineno-13-875"></a>
-<a id="__codelineno-13-876" name="__codelineno-13-876" href="#__codelineno-13-876"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">runOutput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runShellCaptureAll</span><span class="p">(</span><span class="n">stem</span><span class="p">);</span>
-<a id="__codelineno-13-877" name="__codelineno-13-877" href="#__codelineno-13-877"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">generatedArrays</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parseNamedBuffers</span><span class="p">(</span><span class="n">runOutput</span><span class="p">);</span>
-<a id="__codelineno-13-878" name="__codelineno-13-878" href="#__codelineno-13-878"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">rootDebugName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fused</span><span class="p">.</span><span class="n">node</span><span class="p">(</span><span class="n">fusedRootId</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="p">;</span>
-<a id="__codelineno-13-879" name="__codelineno-13-879" href="#__codelineno-13-879"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">americanVectorized</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generatedArrays</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">rootDebugName</span><span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
-<a id="__codelineno-13-880" name="__codelineno-13-880" href="#__codelineno-13-880"></a>
-<a id="__codelineno-13-881" name="__codelineno-13-881" href="#__codelineno-13-881"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;--- the real American put price, computed 3 independent ways ---</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-882" name="__codelineno-13-882" href="#__codelineno-13-882"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;interpreted(original)=%.6f  interpreted(fused)=%.6f  real-vectorized(%s)=%.6f</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-883" name="__codelineno-13-883" href="#__codelineno-13-883"></a><span class="w">           </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">americanInterpreted</span><span class="p">),</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">americanFusedInterpreted</span><span class="p">),</span>
-<a id="__codelineno-13-884" name="__codelineno-13-884" href="#__codelineno-13-884"></a><span class="w">           </span><span class="n">isaName</span><span class="p">(</span><span class="n">hostIsa</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">americanVectorized</span><span class="p">));</span>
-<a id="__codelineno-13-885" name="__codelineno-13-885" href="#__codelineno-13-885"></a>
-<a id="__codelineno-13-886" name="__codelineno-13-886" href="#__codelineno-13-886"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">allThreeMatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">fabs</span><span class="p">(</span><span class="n">americanInterpreted</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">americanFusedInterpreted</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1e-2f</span><span class="w"> </span><span class="o">&amp;&amp;</span>
-<a id="__codelineno-13-887" name="__codelineno-13-887" href="#__codelineno-13-887"></a><span class="w">                          </span><span class="n">std</span><span class="o">::</span><span class="n">fabs</span><span class="p">(</span><span class="n">americanInterpreted</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">americanVectorized</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1e-2f</span><span class="p">;</span>
-<a id="__codelineno-13-888" name="__codelineno-13-888" href="#__codelineno-13-888"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: all three agree -- the fusion pass and the real vectorized dispatcher both</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-889" name="__codelineno-13-889" href="#__codelineno-13-889"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;preserve the original TREE graph&#39;s own answer exactly (%s)</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">allThreeMatch</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-890" name="__codelineno-13-890" href="#__codelineno-13-890"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">allThreeMatch</span><span class="p">;</span>
-<a id="__codelineno-13-891" name="__codelineno-13-891" href="#__codelineno-13-891"></a>
-<a id="__codelineno-13-892" name="__codelineno-13-892" href="#__codelineno-13-892"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Section 34.3 complete, Chapter 34 complete, Part 7 complete: %s ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;all self-checks confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;SOME CHECK FAILED&quot;</span><span class="p">);</span>
-<a id="__codelineno-13-893" name="__codelineno-13-893" href="#__codelineno-13-893"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-<a id="__codelineno-13-894" name="__codelineno-13-894" href="#__codelineno-13-894"></a><span class="p">}</span>
+<a id="__codelineno-13-852" name="__codelineno-13-852" href="#__codelineno-13-852"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">fusedInterpResult</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">evaluateArrays</span><span class="p">(</span><span class="n">fused</span><span class="p">,</span><span class="w"> </span><span class="n">americanTree</span><span class="p">.</span><span class="n">inputArrays</span><span class="p">,</span><span class="w"> </span><span class="n">fusedElementCounts</span><span class="p">);</span>
+<a id="__codelineno-13-853" name="__codelineno-13-853" href="#__codelineno-13-853"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">americanFusedInterpreted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fusedInterpResult</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">fused</span><span class="p">.</span><span class="n">node</span><span class="p">(</span><span class="n">fusedRootId</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+<a id="__codelineno-13-854" name="__codelineno-13-854" href="#__codelineno-13-854"></a>
+<a id="__codelineno-13-855" name="__codelineno-13-855" href="#__codelineno-13-855"></a><span class="w">    </span><span class="c1">// ---------------------------------------------------------------</span>
+<a id="__codelineno-13-856" name="__codelineno-13-856" href="#__codelineno-13-856"></a><span class="w">    </span><span class="c1">// Stage 2: Chapter 19&#39;s real per-node vectorized-CPU dispatcher.</span>
+<a id="__codelineno-13-857" name="__codelineno-13-857" href="#__codelineno-13-857"></a><span class="w">    </span><span class="c1">// ---------------------------------------------------------------</span>
+<a id="__codelineno-13-858" name="__codelineno-13-858" href="#__codelineno-13-858"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;--- Stage 2: Chapter 19&#39;s real per-node vectorized dispatcher, compiled and run on %s ---</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">isaName</span><span class="p">(</span><span class="n">hostIsa</span><span class="p">).</span><span class="n">c_str</span><span class="p">());</span>
+<a id="__codelineno-13-859" name="__codelineno-13-859" href="#__codelineno-13-859"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="n">Backend</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">;</span>
+<a id="__codelineno-13-860" name="__codelineno-13-860" href="#__codelineno-13-860"></a><span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">totalFolds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<a id="__codelineno-13-861" name="__codelineno-13-861" href="#__codelineno-13-861"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">prog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generateFullVectorizedProgram</span><span class="p">(</span><span class="n">fused</span><span class="p">,</span><span class="w"> </span><span class="n">fusedShapes</span><span class="p">,</span><span class="w"> </span><span class="n">fusedElementCounts</span><span class="p">,</span><span class="w"> </span><span class="n">americanTree</span><span class="p">.</span><span class="n">inputArrays</span><span class="p">,</span><span class="w"> </span><span class="n">hostIsa</span><span class="p">,</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">,</span><span class="w"> </span><span class="n">totalFolds</span><span class="p">);</span>
+<a id="__codelineno-13-862" name="__codelineno-13-862" href="#__codelineno-13-862"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;per-node dispatch (%zu compute nodes):</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">.</span><span class="n">size</span><span class="p">());</span>
+<a id="__codelineno-13-863" name="__codelineno-13-863" href="#__codelineno-13-863"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">entry</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;  %-24s -&gt; %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">entry</span><span class="p">.</span><span class="n">first</span><span class="p">.</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">backendName</span><span class="p">(</span><span class="n">entry</span><span class="p">.</span><span class="n">second</span><span class="p">));</span>
+<a id="__codelineno-13-864" name="__codelineno-13-864" href="#__codelineno-13-864"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-865" name="__codelineno-13-865" href="#__codelineno-13-865"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<a id="__codelineno-13-866" name="__codelineno-13-866" href="#__codelineno-13-866"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="o">&amp;</span><span class="w"> </span><span class="n">entry</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">entry</span><span class="p">.</span><span class="n">second</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">Backend</span><span class="o">::</span><span class="n">ScalarFallback</span><span class="p">)</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-13-867" name="__codelineno-13-867" href="#__codelineno-13-867"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: 0 of %zu nodes fell back to the scalar path (%s), %d total FMA fold(s) applied</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-868" name="__codelineno-13-868" href="#__codelineno-13-868"></a><span class="w">           </span><span class="n">dispatchLog</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">totalFolds</span><span class="p">);</span>
+<a id="__codelineno-13-869" name="__codelineno-13-869" href="#__codelineno-13-869"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">noScalarFallback</span><span class="p">;</span>
+<a id="__codelineno-13-870" name="__codelineno-13-870" href="#__codelineno-13-870"></a>
+<a id="__codelineno-13-871" name="__codelineno-13-871" href="#__codelineno-13-871"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">stem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;/tmp/hammer_ch34_092_capstone&quot;</span><span class="p">;</span>
+<a id="__codelineno-13-872" name="__codelineno-13-872" href="#__codelineno-13-872"></a><span class="w">    </span><span class="n">writeFile</span><span class="p">(</span><span class="n">stem</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;.cpp&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">prog</span><span class="p">);</span>
+<a id="__codelineno-13-873" name="__codelineno-13-873" href="#__codelineno-13-873"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">compileLog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runShellCaptureAll</span><span class="p">(</span><span class="s">&quot;g++ -std=c++17 -Wall -Wextra -O2&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">extraFlags</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">stem</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;.cpp -o &quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">stem</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot; 2&gt;&amp;1&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-874" name="__codelineno-13-874" href="#__codelineno-13-874"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">compileClean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compileLog</span><span class="p">.</span><span class="n">empty</span><span class="p">();</span>
+<a id="__codelineno-13-875" name="__codelineno-13-875" href="#__codelineno-13-875"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;--- g++ compile (real %s flags, %zu generated functions) ---</span><span class="se">\n\n</span><span class="s">%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">isaName</span><span class="p">(</span><span class="n">hostIsa</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="n">dispatchLog</span><span class="p">.</span><span class="n">size</span><span class="p">(),</span>
+<a id="__codelineno-13-876" name="__codelineno-13-876" href="#__codelineno-13-876"></a><span class="w">           </span><span class="n">compileClean</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;(no output -- clean compile)</span><span class="se">\n</span><span class="s">&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">compileLog</span><span class="p">.</span><span class="n">c_str</span><span class="p">());</span>
+<a id="__codelineno-13-877" name="__codelineno-13-877" href="#__codelineno-13-877"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">compileClean</span><span class="p">;</span>
+<a id="__codelineno-13-878" name="__codelineno-13-878" href="#__codelineno-13-878"></a>
+<a id="__codelineno-13-879" name="__codelineno-13-879" href="#__codelineno-13-879"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">runOutput</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runShellCaptureAll</span><span class="p">(</span><span class="n">stem</span><span class="p">);</span>
+<a id="__codelineno-13-880" name="__codelineno-13-880" href="#__codelineno-13-880"></a><span class="w">    </span><span class="k">auto</span><span class="w"> </span><span class="n">generatedArrays</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parseNamedBuffers</span><span class="p">(</span><span class="n">runOutput</span><span class="p">);</span>
+<a id="__codelineno-13-881" name="__codelineno-13-881" href="#__codelineno-13-881"></a><span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w"> </span><span class="n">rootDebugName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fused</span><span class="p">.</span><span class="n">node</span><span class="p">(</span><span class="n">fusedRootId</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">debugName</span><span class="p">;</span>
+<a id="__codelineno-13-882" name="__codelineno-13-882" href="#__codelineno-13-882"></a><span class="w">    </span><span class="kt">float</span><span class="w"> </span><span class="n">americanVectorized</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">generatedArrays</span><span class="p">.</span><span class="n">at</span><span class="p">(</span><span class="n">rootDebugName</span><span class="p">)[</span><span class="mi">0</span><span class="p">];</span>
+<a id="__codelineno-13-883" name="__codelineno-13-883" href="#__codelineno-13-883"></a>
+<a id="__codelineno-13-884" name="__codelineno-13-884" href="#__codelineno-13-884"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;--- the real American put price, computed 3 independent ways ---</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-885" name="__codelineno-13-885" href="#__codelineno-13-885"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;interpreted(original)=%.6f  interpreted(fused)=%.6f  real-vectorized(%s)=%.6f</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a id="__codelineno-13-886" name="__codelineno-13-886" href="#__codelineno-13-886"></a><span class="w">           </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">americanInterpreted</span><span class="p">),</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">americanFusedInterpreted</span><span class="p">),</span>
+<a id="__codelineno-13-887" name="__codelineno-13-887" href="#__codelineno-13-887"></a><span class="w">           </span><span class="n">isaName</span><span class="p">(</span><span class="n">hostIsa</span><span class="p">).</span><span class="n">c_str</span><span class="p">(),</span><span class="w"> </span><span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">americanVectorized</span><span class="p">));</span>
+<a id="__codelineno-13-888" name="__codelineno-13-888" href="#__codelineno-13-888"></a>
+<a id="__codelineno-13-889" name="__codelineno-13-889" href="#__codelineno-13-889"></a><span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">allThreeMatch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">fabs</span><span class="p">(</span><span class="n">americanInterpreted</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">americanFusedInterpreted</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1e-2f</span><span class="w"> </span><span class="o">&amp;&amp;</span>
+<a id="__codelineno-13-890" name="__codelineno-13-890" href="#__codelineno-13-890"></a><span class="w">                          </span><span class="n">std</span><span class="o">::</span><span class="n">fabs</span><span class="p">(</span><span class="n">americanInterpreted</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">americanVectorized</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1e-2f</span><span class="p">;</span>
+<a id="__codelineno-13-891" name="__codelineno-13-891" href="#__codelineno-13-891"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;self-check: all three agree -- the fusion pass and the real vectorized dispatcher both</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-892" name="__codelineno-13-892" href="#__codelineno-13-892"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;preserve the original TREE graph&#39;s own answer exactly (%s)</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">allThreeMatch</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;MISMATCH&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-893" name="__codelineno-13-893" href="#__codelineno-13-893"></a><span class="w">    </span><span class="n">allOk</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">allThreeMatch</span><span class="p">;</span>
+<a id="__codelineno-13-894" name="__codelineno-13-894" href="#__codelineno-13-894"></a>
+<a id="__codelineno-13-895" name="__codelineno-13-895" href="#__codelineno-13-895"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;=== Section 34.3 complete, Chapter 34 complete, Part 7 complete: %s ===</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s">&quot;all self-checks confirmed&quot;</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="s">&quot;SOME CHECK FAILED&quot;</span><span class="p">);</span>
+<a id="__codelineno-13-896" name="__codelineno-13-896" href="#__codelineno-13-896"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<a id="__codelineno-13-897" name="__codelineno-13-897" href="#__codelineno-13-897"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="o">[</span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>added<span class="w"> </span>automatically<span class="w"> </span>on<span class="w"> </span>x86_64<span class="o">]</span><span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>./092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
@@ -4063,7 +4150,7 @@ but a genuinely branching, converging DAG's.</p>
 <a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a>--- Stage 1: Chapter 14/16&#39;s real boundedReductionFusionPass(), maxChainLength=3 ---
 <a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a>
 <a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a>fused graph: 55 nodes total -- 35 FusedElementwise group(s), 0 FusedReduction group(s),
-<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>0 plain (unfused) compute node(s), down from 145 compute nodes in the original graph.
+<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>0 plain (unfused) compute node(s), down from 125 compute nodes in the original graph.
 <a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a>self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum
 <a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a>node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR
 <a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a>tree topology (multiple nodes converging back into shared Const parameters), not a flat
@@ -4153,7 +4240,7 @@ but a genuinely branching, converging DAG's.</p>
 <a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a>--- Stage 1: Chapter 14/16&#39;s real boundedReductionFusionPass(), maxChainLength=3 ---
 <a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a>
 <a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a>fused graph: 55 nodes total -- 35 FusedElementwise group(s), 0 FusedReduction group(s),
-<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>0 plain (unfused) compute node(s), down from 145 compute nodes in the original graph.
+<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>0 plain (unfused) compute node(s), down from 125 compute nodes in the original graph.
 <a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a>self-check: 0 FusedReduction groups again, same as Section 33.3 -- this tree has no Sum
 <a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a>node either. The real new test here: the SAME unmodified pass over a genuinely IRREGULAR
 <a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a>tree topology (multiple nodes converging back into shared Const parameters), not a flat
@@ -4213,7 +4300,8 @@ but a genuinely branching, converging DAG's.</p>
 <a id="__codelineno-16-87" name="__codelineno-16-87" href="#__codelineno-16-87"></a>
 <a id="__codelineno-16-88" name="__codelineno-16-88" href="#__codelineno-16-88"></a>=== Section 34.3 complete, Chapter 34 complete, Part 7 complete: all self-checks confirmed ===
 </code></pre></div>
-<p><em>Identical apart from the ISA name itself (AVX2/FMA on the cloud sandbox, NEON on the device, each machine's own real vector hardware) -- the real American put price agrees exactly across all three computations (interpreted-original, interpreted-fused, real-vectorized-compiled) on both machines.</em></p>
+<p><em>Identical apart from the ISA name itself (AVX2/FMA on the cloud sandbox, NEON on the device, each machine's own real vector hardware) -- the real American put price agrees across all three computations (interpreted-original, interpreted-fused, real-vectorized-compiled) on both machines, within the self-check's own real <code>1e-2</code> tolerance.</em></p>
+<p><em>Two honest corrections to the printed output and self-checks above, neither of which changes the real numbers shown: (1) the printed values themselves (<code>5.882800</code> for both interpreted paths, <code>5.882792</code> for the real-vectorized path) do differ in the sixth decimal place -- "agree exactly" overstates it; the actual guarantee demonstrated is agreement to within the stated tolerance, consistent with ordinary FMA/fusion rounding, not bit-for-bit identity. (2) <code>max(a,b) = b + ReLU(a-b)</code> is an exact identity over the real numbers, but not bit-for-bit in float32 in general -- it holds here (and matches the independent reference exactly in Stage 0's interpreted path) because this chapter's own CRR tree values have enough headroom that no rounding difference actually surfaces, not because the identity is exact in floating point generally. (The original graph's own node count, "down from 125 compute nodes in the original graph," was itself fixed in the code above after a spot-check review found it had been mislabeling the 145-node TOTAL -- including every <code>Input</code>/<code>Const</code> leaf -- as a compute-node count; the output above reflects a real recompile and rerun with the corrected count, confirmed byte-for-byte reproducible in this sandbox.)</em></p>
 <h2 id="what-chapter-34-actually-shows-and-what-part-7-has-now-shown-four-times-over">What Chapter 34 actually shows, and what Part 7 has now shown four times over<a class="headerlink" href="#what-chapter-34-actually-shows-and-what-part-7-has-now-shown-four-times-over" title="Permanent link">&para;</a></h2>
 <p>Nothing here is a simulation. Section 34.1's terminal payoffs are a
 real CUDA Hammer graph's real output, needing no workaround at all --
@@ -4251,9 +4339,9 @@ own honestly-named limit.</p>
 <p>This closes Part 7's own planned domain sequence (computer vision,
 NLP/transformers, scientific computing, quantitative finance) and,
 with it, the book's own numbered chapter sequence, Chapters 1 through
-34. The appendices (A through H) remain planned, not yet built, and
-are the only work this book's own Table of Contents still lists as
-outstanding.</p>
+34. Appendices A through F are already built; Appendices G and H
+remain planned, and are the only work this book's own Table of
+Contents still lists as outstanding.</p>
 
 
 

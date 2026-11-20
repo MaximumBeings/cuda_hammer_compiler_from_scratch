@@ -20,6 +20,8 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 050_the_jit_backend_end_to_end_no_subprocess_no_stdout_parsing.cpp -o 050_driver -ldl
 // Run:     ./050_driver
+// Numerical policy: FMA contraction and vector reductions may change rounding.
+// These teaching backends permit contraction; they are not strict bitwise FP rewrites.
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -802,7 +804,7 @@ static std::map<std::string, std::vector<float>> runJitGraph(const JitModule& mo
 
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-2f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!(std::fabs(a[i] - b[i]) <= tol)) return false;
     return true;
 }
 

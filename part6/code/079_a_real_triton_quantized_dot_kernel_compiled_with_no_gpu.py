@@ -1,20 +1,21 @@
-# Chapter 30, File 079: File 078's own hand-argued claim -- that a
-# quantized dot product needs its accumulator's own TYPE widened, not
-# just a wider value -- confirmed as real, automatically-inserted
-# compiler behavior, by writing the same computation as one real Triton
-# kernel and reading what its own compiler actually emits.
+# Chapter 30, File 079: explicit widening in a zero-point-zero int8 dot.
+# The programmer requests int32 conversion before multiplication; the compiler
+# lowers those explicit casts. This is not automatic inference of a quantized
+# accumulator policy from arbitrary primitive graphs.
 #
-# Real toolchain note, same honest limitation as every Triton file since
-# Chapter 27: no physical GPU here, so this file is real AOT COMPILATION
-# only, never execution -- File 078's own pure-NumPy version already
-# proved the arithmetic correct; this file proves the SAME accumulator-
-# widening step is something Triton's own compiler inserts automatically
-# from ordinary Python type-conversion syntax (`.to(tl.int32)`), not
-# something the block-level programmer has to hand-encode as a separate
-# instruction.
+# Historical evidence is offline AOT compilation, not GPU execution. File 078
+# checks its own NumPy arithmetic; it does not validate this Triton kernel.
+# Current source bounds positive power-of-two N to <=65536 so worst-case
+# signed-int8 accumulation fits int32. Finite input scales and matching allocated
+# extents are caller requirements; asymmetric zero-point correction is absent.
+#
+# A fresh compile and real-device checks are required after source changes.
+# See validation/accuracy-fixes/gpu_case_validation.py. Historical IR excerpts
+# show the former N=64 compile and are not current GPU runtime evidence.
 #
 # Compiled with:   python3 "079_a_real_triton_quantized_dot_kernel_compiled_with_no_gpu.py"
 
+import re
 import triton
 import triton.language as tl
 from triton.backends.compiler import GPUTarget
@@ -23,6 +24,8 @@ from triton.backends.compiler import GPUTarget
 @triton.jit
 def quantized_dot_kernel(a_ptr, b_ptr, out_ptr, scale_a, scale_b,
                           N: tl.constexpr):
+    tl.static_assert(N > 0 and (N & (N - 1)) == 0, "N must be a positive power of two")
+    tl.static_assert(N <= 65536, "int8 worst-case accumulation must fit int32")
     # a, b load as real int8 BLOCK-level tensors -- Chapter 27's own
     # block-level model, applied here to narrow integer data for the
     # first time in this book.
@@ -35,7 +38,7 @@ def quantized_dot_kernel(a_ptr, b_ptr, out_ptr, scale_a, scale_b,
     # `.to(tl.int32)` -- with no manual overflow bookkeeping.
     a32 = a.to(tl.int32)
     b32 = b.to(tl.int32)
-    products = a32 * b32          # real int32 * int32, no overflow risk
+    products = a32 * b32          # int8-range products fit int32; N is bounded above
     acc = tl.sum(products, axis=0)  # real int32 accumulate (a genuine
     # Triton block-level REDUCTION, tl.sum, over the whole loaded block --
     # not a running total threaded through a loop the way File 076's own
@@ -72,7 +75,9 @@ def strip_source_locations(ir_text):
 
 
 def count_ops(ir_text, op_name):
-    return sum(1 for line in ir_text.splitlines() if op_name in line)
+    # Count the operation name, not e.g. its tt.reduce.return terminator.
+    pattern = r"\b" + re.escape(op_name) + r"(?![\w.])"
+    return sum(1 for line in ir_text.splitlines() if re.search(pattern, line))
 
 
 if __name__ == "__main__":
@@ -108,7 +113,7 @@ if __name__ == "__main__":
     print("=== Real TTIR excerpt: load through widen through multiply "
           "(path-normalized) ===")
     lines = ttir.splitlines()
-    load_idx = next(i for i, l in enumerate(lines) if "b_3 = tt.load" in l)
+    load_idx = next(i for i, l in enumerate(lines) if "tt.load" in l)
     for line in lines[load_idx:load_idx + 4]:
         print(line.strip())
 

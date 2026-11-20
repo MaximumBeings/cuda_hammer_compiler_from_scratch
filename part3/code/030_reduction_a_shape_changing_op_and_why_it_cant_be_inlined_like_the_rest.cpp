@@ -26,6 +26,7 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest.cpp -o 030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest
 // Run:     ./030_reduction_a_shape_changing_op_and_why_it_cant_be_inlined_like_the_rest
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -180,8 +181,13 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
-    return n;  // an EMPTY dims vector (a scalar) is the empty product: 1 element, no special case needed
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
+    return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {
     size_t rank = std::max(a.dims.size(), b.dims.size());

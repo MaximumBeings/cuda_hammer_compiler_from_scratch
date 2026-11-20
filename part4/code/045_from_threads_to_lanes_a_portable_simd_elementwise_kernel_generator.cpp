@@ -651,7 +651,7 @@ int main() {
     while (iss >> v) vecVals.push_back(v);
     const std::vector<float>& expected = fusedArrays.at("out");
     bool matches = (vecVals.size() == expected.size());
-    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (std::fabs(vecVals[i] - expected[i]) > 1e-3f) matches = false;
+    if (matches) for (size_t i = 0; i < vecVals.size(); ++i) if (!(std::fabs(vecVals[i] - expected[i]) <= 1e-3f)) matches = false;
     printf("evaluateArrays(fused).out = ");
     for (float ev : expected) printf("%.6f ", ev);
     printf("\n");

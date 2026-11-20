@@ -38,6 +38,8 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp -o 023_folding_cse_simplification_and_dce_closing_part_2s_pipeline
 // Run:     ./023_folding_cse_simplification_and_dce_closing_part_2s_pipeline
 #include <cstdio>
+#include <cmath>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -145,7 +147,7 @@ static std::string printGraphAsSource(const Graph& g) {
         out += n->debugName + " = " + opKindToSourceKeyword(n->op) + "(";
         if (n->op == OpKind::Const) {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {
@@ -294,7 +296,9 @@ static Graph commonSubexpressionEliminationPass(const Graph& g) {
 
 // ==================== algebraicSimplificationPass() (from Section 11.1/11.2, unchanged) ====================
 
-static Graph algebraicSimplificationPass(const Graph& g) {
+static Graph algebraicSimplificationPass(const Graph& g, bool relaxedMath = false) {
+    // relaxedMath permits ignoring NaN/infinity and the sign of zero.
+    // Strict mode retains Add-by-zero and Mul-by-zero operations.
     TopoResult topo = topologicalSort(g);
     if (!topo.ok) throw std::runtime_error("algebraicSimplificationPass: input graph is not acyclic");
 
@@ -328,12 +332,12 @@ static Graph algebraicSimplificationPass(const Graph& g) {
             bool rhsIsOne  = (rhsNode->op == OpKind::Const && rhsNode->constValue == 1.0f);
 
             if (n->op == OpKind::Add) {
-                if (lhsIsZero) newValue = rhs;
-                else if (rhsIsZero) newValue = lhs;
+                if (relaxedMath && lhsIsZero) newValue = rhs;
+                else if (relaxedMath && rhsIsZero) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Add, lhs, rhs, n->debugName);
             } else { // Mul
-                if (lhsIsZero) newValue = lhs;
-                else if (rhsIsZero) newValue = rhs;
+                if (relaxedMath && lhsIsZero) newValue = lhs;
+                else if (relaxedMath && rhsIsZero) newValue = rhs;
                 else if (lhsIsOne) newValue = rhs;
                 else if (rhsIsOne) newValue = lhs;
                 else newValue = result.addBinary(OpKind::Mul, lhs, rhs, n->debugName);
@@ -453,7 +457,7 @@ int main() {
     Value combined = original.addBinary(OpKind::Add, waste, sum1, "combined");
     original.addBinary(OpKind::Mul, combined, sum2, "out");
 
-    Graph simplifyAloneOnOriginal = algebraicSimplificationPass(original);
+    Graph simplifyAloneOnOriginal = algebraicSimplificationPass(original, true);
     bool simplifyAloneFindsNothing = (simplifyAloneOnOriginal.size() == original.size());
     printf("size: %zu -> %zu\n", original.size(), simplifyAloneOnOriginal.size());
     printf("self-check: simplification alone finds NOTHING before folding runs (%s)\n\n",
@@ -465,7 +469,7 @@ int main() {
     Graph finalResult = runPasses(original, {
         {"constantFoldPass", constantFoldPass},
         {"commonSubexpressionEliminationPass", commonSubexpressionEliminationPass},
-        {"algebraicSimplificationPass", algebraicSimplificationPass},
+        {"algebraicSimplificationPass", [](const Graph& in) { return algebraicSimplificationPass(in, true); }},
         {"deadCodeEliminationPass", deadCodeEliminationPass},
     });
 
@@ -490,7 +494,7 @@ int main() {
     Value tzero = tiny.addConst(0.0f, "zero");
     tiny.addBinary(OpKind::Add, tx, tzero, "out");  // x + 0 -- IS the last node, and WILL be elided
 
-    Graph tinySimplified = algebraicSimplificationPass(tiny);
+    Graph tinySimplified = algebraicSimplificationPass(tiny, true);
     printf("Before: %zu nodes, last node is 'out'\n", tiny.size());
     printf("After:  %zu nodes\n", tinySimplified.size());
     printf("%s\n", printGraphAsSource(tinySimplified).c_str());

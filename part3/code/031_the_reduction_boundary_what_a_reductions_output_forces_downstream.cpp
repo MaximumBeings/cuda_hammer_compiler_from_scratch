@@ -25,6 +25,7 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 031_the_reduction_boundary_what_a_reductions_output_forces_downstream.cpp -o 031_the_reduction_boundary_what_a_reductions_output_forces_downstream
 // Run:     ./031_the_reduction_boundary_what_a_reductions_output_forces_downstream
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 #include <memory>
@@ -144,7 +145,12 @@ static std::string shapeStr(const Shape& s) {
 }
 static long long numElements(const Shape& s) {
     long long n = 1;
-    for (int d : s.dims) n *= d;
+    for (int d : s.dims) {
+        if (d <= 0) throw std::runtime_error("shape dimensions must be positive");
+        if (n > std::numeric_limits<long long>::max() / d)
+            throw std::overflow_error("shape element count overflow");
+        n *= d;
+    }
     return n;
 }
 static Shape broadcastShapes(const Shape& a, const Shape& b, const std::string& context) {

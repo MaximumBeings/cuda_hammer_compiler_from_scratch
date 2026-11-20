@@ -24,7 +24,13 @@
 //
 // Compile: g++ -x c++ -std=c++17 -Wall -Wextra -O2 043_reductions_on_the_gpu_avoiding_a_data_race_with_atomicadd.cu -o 043_driver
 // Run:     ./043_driver
+// Override for the test GPU, including kernels compiled by this generator.
+#ifndef HAMMER_CUDA_ARCH
+#define HAMMER_CUDA_ARCH "sm_70"
+#endif
+
 #include <cstdio>
+#include <sys/wait.h>
 #include <string>
 #include <vector>
 #include <memory>
@@ -449,7 +455,12 @@ static std::string runShellCaptureAll(const std::string& cmd) {
     if (!pipe) throw std::runtime_error("popen failed for: " + cmd);
     char buf[4096];
     while (fgets(buf, sizeof(buf), pipe)) out += buf;
-    pclose(pipe);
+    int status = pclose(pipe);
+    // A generated program uses 77 for fail-fast CUDA diagnostics. The
+    // caller distinguishes a no-device skip from other CUDA failures.
+    if (status == -1 || !WIFEXITED(status) ||
+        (WEXITSTATUS(status) != 0 && WEXITSTATUS(status) != 77))
+        throw std::runtime_error("subprocess failed: " + cmd + "\n" + out);
     return out;
 }
 static void writeFile(const std::string& path, const std::string& content) {
@@ -507,8 +518,8 @@ int main() {
     };
 
     std::string prog = "#include <cstdio>\n#include <cuda_runtime.h>\n\n";
-    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) "
-            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); } while (0)\n\n";
+    prog += "#define CUDA_CHECK(expr) do { cudaError_t _e = (expr); if (_e != cudaSuccess) { "
+            "printf(\"CUDA error at line %d: %s\\n\", __LINE__, cudaGetErrorString(_e)); return 77; } } while (0)\n\n";
     prog += kernelSrc + "\n";
     prog += "int main() {\n";
     prog += "    float hExt0[] = " + formatArrayLiteral(xVals) + ";\n";
@@ -525,21 +536,27 @@ int main() {
     prog += "    CUDA_CHECK(cudaDeviceSynchronize());\n";
     prog += "    float hOut = 0.0f;\n";
     prog += "    CUDA_CHECK(cudaMemcpy(&hOut, dOut, sizeof(float), cudaMemcpyDeviceToHost));\n";
-    prog += "    printf(\"kernel result (0/garbage without a real GPU): %f\\n\", hOut);\n";
+    prog += "    printf(\"kernel result: %f\\n\", hOut);\n";
     prog += "    CUDA_CHECK(cudaFree(dExt0)); CUDA_CHECK(cudaFree(dOut));\n";
     prog += "    return 0;\n}\n";
 
     writeFile("/tmp/hammer_ch18_043.cu", prog);
-    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=sm_70 -o /tmp/hammer_ch18_043 /tmp/hammer_ch18_043.cu 2>&1");
+    std::string compileLog = runShellCaptureAll("nvcc -std=c++17 -arch=" HAMMER_CUDA_ARCH " -o /tmp/hammer_ch18_043 /tmp/hammer_ch18_043.cu 2>&1");
     bool compileClean = compileLog.find("error") == std::string::npos;
     printf("--- nvcc compile ---\n\n%s\n", compileLog.empty() ? "(no output -- clean compile)\n" : compileLog.c_str());
     printf("self-check: nvcc accepts the generated atomicAdd()-based kernel (%s)\n\n", compileClean ? "confirmed" : "MISMATCH");
 
     std::string runOutput = runShellCaptureAll("/tmp/hammer_ch18_043 2>&1");
     printf("--- Running the compiled binary ---\n\n%s\n", runOutput.c_str());
-    bool honestlyReportsNoDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
-    printf("self-check: honestly reports no CUDA-capable device, same as Section 18.1 (%s)\n\n",
-           honestlyReportsNoDevice ? "confirmed" : "MISMATCH");
+    bool noDevice = runOutput.find("no CUDA-capable device") != std::string::npos;
+    if (noDevice) { printf("SKIP: no physical CUDA GPU; runtime correctness not validated.\n"); return 77; }
+    bool gpuMatches = runOutput.find("CUDA error") == std::string::npos;
+    try {
+        size_t pos = runOutput.find("kernel result:");
+        if (pos == std::string::npos) gpuMatches = false;
+        else gpuMatches = gpuMatches && std::fabs(std::stof(runOutput.substr(pos + std::string("kernel result:").size())) - 11.0f) <= 1e-2f;
+    } catch (const std::exception&) { gpuMatches = false; }
+    printf("GPU numeric comparison against interpreter: %s\n", gpuMatches ? "confirmed" : "MISMATCH");
 
     printf("--- The host-side reference: same emitSteps() body, run for real on the CPU ---\n\n");
     std::string cpuFuncSrc = generateCpuReductionFunction("compute_s_cpu", sLowered);
@@ -562,6 +579,6 @@ int main() {
     printf("self-check: this IS the number the kernel's own arithmetic computes -- proven by real\n");
     printf("execution of the identical emitSteps() body on the CPU (%s)\n", cpuMatches ? "confirmed" : "MISMATCH");
 
-    bool allOk = compileClean && honestlyReportsNoDevice && cpuMatches;
+    bool allOk = compileClean && gpuMatches && cpuMatches;
     return allOk ? 0 : 1;
 }

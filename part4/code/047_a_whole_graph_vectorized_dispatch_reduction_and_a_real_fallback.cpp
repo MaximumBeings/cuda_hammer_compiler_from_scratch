@@ -18,6 +18,8 @@
 //
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 047_a_whole_graph_vectorized_dispatch_reduction_and_a_real_fallback.cpp -o 047_driver
 // Run:     ./047_driver
+// Numerical policy: FMA contraction and vector reductions may change rounding.
+// These teaching backends permit contraction; they are not strict bitwise FP rewrites.
 #include <cstdio>
 #include <string>
 #include <vector>
@@ -598,10 +600,13 @@ static std::string generateVectorElementwiseFunctionFma(const std::string& funcN
 // The horizontal sum below uses the simplest technique that is genuinely
 // portable across BOTH of this book's own real ISAs: store the
 // accumulator's own lanes out to a small array and add them up in plain
-// scalar code. NEON offers a real single-instruction alternative here --
-// vaddvq_f32(acc) sums all four lanes in one instruction -- but AVX2 has no
-// equivalent single instruction that reduces all eight lanes without
-// reaching for AVX-512, so this section deliberately uses the
+// scalar code. NEON offers a real single-INTRINSIC alternative here --
+// vaddvq_f32(acc) sums all four lanes via one intrinsic call (which itself
+// compiles to a couple of pairwise-add instructions on real hardware, not
+// literally a single instruction) -- but AVX2 has no equivalent intrinsic
+// that reduces all eight lanes without reaching for AVX-512, whose own
+// _mm512_reduce_add_ps is itself a multi-instruction sequence too, not a
+// single instruction either. So this section deliberately uses the
 // slower-but-uniform array-extraction approach on BOTH backends rather than
 // special-casing NEON's own faster path. A production compiler would
 // dispatch to vaddvq_f32 on NEON and keep the array-extraction fallback
@@ -793,7 +798,7 @@ static std::map<std::string, std::vector<float>> parseNamedBuffers(const std::st
 }
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-2f) {
     if (a.size() != b.size()) return false;
-    for (size_t i = 0; i < a.size(); ++i) if (std::fabs(a[i] - b[i]) > tol) return false;
+    for (size_t i = 0; i < a.size(); ++i) if (!(std::fabs(a[i] - b[i]) <= tol)) return false;
     return true;
 }
 

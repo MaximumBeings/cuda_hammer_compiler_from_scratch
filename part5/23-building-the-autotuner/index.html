@@ -12,6 +12,8 @@
         <meta name="author" content="Oluwaseyi Awoga">
       
       
+        <link rel="canonical" href="https://maximumbeings.github.io/cuda_hammer_compiler_from_scratch/part5/23-building-the-autotuner/">
+      
       
         <link rel="prev" href="../22-cost-models-vs-measurement/">
       
@@ -71,7 +73,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -129,7 +131,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
       <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
@@ -139,7 +141,7 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="yellow" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="blue" data-md-color-accent="blue"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
       <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
@@ -197,6 +199,18 @@
       
     
     
+      <div class="md-header__source">
+        <a href="https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
   </nav>
   
 </header>
@@ -230,6 +244,18 @@
     </a>
     CUDA Hammer - A CUDA C++ Compiler From Scratch -- Under Development
   </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
   
   <ul class="md-nav__list" data-md-scrollfix>
     
@@ -293,6 +319,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../../validation-status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -309,10 +362,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
         
           
-          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
             
   
   
@@ -330,8 +383,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -454,10 +507,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
             
   
   
@@ -475,8 +528,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -627,10 +680,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
             
   
   
@@ -648,8 +701,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -800,10 +853,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
         
           
-          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="">
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
             
   
   
@@ -821,8 +874,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_6">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1001,10 +1054,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
         
           
-          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
             
   
   
@@ -1022,8 +1075,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1174,10 +1227,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
         
           
-          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
             
   
   
@@ -1195,8 +1248,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_8">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1555,10 +1608,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
         
           
-          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
             
   
   
@@ -1576,8 +1629,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_9">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1784,10 +1837,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
         
           
-          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="">
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
             
   
   
@@ -1805,8 +1858,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_10">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1957,10 +2010,10 @@
         
           
         
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
         
           
-          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="">
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
             
   
   
@@ -1978,8 +2031,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_11">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -2367,8 +2420,18 @@
                   
 
 
+  
+  
+
 
 <h1 id="23-building-cuda-hammers-autotuner">23. Building CUDA Hammer's Autotuner<a class="headerlink" href="#23-building-cuda-hammers-autotuner" title="Permanent link">&para;</a></h1>
+<!-- hammer:figure:opener-23:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/openers/23.svg?v=7c1669d8baf5"><img alt="Building CUDA Hammer's Autotuner" src="../../images/openers/23.svg?v=7c1669d8baf5" /></a></p>
+<figcaption>Chapter roadmap. Open any diagram for a full-size view.</figcaption>
+</figure>
+<!-- hammer:figure:opener-23:end -->
+
 <p><strong>What you will understand:</strong> <code>generateScheduledElementwiseFunction()</code>, which emits real C++ TEXT for one loop's own tile size and unroll factor -- the compiled twin of Chapter 21's own <code>computeUnrolled()</code> -- compiled with the real g++ this book has shelled out to since Chapter 18 and dlopen-loaded with Chapter 20's own <code>JitModule</code>, exposing a real cost this book has never had to budget for before: COMPILE TIME, measured separately from RUN TIME, for the first time landing in the same real order of magnitude; <code>generateScheduleFunction()</code>, which extends real codegen to a FULL <code>Schedule</code> -- tile size, loop order, AND unroll factor together -- baking the chosen loop order directly into the generated code's own shape instead of branching on it at runtime, then honestly rechecking whether removing Chapter 22's own interpreter changes that chapter's own near-chance ranking agreement; and the autotuner itself, a HYBRID search that uses Chapter 22's own imperfect cost model to prune 128 real schedules down to a short list cheaply, pays for real compiled measurement only on that short list, and is checked -- honestly, in both directions -- against the alternative it exists to avoid: compiling and measuring every one of the 128 candidates for real.</p>
 <p><strong>What you need to know first:</strong> Chapter 20's own <code>JitModule</code> (RAII dlopen/dlsym/dlclose) and <code>compileToSharedLibrary()</code> (the one remaining g++ shell-out, scoped to compilation only); Chapter 21's own <code>Loop</code>/<code>LoopNest</code>/<code>Schedule</code>/<code>enumerateSchedules()</code>/<code>scheduleStr()</code>, and its own closing number -- 128 legal schedules for <code>LoopNest [dim0:6, dim1:8]</code>; and Chapter 22's own <code>estimateLoopOverheadCost()</code>/<code>estimateLoopOrderCost()</code>/<code>estimateScheduleCost()</code>, plus that chapter's own closing, honestly-diagnosed finding -- a combined cost model, applied to 6 schedules run through a generic INTERPRETER, landing at a near-chance ranking agreement (40% on the cloud sandbox, 53% on the device), traced to interpreter bookkeeping overhead on a 48-element toy problem, not evidence the underlying models are worthless.</p>
 <hr />
@@ -2414,6 +2477,13 @@
 <a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>something interpreted or estimated.
 </code></pre></div>
 <h2 id="231-real-codegen-for-a-scheduled-loop-tile-size-and-unroll-factor">23.1 Real Codegen for a Scheduled Loop: Tile Size and Unroll Factor<a class="headerlink" href="#231-real-codegen-for-a-scheduled-loop-tile-size-and-unroll-factor" title="Permanent link">&para;</a></h2>
+<!-- hammer:figure:23.1:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/concepts/23-01.svg?v=9590dcf94dc0"><img alt="Scheduled source must remain correct" src="../../images/concepts/23-01.svg?v=9590dcf94dc0" /></a></p>
+<figcaption>Reject schedules that change coverage or arithmetic semantics.</figcaption>
+</figure>
+<!-- hammer:figure:23.1:end -->
+
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>Chapter 21's own <code>computeUnrolled()</code> already demonstrated, by direct execution, that a chosen tile size and unroll factor never change an elementwise loop's own answer -- only how the same total work gets chunked. That function was hand-written once, for one fixed computation. This section builds the generator that produces a function LIKE it, but for whichever tile size and unroll factor a <code>Schedule</code> actually specifies, as real C++ source text assembled at runtime -- the same kind of string-building this book has done since Chapter 17's own <code>generateLoopFunction()</code>, applied for the first time to a value (a schedule's own tile size and unroll factor) that used to only ever be interpreted or reasoned about abstractly.</p>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
@@ -2456,7 +2526,7 @@
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1">// emits REAL C++ text -- a tiled, unrolled loop, honoring a schedule&#39;s own</span>
 <a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1">// tile size and unroll factor exactly the way Section 21.1/21.3 defined</span>
 <a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1">// them -- compiled with the real g++ this book has shelled out to since</span>
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1">// Chapter 18, and loaded in-process with Chapter 20&#39;s own JitModule. Every</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1">// Chapter 17, and loaded in-process with Chapter 20&#39;s own JitModule. Every</span>
 <a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1">// schedule this section tests is now a REAL compiled function, not an</span>
 <a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c1">// interpreted one, and this section&#39;s own honest finding is a new one Part</span>
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1">// 5 has not yet had to face: compiling a schedule has a real, nonzero cost</span>
@@ -2726,8 +2796,16 @@
 <div class="admonition note">
 <p class="admonition-title">Compiling every candidate does not scale the way interpreting one does</p>
 <p>Chapter 22's own combined cost model was cheap enough to score all 128 real schedules in a fraction of a millisecond -- no compilation, no process launch, just arithmetic on a <code>Schedule</code>'s own fields. This section's own real measurement shows real codegen is a different kind of cost entirely: tens of milliseconds per candidate, dominated by an actual g++ invocation, not by the size of the computation being compiled (Section 23.1's own generated functions are short, and still cost tens of milliseconds to build). Multiply that by 128 candidates, and compiling the ENTIRE search space starts to cost seconds, not milliseconds -- a real number Section 23.3's own autotuner will have to budget against directly, which is exactly why that section checks a short list against the full space rather than assuming either extreme is obviously right.</p>
+<p>One honest caveat about the "same order of magnitude" self-check above: compile time does not scale with <code>extent</code> at all (a g++ invocation on a short generated function costs about the same tens of milliseconds whether the loop will run once or thirty million times), while execution time scales with <code>extent</code> directly. Part 2's own 30,000,000-element extent was chosen specifically because it is large enough to pull execution time up into the same tens-of-milliseconds range compile time already sits in -- at a much smaller extent the two would NOT land anywhere near each other. Section 23.3's own real autotuning workload is a striking example: at 48 elements, one real execution of the generated function costs on the order of 0.02 microseconds, against roughly 110-150 milliseconds to compile it -- a ratio of many millions to one, not "the same order of magnitude" at all. Both numbers are real; which one dominates depends entirely on how large the actual workload is, which is exactly why an autotuner has to budget compilation cost separately rather than assume it is always comparable to runtime.</p>
 </div>
 <h2 id="232-real-codegen-for-a-full-schedule-tile-size-loop-order-and-unroll-factor-together">23.2 Real Codegen for a Full Schedule: Tile Size, Loop Order, and Unroll Factor Together<a class="headerlink" href="#232-real-codegen-for-a-full-schedule-tile-size-loop-order-and-unroll-factor-together" title="Permanent link">&para;</a></h2>
+<!-- hammer:figure:23.2:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/concepts/23-02.svg?v=c4d83faac177"><img alt="Search the combined schedule space" src="../../images/concepts/23-02.svg?v=c4d83faac177" /></a></p>
+<figcaption>Only correct candidates should be benchmarked.</figcaption>
+</figure>
+<!-- hammer:figure:23.2:end -->
+
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>Section 23.1's generator only ever varied two of a <code>Schedule</code>'s own three fields -- tile size and unroll factor -- because it always generated a plain one-dimensional loop. A real <code>Schedule</code> (Chapter 21) also carries a LOOP ORDER, meaningful only once there is more than one loop to order, and Chapter 22.3's own interpreter already showed loop order changes real measured time even though it can never change the answer (Section 21.2). This section's generator has to make a choice Section 23.1's never needed to: which of two possible nestings -- <code>dim0</code> outer, <code>dim1</code> inner, or the reverse -- does the GENERATED CODE ITSELF take, not as a runtime flag checked on every call, but as a decision baked into the text before g++ ever sees it.</p>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
@@ -3240,14 +3318,21 @@
 <p><em>Correctness (the bit-for-bit self-checks above) matches on both machines, as it has every chapter since 17. The millisecond figures, and in places even which candidate ranks fastest, are expected to differ between the two -- that is real data about two different machines, not a discrepancy to reconcile.</em></p>
 <div class="admonition warning">
 <p class="admonition-title">[COMMON TRAP] removing one confound does not mean removing every confound</p>
-<p>It would be easy to read Section 23.2's own honest finding as a clean verdict either way -- "compiling fixed it" or "compiling didn't help." The real, machine-specific result this section actually measured is more useful than either clean story: whatever changed on one real machine did not change the same way on the other, which is itself evidence about WHAT was actually going on. Chapter 22.3 diagnosed interpreter overhead as a likely confound on a 48-element toy problem; this section's own real test of that diagnosis, on two different machines, is exactly the kind of check a cost model -- or a diagnosis about a cost model -- has to survive before an autotuner should lean on it.</p>
+<p>It would be easy to read Section 23.2's own honest finding as a clean verdict either way -- "compiling fixed it" or "compiling didn't help." The real, machine-specific result this section actually measured is more useful than either clean story: whatever changed on one real machine did not change the same way on the other, which is itself evidence about WHAT was actually going on. Chapter 22.3 diagnosed interpreter overhead as a likely confound on a 48-element toy problem; this section's own real test of that diagnosis, on two different machines, is exactly the kind of check a cost model -- or a diagnosis about a cost model -- has to survive before an autotuner should lean on it. One more honest limit: "67%" and "10 of 15" are both the same small sample of only 15 pairwise comparisons, so a few comparisons landing differently on a re-run (ordinary timing jitter, nothing structural) can move that percentage by a wide margin. The genuinely reliable finding here is the qualitative direction -- real compiled measurement did not make ranking agreement WORSE on either machine -- not the exact percentage, which this section does not claim is reproducible to the point.</p>
 </div>
 <h2 id="233-the-autotuner-pruning-with-a-cost-model-then-measuring-for-real">23.3 The Autotuner: Pruning With a Cost Model, Then Measuring for Real<a class="headerlink" href="#233-the-autotuner-pruning-with-a-cost-model-then-measuring-for-real" title="Permanent link">&para;</a></h2>
+<!-- hammer:figure:23.3:start -->
+<figure class="chapter-figure">
+<p><a href="../../images/concepts/23-03.svg?v=2da2d371aff4"><img alt="Hybrid tuning prunes then measures" src="../../images/concepts/23-03.svg?v=2da2d371aff4" /></a></p>
+<figcaption>Pruning can discard the true fastest candidate.</figcaption>
+</figure>
+<!-- hammer:figure:23.3:end -->
+
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Every piece this chapter and the two before it built now exists at once: Chapter 21's own 128 real, enumerated schedules for <code>LoopNest [dim0:6, dim1:8]</code>; Chapter 22's own <code>estimateScheduleCost()</code>, a cost model cheap enough to score all 128 in a fraction of a millisecond and honestly known to rank imperfectly; and Section 23.2's own <code>generateScheduleFunction()</code>, real compiled codegen for any one of those 128 schedules, at a real, non-negligible cost per candidate that Section 23.1 already put a number on. An autotuner is simply the program that puts all three pieces together and makes a real decision: which candidates are worth the real cost of compiling and measuring, and which are not.</p>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p>The design this section builds is the HYBRID Chapter 22's own closing paragraph already pointed toward: rank all 128 real schedules with <code>estimateScheduleCost()</code>, keep only the cheapest <code>topK = 8</code>, and pay for real compilation and careful measurement (best-of-9 trials, 2,000,000 repeat calls each, to get a reliably measurable duration on this book's own toy-scale 48-element computation) on ONLY that short list. That hybrid autotuner's own winner is whichever of the 8 short-listed candidates measures fastest for real -- a genuine, compiled, dlopen-loaded answer, not a cost-model guess.</p>
-<p>The honest question a hybrid design like this one has to answer is whether pruning down to 8 ever throws away the schedule that was actually best. This section answers it directly, not by argument but by also doing the expensive thing the hybrid exists to avoid: compiling and measuring all 128 real schedules, with a deliberately LIGHTER measurement pass (best-of-3, 200,000 repeat calls -- noisier, but fast enough to make measuring all 128 affordable at all) to serve as real, not simulated, ground truth. Comparing the hybrid's own 8-candidate answer against this exhaustive 128-candidate answer needs one piece of care Section 23.1 already set up: the two passes use different repeat counts, so the code compares PER-CALL time (<code>MeasuredCandidate::perCallUs()</code>), never raw totals from two differently-scaled measurement runs, which would never be a fair comparison. The result, reported honestly in the code's own closing verdict below, is a genuine test of whether an imperfect, honestly-flawed cost model is still useful as a pruning filter -- and a real, directly measured wall-clock accounting of what pruning actually saves, whichever way the short list turns out.</p>
+<p>The honest question a hybrid design like this one has to answer is whether pruning down to 8 ever throws away the schedule that was actually best. This section answers it directly, not by argument but by also doing the expensive thing the hybrid exists to avoid: compiling and measuring all 128 real schedules, with a deliberately LIGHTER measurement pass (best-of-3, 200,000 repeat calls -- noisier, but fast enough to make measuring all 128 affordable at all) to serve as real, not simulated, ground truth. Comparing the hybrid's own 8-candidate answer against this exhaustive 128-candidate answer needs one piece of care Section 23.1 already set up: the two passes use different repeat counts, so the code compares PER-CALL time (<code>MeasuredCandidate::perCallUs()</code>), never raw totals from two differently-scaled measurement runs, which would never be a fair comparison. The result, reported honestly in the code's own closing verdict below, is a genuine test of whether an imperfect, honestly-flawed cost model is still useful as a pruning filter -- and a real, directly measured wall-clock accounting of what pruning actually saves, whichever way the short list turns out. One honest limit on how much weight that verdict can bear: this book's own toy-scale 48-element computation runs in roughly tens of nanoseconds per call, and the lighter best-of-3 pass used to make measuring all 128 candidates affordable is itself noisy at that scale -- a re-run of this exact program can report a different candidate as the "true best" than the one printed below, and a different agreement count against the cost model's own top-8, simply from ordinary measurement jitter. The printed numbers below are real, not fabricated, but they are one noisy sample of that exhaustive pass, not a guaranteed-stable oracle.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>autotuneSchedule, the hybrid design (this section&#39;s own capstone):
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  Part 1 -- estimateScheduleCost() ranks all 128 real schedules
@@ -3262,22 +3347,24 @@
 <a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  |
 <a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>  +-- hybrid&#39;s own winner: fastest of the 8, for real
 <a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>  |
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>  Part 3 -- EXHAUSTIVE (ground truth): compile + measure ALL 128
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>            (lighter pass: best-of-3, 200,000 reps each -- noisier,
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>            but affordable across all 128) -- real ground truth,
-<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>            not simulated
-<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>  |
-<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>  +-- true best: fastest of all 128, for real
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>  Part 3 -- EXHAUSTIVE (the best affordable proxy for ground truth):
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>            compile + measure ALL 128 (lighter pass: best-of-3,
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>            200,000 reps each -- noisier, but affordable across all
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>            128) -- a real, not simulated, measurement; NOT a
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>            noise-free oracle, since the lighter pass is itself
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>            susceptible to measurement jitter at this toy scale
 <a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>  |
-<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  Part 4 -- the honest verdict: was the true best inside the cost
-<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>            model&#39;s own top-8 short list? did the hybrid still win
-<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>            on real wall-clock time regardless? Compared by PER-CALL
-<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>            time (perCallUs()), never raw totals across two
-<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>            differently-scaled measurement passes.
-<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>
-<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>Neither pass is asked to be free of noise. Both are asked to be
-<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>honest about what they actually measured, and about which real
-<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>schedule -- not which predicted one -- came out fastest.
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  +-- true best: fastest of all 128, for real
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>  |
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>  Part 4 -- the honest verdict: was the true best inside the cost
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>            model&#39;s own top-8 short list? did the hybrid still win
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>            on real wall-clock time regardless? Compared by PER-CALL
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>            time (perCallUs()), never raw totals across two
+<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a>            differently-scaled measurement passes.
+<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a>
+<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>Neither pass is asked to be free of noise. Both are asked to be
+<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a>honest about what they actually measured, and about which real
+<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a>schedule -- not which predicted one -- came out fastest.
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1">// Chapter 23: Building CUDA Hammer&#39;s Autotuner</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1">// 059_the_autotuner_pruning_with_a_cost_model_then_measuring_for_real.cpp</span>

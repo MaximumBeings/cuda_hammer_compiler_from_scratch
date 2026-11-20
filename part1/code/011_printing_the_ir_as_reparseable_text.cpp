@@ -40,6 +40,9 @@
 // Compile: g++ -std=c++17 -Wall -Wextra -O2 011_printing_the_ir_as_reparseable_text.cpp -o 011_printing_the_ir_as_reparseable_text
 // Run:     ./011_printing_the_ir_as_reparseable_text
 #include <cstdio>
+#include <cstdlib>
+#include <cmath>
+#include <cstring>
 #include <cctype>
 #include <string>
 #include <vector>
@@ -118,11 +121,15 @@ static std::vector<Token> lexLine(const std::string& line) {
             toks.push_back({TokKind::Ident, line.substr(start, i - start), 0.0f});
             continue;
         }
-        if (isdigit(static_cast<unsigned char>(c)) || c == '.') {
-            size_t start = i;
-            while (i < line.size() && (isdigit(static_cast<unsigned char>(line[i])) || line[i] == '.')) ++i;
-            std::string text = line.substr(start, i - start);
-            toks.push_back({TokKind::Number, text, std::stof(text)});
+        if (isdigit(static_cast<unsigned char>(c)) || c == '.' || c == '-' || c == '+') {
+            const char* start = line.c_str() + i;
+            char* end = nullptr;
+            float value = std::strtof(start, &end);
+            if (end == start || !std::isfinite(value))
+                throw std::runtime_error("lex: invalid or nonfinite numeric literal");
+            size_t count = static_cast<size_t>(end - start);
+            toks.push_back({TokKind::Number, line.substr(i, count), value});
+            i += count;
             continue;
         }
         switch (c) {
@@ -236,6 +243,7 @@ static bool graphsStructurallyEqual(const Graph& a, const Graph& b) {
         const Node* na = a.node(static_cast<int>(i));
         const Node* nb = b.node(static_cast<int>(i));
         if (na->op != nb->op) return false;
+        if (na->op == OpKind::Const && std::memcmp(&na->constValue, &nb->constValue, sizeof(float)) != 0) return false;
         if (na->inputs.size() != nb->inputs.size()) return false;
         for (size_t j = 0; j < na->inputs.size(); ++j) {
             if (na->inputs[j].nodeId != nb->inputs[j].nodeId) return false;
@@ -269,7 +277,7 @@ static std::string printGraphAsSource(const Graph& g) {
             // Const's one argument is a NUMBER, not a name -- print the
             // stored value itself, not a reference to another node.
             char buf[64];
-            snprintf(buf, sizeof(buf), "%g", n->constValue);
+            snprintf(buf, sizeof(buf), "%.9g", n->constValue);
             out += buf;
         } else {
             for (size_t i = 0; i < n->inputs.size(); ++i) {

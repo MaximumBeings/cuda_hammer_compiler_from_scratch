@@ -553,7 +553,7 @@ static std::vector<float> parseFloats(const std::string& text) {
 static bool arraysMatch(const std::vector<float>& a, const std::vector<float>& b, float tol = 1e-3f) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
-        if (std::fabs(a[i] - b[i]) > tol) return false;
+        if (!(std::fabs(a[i] - b[i]) <= tol)) return false;
     }
     return true;
 }

@@ -68,8 +68,11 @@ int main() {
 #elif defined(__aarch64__)
     printf("[A.2] compile-time architecture: __aarch64__ -- Chapter 19 targets Isa::Neon here\n");
     std::vector<std::string> flags = readRealCpuFlags();
+    if (flags.empty()) {
+        printf("      /proc/cpuinfo unavailable: runtime flags UNKNOWN, not absent.\n");
+    }
     bool asimd = hasFlag(flags, "asimd");
-    printf("      real /proc/cpuinfo: asimd=%s\n", asimd ? "yes" : "no");
+    printf("      real /proc/cpuinfo: asimd=%s\n", flags.empty() ? "unknown" : (asimd ? "yes" : "no"));
 #else
     printf("[A.2] neither __x86_64__ nor __aarch64__ -- outside Chapter 19's own two real targets\n");
 #endif

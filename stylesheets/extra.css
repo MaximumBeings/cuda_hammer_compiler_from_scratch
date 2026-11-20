@@ -1,20 +1,20 @@
-/* Header bar text/icons in red, independent of the yellow/amber palette. */
-.md-header,
-.md-header__title,
-.md-header__topic,
-.md-header__button,
-.md-header__ellipsis,
-.md-tabs__link {
-  color: #c1121f !important;
+/* Shared visual system: deep-blue navigation and full-width technical figures. */
+:root,[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0b2e63;
+  --md-primary-fg-color--dark: #082449;
+  --md-primary-bg-color: #fff;
+  --md-accent-fg-color: #145caa;
+  --md-typeset-a-color: #164b8d;
 }
-
-.md-header__button svg,
-.md-search__icon svg,
-.md-header__button.md-icon svg {
-  fill: #c1121f !important;
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0b2e63;
+  --md-accent-fg-color: #8bb9ff;
+  --md-typeset-a-color: #8bb9ff;
 }
-
-.md-search__input,
-.md-search__input::placeholder {
-  color: #c1121f !important;
-}
+.md-header,.md-tabs { background-color: #0b2e63; color:#fff; }
+.md-search__input { color:#fff; }
+.md-nav__link--active,.md-nav__link:hover,.md-nav__link:focus { color:var(--md-typeset-a-color); }
+.md-typeset figure.chapter-figure { display:block; width:100%; max-width:none; margin:2rem 0; }
+.md-typeset .chapter-figure p,.md-typeset .chapter-figure a { display:block; width:100%; }
+.md-typeset .chapter-figure img { display:block; width:100%; max-width:100%; height:auto; }
+.md-typeset .chapter-figure figcaption { color:var(--md-default-fg-color--light); font-size:.8rem; margin:.7rem 0 0; }
