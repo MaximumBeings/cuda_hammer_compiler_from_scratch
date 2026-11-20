@@ -386,7 +386,7 @@ exactly why Chapter 23's own autotuner will not trust a cost model blindly -- it
 one to narrow 128 candidates down to a short list, then MEASURE the short list for real.
 ```
 
-**Output (device, aarch64 Linux VM -- real, machine-specific timing):**
+**Historical output (device, aarch64 Linux VM; earlier revision and machine-specific timing):**
 
 ```text
 === Section 22.1: a loop-overhead cost model for tile size and unroll factor ===
@@ -680,17 +680,16 @@ int main() {
     printf("  model predicts:  row-major cheaper by %.1fx\n", colMajorCost / rowMajorCost);
     printf("  measurement finds: row-major faster by %.2fx\n", bestColMs / bestRowMs);
     printf("  ranking matches: %s\n\n", modelRankingCorrect ? "yes" : "no");
-    printf("Unlike Section 22.1's loop-overhead model, this one gets the RANKING right. The magnitude is\n");
-    printf("off -- the model predicted an %.1fx gap and reality delivered %.2fx -- real memory hierarchies\n",
-           colMajorCost / rowMajorCost, bestColMs / bestRowMs);
-    printf("have effects this deliberately simple model never included (TLB misses under a stride this\n");
-    printf("large, and hardware prefetchers that help the contiguous case even more than a flat line-count\n");
-    printf("model assumes), so the real penalty for column-major turned out worse than predicted, not\n");
-    printf("better. Getting the DIRECTION right while getting the MAGNITUDE wrong is still a useful cost\n");
-    printf("model for ranking candidates, which is all an autotuner actually needs from it -- and it is a\n");
-    printf("different kind of honesty than Section 22.1's model, which got the direction wrong at high\n");
-    printf("unroll factors. Different mechanisms deserve different amounts of trust, which is exactly what\n");
-    printf("Section 22.3 has to decide when it combines both models into one score for a real schedule.\n");
+    printf("The measured ranking %s the model on this run.\n",
+           modelRankingCorrect ? "matches" : "does not match");
+    printf("The observed ratio %.2fx is %s the predicted ratio %.2fx.\n",
+           bestColMs / bestRowMs,
+           bestColMs / bestRowMs > colMajorCost / rowMajorCost ? "greater than" :
+           bestColMs / bestRowMs < colMajorCost / rowMajorCost ? "less than" : "equal to",
+           colMajorCost / rowMajorCost);
+    printf("This cache-line model omits prefetching, cache levels, TLB effects and compiler choices.\n");
+    printf("A timing discrepancy alone does not identify which mechanism caused it.\n");
+    printf("Use measured candidate timings to test rankings; do not assume a portable speed ratio.\n");
 
     bool allOk = (rowMajorCost < colMajorCost) && bothCorrect;
     return allOk ? 0 : 1;
@@ -698,11 +697,14 @@ int main() {
 ```
 
 ```bash
-g++ -std=c++17 -Wall -Wextra -O2 "055_a_memory_stride_cost_model_for_loop_order.cpp" -o "055_a_memory_stride_cost_model_for_loop_order"
-./"055_a_memory_stride_cost_model_for_loop_order"
+clang++ -std=c++17 -O1 -g -fsanitize=address,undefined,float-cast-overflow \
+  -fno-sanitize-recover=all -Wall -Wextra \
+  docs/part5/code/055_a_memory_stride_cost_model_for_loop_order.cpp \
+  -o /tmp/hammer-stride-followup
+/tmp/hammer-stride-followup
 ```
 
-**Fresh local output (native macOS arm64, Apple Clang C++17; timings are observations):**
+**Fresh local output (November 20, 2026; native macOS arm64, Apple Clang C++17, `-O1` with ASan/UBSan/float-cast-overflow; timings include instrumentation):**
 
 
 
@@ -723,9 +725,9 @@ diluting the memory-only effect once real compute work is added into the same to
 
 --- Part 2: real measurement -- computeOrdered() on a real 4096x4096 float array (64 MB) ---
 
-  order dim0>dim1 (row-major) best-of-5 =    3.935 ms
-  order dim1>dim0 (col-major) best-of-5 =  307.545 ms
-  measured ratio (col-major / row-major) = 78.15x
+  order dim0>dim1 (row-major) best-of-5 =   26.520 ms
+  order dim1>dim0 (col-major) best-of-5 =  123.703 ms
+  measured ratio (col-major / row-major) = 4.66x
 
 self-check: both orders produce the exact same bit-for-bit output array (confirmed) -- Section
 21.2's own finding holds again here: for this elementwise computation, loop order is STILL a
@@ -734,22 +736,17 @@ pure performance knob, never a correctness concern; what changes is only how lon
 --- Part 3: does the model's prediction match what actually happened? ---
 
   model predicts:  row-major cheaper by 11.7x
-  measurement finds: row-major faster by 78.15x
+  measurement finds: row-major faster by 4.66x
   ranking matches: yes
 
-Unlike Section 22.1's loop-overhead model, this one gets the RANKING right. The magnitude is
-off -- the model predicted an 11.7x gap and reality delivered 78.15x -- real memory hierarchies
-have effects this deliberately simple model never included (TLB misses under a stride this
-large, and hardware prefetchers that help the contiguous case even more than a flat line-count
-model assumes), so the real penalty for column-major turned out worse than predicted, not
-better. Getting the DIRECTION right while getting the MAGNITUDE wrong is still a useful cost
-model for ranking candidates, which is all an autotuner actually needs from it -- and it is a
-different kind of honesty than Section 22.1's model, which got the direction wrong at high
-unroll factors. Different mechanisms deserve different amounts of trust, which is exactly what
-Section 22.3 has to decide when it combines both models into one score for a real schedule.
+The measured ranking matches the model on this run.
+The observed ratio 4.66x is less than the predicted ratio 11.71x.
+This cache-line model omits prefetching, cache levels, TLB effects and compiler choices.
+A timing discrepancy alone does not identify which mechanism caused it.
+Use measured candidate timings to test rankings; do not assume a portable speed ratio.
 ```
 
-**Output (device, aarch64 Linux VM -- real, machine-specific timing):**
+**Historical output (device, aarch64 Linux VM; earlier revision and machine-specific timing):**
 
 ```text
 === Section 22.2: a memory-stride cost model for loop order ===
@@ -797,7 +794,7 @@ Section 22.3 has to decide when it combines both models into one score for a rea
 *Correctness (the bit-for-bit self-checks above) matches on both machines, as it has every chapter since 17. The millisecond figures, and in places even which candidate ranks fastest, are expected to differ between the two -- that is real data about two different machines, not a discrepancy to reconcile.*
 
 !!! warning "[COMMON TRAP] a model that gets the RANKING right is not a model you can trust for MAGNITUDE"
-    Section 22.2's own model correctly says "row-major is cheaper" -- and it would be a real mistake to read that success as license to trust its own predicted RATIO too. An autotuner that used this model's own 11-to-12x prediction to decide, say, how much extra tiling complexity is worth trading for a better loop order would be reasoning from a number that real hardware, on both machines this book measured, blew past by a wide margin. Getting a ranking right and getting a magnitude right are different claims, and a cost model can genuinely earn one without the other -- which is exactly why Chapter 23's own autotuner will use a cost model to choose WHICH few candidates to measure, never to decide BY HOW MUCH one candidate is expected to win.
+    Section 22.2's own model correctly says "row-major is cheaper" -- and it would be a real mistake to read that success as license to trust its own predicted RATIO too. An autotuner that used this model's own 11-to-12x prediction to decide how much extra tiling complexity to accept would be treating a heuristic as a measured ratio. Historical runs exceeded the prediction; the new instrumented run is below it. Neither establishes a portable ratio, and instrumented timings are not an optimized performance baseline. Getting a ranking right and getting a magnitude right are different claims, and a cost model can genuinely earn one without the other -- which is exactly why Chapter 23's own autotuner will use a cost model to choose WHICH few candidates to measure, never to decide BY HOW MUCH one candidate is expected to win.
 
 ## 22.3 Combining Both Cost Models: Prediction vs. Measurement for Real Schedules
 
@@ -1322,7 +1319,7 @@ space, for a real kernel) down to a short list, and only then pay for real measu
 23 builds exactly that hybrid.
 ```
 
-**Output (device, aarch64 Linux VM -- real, machine-specific timing):**
+**Historical output (device, aarch64 Linux VM; earlier revision and machine-specific timing):**
 
 ```text
 === Section 22.3: combining both cost models -- prediction vs. measurement for real schedules ===

@@ -12,6 +12,8 @@ Reviewed baseline: `a01589b`. This follows, and does not replace, the earlier te
 6. No automatic verification workflow protected publishing. A new workflow runs publication/coverage checks, 78 sanitized host drivers and focused regressions on Linux and macOS before deploying `main`. It has no CUDA runner and makes no GPU-validation claim.
 7. The source-level publication checker did not check built HTML fragments. A separate strict checker now rejects missing assets/pages/anchors, duplicate IDs, escaping relative paths and absent/empty sites, with negative regressions. No prior acceptance criteria were relaxed.
 
+8. Chapter 22’s stride benchmark unconditionally described the measured penalty as worse than predicted. The fresh sanitizer run actually measured a smaller ratio. Its conclusion now reports the observed ranking and whether the ratio is above/below the prediction, without attributing the discrepancy to an unmeasured hardware mechanism. The changed driver was recompiled and rerun with sanitizers; the page uses actual new stdout and labels the historical device output.
+
 ## Checks actually run locally
 
 - Strict MkDocs build, 43 content pages / 108 downloadable source embeds / 159 SVGs.
@@ -23,7 +25,7 @@ Reviewed baseline: `a01589b`. This follows, and does not replace, the earlier te
 - Four systems C++ regression programs plus the numerical comparison regression, each with sanitizers.
 - All 17 existing negative coverage cases, plus five publication/GPU-runner test methods with deliberate negative cases.
 
-Commands, fresh stdout and source/evidence hashes are under `validation/final-followup-2026-11-20/`. Generated child programs are not automatically sanitizer-instrumented by the host driver sweep. No source algorithm in the 108 downloadable lessons was changed by this follow-up.
+Commands, fresh stdout and source/evidence hashes are under `validation/final-followup-2026-11-20/`. Generated child programs are not automatically sanitizer-instrumented by the host driver sweep. No source algorithm in the 108 downloadable lessons was changed by this follow-up. The stride benchmark’s printed conclusion changed after the 78-driver baseline; its separate current-source compile/run record is under `stride-conclusion/`. The 78-driver baseline and its hashes remain unchanged.
 
 ## Remaining limits
 
