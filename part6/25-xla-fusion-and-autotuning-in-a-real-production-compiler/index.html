@@ -2306,26 +2306,26 @@ XLA:CPU. That gap is named here explicitly, the same way Chapter 18 named
 its own "compiles but never executes" limitation, rather than left
 implicit.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+----------------------------------------------------------------+
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 25&#39;s own shape, section by section                    |
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 25's own shape, section by section                    |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                  |
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  25.1  A production IR meets CUDA Hammer&#39;s own diamond graph    |
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  25.1  A production IR meets CUDA Hammer's own diamond graph    |
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>|        -- same shared-value shape as Ch4/Ch13, run through      |
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>|           REAL XLA instead of CUDA Hammer&#39;s own passes.         |
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>|           REAL XLA instead of CUDA Hammer's own passes.         |
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>|                                                                  |
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>|  25.2  What XLA&#39;s real fusion pass draws its own boundary       |
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>|        around -- an &quot;escapes the group&quot; rule tested against     |
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>|        Ch13&#39;s own &quot;consumers != 1&quot; rule and Ch14&#39;s own          |
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|        &quot;a reduction&#39;s output is ALWAYS external&quot; rule.          |
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>|  25.2  What XLA's real fusion pass draws its own boundary       |
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>|        around -- an "escapes the group" rule tested against     |
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>|        Ch13's own "consumers != 1" rule and Ch14's own          |
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|        "a reduction's output is ALWAYS external" rule.          |
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>|                                                                  |
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>|  25.3  A real production autotuner&#39;s own tuning-knob and        |
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>|        cache-key records, laid directly next to Ch21&#39;s          |
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>|        Schedule and Ch24&#39;s loopNestKeyForTarget().              |
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>|  25.3  A real production autotuner's own tuning-knob and        |
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>|        cache-key records, laid directly next to Ch21's          |
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>|        Schedule and Ch24's loopNestKeyForTarget().              |
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>+----------------------------------------------------------------+
 </code></pre></div>
 <h2 id="251-a-production-ir-meets-cuda-hammers-own-diamond-graph">25.1 A Production IR Meets CUDA Hammer's Own Diamond Graph<a class="headerlink" href="#251-a-production-ir-meets-cuda-hammers-own-diamond-graph" title="Permanent link">&para;</a></h2>
 <!-- hammer:figure:25.1:start -->
 <figure class="chapter-figure">
-<p><a href="../../images/concepts/25-01.svg?v=68f8ac243dc7"><img alt="Inspect the actual production IR" src="../../images/concepts/25-01.svg?v=68f8ac243dc7" /></a></p>
+<p><a href="../../images/concepts/25-01.svg?v=d33d80632c14"><img alt="Inspect the actual production IR" src="../../images/concepts/25-01.svg?v=d33d80632c14" /></a></p>
 <figcaption>HLO shape and fusion decisions are version- and target-dependent.</figcaption>
 </figure>
 <!-- hammer:figure:25.1:end -->
@@ -2368,41 +2368,41 @@ own backend-specific CUDA codegen runs.</p>
 exactly as XLA's frontend first sees it, then asks for the same graph's
 real, fully optimized HLO after XLA's own fusion pass has run.
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/usr/bin/env python3</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Chapter 25, Section 25.1-25.2: CUDA Hammer&#39;s own diamond test graph --</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># the same shared-value shape used by Ch4&#39;s Graph/Node IR and Ch13&#39;s</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Chapter 25, Section 25.1-25.2: CUDA Hammer's own diamond test graph --</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># the same shared-value shape used by Ch4's Graph/Node IR and Ch13's</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># elementwiseFusionPass() ever since -- run through a REAL production</span>
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># compiler&#39;s own fusion pass instead of CUDA Hammer&#39;s own.</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># compiler's own fusion pass instead of CUDA Hammer's own.</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1">#</span>
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># This is the first Python file in this book. Every chapter through Ch24</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># built CUDA Hammer itself in C++; this chapter studies a real, independent</span>
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># system (XLA, via JAX) that this book has only ever cited before (Ch3).</span>
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># There is no C++ source for XLA available to compile in this sandbox, and</span>
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># reimplementing XLA&#39;s own fusion pass here would defeat the point of a</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1"># reimplementing XLA's own fusion pass here would defeat the point of a</span>
 <a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1"># case study -- so this file installs the real thing (`pip install jax`,</span>
 <a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1"># which pulls a real jaxlib containing XLA) and asks XLA itself, live, what</span>
 <a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># it decides. Every HLO dump below is genuinely produced by XLA on this</span>
 <a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="c1"># machine, not transcribed from documentation.</span>
 <a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1">#</span>
-<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1"># Part 1 prints XLA&#39;s UNOPTIMIZED HLO (StableHLO, as traced from the Python</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1"># Part 1 prints XLA's UNOPTIMIZED HLO (StableHLO, as traced from the Python</span>
 <a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="c1"># function, before any XLA-internal optimization) for the diamond graph:</span>
 <a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="c1">#     t1 = a + b</span>
 <a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="c1">#     t2 = t1 * c</span>
 <a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1">#     t3 = relu(t1)</span>
 <a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="c1">#     out = t2 + t3</span>
-<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1"># -- structurally the same &quot;t1 feeds two consumers that join at out&quot; shape</span>
-<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1"># as Ch4&#39;s own diamond test graph, reused through every fusion pass since</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="c1"># -- structurally the same "t1 feeds two consumers that join at out" shape</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="c1"># as Ch4's own diamond test graph, reused through every fusion pass since</span>
 <a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="c1"># Ch13.</span>
 <a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="c1">#</span>
-<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="c1"># Part 2 prints XLA&#39;s OPTIMIZED HLO for the same graph -- after XLA&#39;s real,</span>
-<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1"># built-in fusion pass has run. Ch13&#39;s own elementwiseFusionPass() forces a</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="c1"># Part 2 prints XLA's OPTIMIZED HLO for the same graph -- after XLA's real,</span>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1"># built-in fusion pass has run. Ch13's own elementwiseFusionPass() forces a</span>
 <a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="c1"># value external whenever `consumers != 1` (t1 has 2 consumers here, so</span>
-<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="c1"># Ch13&#39;s own pass keeps it external, materialized to memory once and read</span>
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="c1"># Ch13's own pass keeps it external, materialized to memory once and read</span>
 <a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="c1"># back twice). The question this file asks empirically is whether a real</span>
 <a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="c1"># production fusion pass uses that same rule.</span>
 <a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="c1">#</span>
 <a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="c1"># Part 3 changes ONE thing: it also returns t1 itself as a second output,</span>
-<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="c1"># so t1 is no longer just &quot;used twice inside the graph&quot; but also escapes</span>
-<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="c1"># the whole computation as a live result -- the same distinction Ch16&#39;s own</span>
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="c1"># so t1 is no longer just "used twice inside the graph" but also escapes</span>
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="c1"># the whole computation as a live result -- the same distinction Ch16's own</span>
 <a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="c1"># classifyNode() drew between an ordinary Shared node and a GraphRoot.</span>
 <a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>
 <a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
@@ -2430,47 +2430,47 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-2-61" name="__codelineno-2-61" href="#__codelineno-2-61"></a>    <span class="n">b</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 <a id="__codelineno-2-62" name="__codelineno-2-62" href="#__codelineno-2-62"></a>    <span class="n">c</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 <a id="__codelineno-2-63" name="__codelineno-2-63" href="#__codelineno-2-63"></a>
-<a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;jax version: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;real backend device: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-64" name="__codelineno-2-64" href="#__codelineno-2-64"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"jax version: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-2-65" name="__codelineno-2-65" href="#__codelineno-2-65"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"real backend device: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-2-66" name="__codelineno-2-66" href="#__codelineno-2-66"></a>    <span class="nb">print</span><span class="p">()</span>
 <a id="__codelineno-2-67" name="__codelineno-2-67" href="#__codelineno-2-67"></a>
-<a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 1: unoptimized HLO (StableHLO) for the diamond graph&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-2-68" name="__codelineno-2-68" href="#__codelineno-2-68"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-2-69" name="__codelineno-2-69" href="#__codelineno-2-69"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"PART 1: unoptimized HLO (StableHLO) for the diamond graph"</span><span class="p">)</span>
+<a id="__codelineno-2-70" name="__codelineno-2-70" href="#__codelineno-2-70"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
 <a id="__codelineno-2-71" name="__codelineno-2-71" href="#__codelineno-2-71"></a>    <span class="n">lowered</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">diamond</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
 <a id="__codelineno-2-72" name="__codelineno-2-72" href="#__codelineno-2-72"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">lowered</span><span class="o">.</span><span class="n">as_text</span><span class="p">())</span>
 <a id="__codelineno-2-73" name="__codelineno-2-73" href="#__codelineno-2-73"></a>
-<a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-2-75" name="__codelineno-2-75" href="#__codelineno-2-75"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 2: optimized HLO for the diamond graph (real XLA fusion pass)&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-2-75" name="__codelineno-2-75" href="#__codelineno-2-75"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"PART 2: optimized HLO for the diamond graph (real XLA fusion pass)"</span><span class="p">)</span>
+<a id="__codelineno-2-76" name="__codelineno-2-76" href="#__codelineno-2-76"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
 <a id="__codelineno-2-77" name="__codelineno-2-77" href="#__codelineno-2-77"></a>    <span class="n">compiled</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">diamond</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 <a id="__codelineno-2-78" name="__codelineno-2-78" href="#__codelineno-2-78"></a>    <span class="n">optimized_text</span> <span class="o">=</span> <span class="n">compiled</span><span class="o">.</span><span class="n">as_text</span><span class="p">()</span>
 <a id="__codelineno-2-79" name="__codelineno-2-79" href="#__codelineno-2-79"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">optimized_text</span><span class="p">)</span>
 <a id="__codelineno-2-80" name="__codelineno-2-80" href="#__codelineno-2-80"></a>
-<a id="__codelineno-2-81" name="__codelineno-2-81" href="#__codelineno-2-81"></a>    <span class="n">fusion_count</span> <span class="o">=</span> <span class="n">optimized_text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot; fusion(&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- number of `fusion(...)` instructions in the ENTRY computation: &quot;</span>
-<a id="__codelineno-2-83" name="__codelineno-2-83" href="#__codelineno-2-83"></a>          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">fusion_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-84" name="__codelineno-2-84" href="#__codelineno-2-84"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- t1 (the shared add) appears INSIDE the single fused_computation &quot;</span>
-<a id="__codelineno-2-85" name="__codelineno-2-85" href="#__codelineno-2-85"></a>          <span class="sa">f</span><span class="s2">&quot;body, not as its own materialized buffer: &quot;</span>
-<a id="__codelineno-2-86" name="__codelineno-2-86" href="#__codelineno-2-86"></a>          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;add.1&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">optimized_text</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;add.0&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">optimized_text</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-81" name="__codelineno-2-81" href="#__codelineno-2-81"></a>    <span class="n">fusion_count</span> <span class="o">=</span> <span class="n">optimized_text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">" fusion("</span><span class="p">)</span>
+<a id="__codelineno-2-82" name="__codelineno-2-82" href="#__codelineno-2-82"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-- number of `fusion(...)` instructions in the ENTRY computation: "</span>
+<a id="__codelineno-2-83" name="__codelineno-2-83" href="#__codelineno-2-83"></a>          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">fusion_count</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-2-84" name="__codelineno-2-84" href="#__codelineno-2-84"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-- t1 (the shared add) appears INSIDE the single fused_computation "</span>
+<a id="__codelineno-2-85" name="__codelineno-2-85" href="#__codelineno-2-85"></a>          <span class="sa">f</span><span class="s2">"body, not as its own materialized buffer: "</span>
+<a id="__codelineno-2-86" name="__codelineno-2-86" href="#__codelineno-2-86"></a>          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'add.1'</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">optimized_text</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'add.0'</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">optimized_text</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-2-87" name="__codelineno-2-87" href="#__codelineno-2-87"></a>
 <a id="__codelineno-2-88" name="__codelineno-2-88" href="#__codelineno-2-88"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-2-89" name="__codelineno-2-89" href="#__codelineno-2-89"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-2-90" name="__codelineno-2-90" href="#__codelineno-2-90"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 3: same graph, but t1 is ALSO returned as a live output&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-91" name="__codelineno-2-91" href="#__codelineno-2-91"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-2-89" name="__codelineno-2-89" href="#__codelineno-2-89"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-2-90" name="__codelineno-2-90" href="#__codelineno-2-90"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"PART 3: same graph, but t1 is ALSO returned as a live output"</span><span class="p">)</span>
+<a id="__codelineno-2-91" name="__codelineno-2-91" href="#__codelineno-2-91"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
 <a id="__codelineno-2-92" name="__codelineno-2-92" href="#__codelineno-2-92"></a>    <span class="n">compiled_mo</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">diamond_multi_output</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 <a id="__codelineno-2-93" name="__codelineno-2-93" href="#__codelineno-2-93"></a>    <span class="n">mo_text</span> <span class="o">=</span> <span class="n">compiled_mo</span><span class="o">.</span><span class="n">as_text</span><span class="p">()</span>
 <a id="__codelineno-2-94" name="__codelineno-2-94" href="#__codelineno-2-94"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">mo_text</span><span class="p">)</span>
 <a id="__codelineno-2-95" name="__codelineno-2-95" href="#__codelineno-2-95"></a>
-<a id="__codelineno-2-96" name="__codelineno-2-96" href="#__codelineno-2-96"></a>    <span class="n">mo_fusion_count</span> <span class="o">=</span> <span class="n">mo_text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot; fusion(&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-97" name="__codelineno-2-97" href="#__codelineno-2-97"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- number of `fusion(...)` instructions in the ENTRY computation &quot;</span>
-<a id="__codelineno-2-98" name="__codelineno-2-98" href="#__codelineno-2-98"></a>          <span class="sa">f</span><span class="s2">&quot;once t1 escapes as an output: </span><span class="si">{</span><span class="n">mo_fusion_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-96" name="__codelineno-2-96" href="#__codelineno-2-96"></a>    <span class="n">mo_fusion_count</span> <span class="o">=</span> <span class="n">mo_text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">" fusion("</span><span class="p">)</span>
+<a id="__codelineno-2-97" name="__codelineno-2-97" href="#__codelineno-2-97"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-- number of `fusion(...)` instructions in the ENTRY computation "</span>
+<a id="__codelineno-2-98" name="__codelineno-2-98" href="#__codelineno-2-98"></a>          <span class="sa">f</span><span class="s2">"once t1 escapes as an output: </span><span class="si">{</span><span class="n">mo_fusion_count</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-2-99" name="__codelineno-2-99" href="#__codelineno-2-99"></a>
 <a id="__codelineno-2-100" name="__codelineno-2-100" href="#__codelineno-2-100"></a>
-<a id="__codelineno-2-101" name="__codelineno-2-101" href="#__codelineno-2-101"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-2-101" name="__codelineno-2-101" href="#__codelineno-2-101"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-2-102" name="__codelineno-2-102" href="#__codelineno-2-102"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">&quot;063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"063_a_diamond_graph_through_real_xlas_hlo_ir.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated XLA output):</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>jax version: 0.10.2
@@ -2480,7 +2480,7 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>PART 1: unoptimized HLO (StableHLO) for the diamond graph
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>==============================================================================
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>module @jit_diamond attributes {mhlo.num_partitions = 1 : i32, mhlo.num_replicas = 1 : i32} {
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  func.func public @main(%arg0: tensor&lt;6x8xf32&gt;, %arg1: tensor&lt;6x8xf32&gt;, %arg2: tensor&lt;6x8xf32&gt;) -&gt; (tensor&lt;6x8xf32&gt; {jax.result_info = &quot;result&quot;}) {
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  func.func public @main(%arg0: tensor&lt;6x8xf32&gt;, %arg1: tensor&lt;6x8xf32&gt;, %arg2: tensor&lt;6x8xf32&gt;) -&gt; (tensor&lt;6x8xf32&gt; {jax.result_info = "result"}) {
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    %0 = stablehlo.add %arg0, %arg1 : tensor&lt;6x8xf32&gt;
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    %1 = stablehlo.multiply %0, %arg2 : tensor&lt;6x8xf32&gt;
 <a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    %2 = call @relu(%0) : (tensor&lt;6x8xf32&gt;) -&gt; tensor&lt;6x8xf32&gt;
@@ -2501,12 +2501,12 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>HloModule jit_diamond, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0}, f32[6,8]{1,0})-&gt;f32[6,8]{1,0}}, allow_spmd_sharding_propagation_to_parameters={true,true,true}, allow_spmd_sharding_propagation_to_output={true}
 <a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>
 <a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>FileNames
-<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a>1 &quot;/home/claude/hammer_repo/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot;
+<a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a>1 "/home/claude/hammer_repo/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py"
 <a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>
 <a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a>FunctionNames
-<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a>1 &quot;&lt;module&gt;&quot;
-<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a>2 &quot;main&quot;
-<a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a>3 &quot;diamond&quot;
+<a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a>1 "&lt;module&gt;"
+<a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a>2 "main"
+<a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a>3 "diamond"
 <a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a>
 <a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a>FileLocations
 <a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a>1 {file_name_id=1 function_name_id=1 line=102 end_line=102 column=4 end_column=10}
@@ -2528,20 +2528,20 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-4-53" name="__codelineno-4-53" href="#__codelineno-4-53"></a>%fused_computation (param_0.2: f32[6,8], param_1.3: f32[6,8], param_2.2: f32[6,8]) -&gt; f32[6,8] {
 <a id="__codelineno-4-54" name="__codelineno-4-54" href="#__codelineno-4-54"></a>  %param_1.3 = f32[6,8]{1,0} parameter(1)
 <a id="__codelineno-4-55" name="__codelineno-4-55" href="#__codelineno-4-55"></a>  %param_2.2 = f32[6,8]{1,0} parameter(2)
-<a id="__codelineno-4-56" name="__codelineno-4-56" href="#__codelineno-4-56"></a>  %add.1 = f32[6,8]{1,0} add(%param_1.3, %param_2.2), metadata={op_name=&quot;jit(diamond)/add&quot; stack_frame_id=3}
+<a id="__codelineno-4-56" name="__codelineno-4-56" href="#__codelineno-4-56"></a>  %add.1 = f32[6,8]{1,0} add(%param_1.3, %param_2.2), metadata={op_name="jit(diamond)/add" stack_frame_id=3}
 <a id="__codelineno-4-57" name="__codelineno-4-57" href="#__codelineno-4-57"></a>  %param_0.2 = f32[6,8]{1,0} parameter(0)
-<a id="__codelineno-4-58" name="__codelineno-4-58" href="#__codelineno-4-58"></a>  %mul.0 = f32[6,8]{1,0} multiply(%add.1, %param_0.2), metadata={op_name=&quot;jit(diamond)/mul&quot; stack_frame_id=4}
-<a id="__codelineno-4-59" name="__codelineno-4-59" href="#__codelineno-4-59"></a>  %constant.2 = f32[] constant(0), metadata={op_name=&quot;jit(diamond)/jit(relu)&quot; stack_frame_id=5}
-<a id="__codelineno-4-60" name="__codelineno-4-60" href="#__codelineno-4-60"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name=&quot;jit(diamond)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-4-61" name="__codelineno-4-61" href="#__codelineno-4-61"></a>  %max.4 = f32[6,8]{1,0} maximum(%add.1, %max.5), metadata={op_name=&quot;jit(diamond)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-4-62" name="__codelineno-4-62" href="#__codelineno-4-62"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%mul.0, %max.4), metadata={op_name=&quot;jit(diamond)/add&quot; stack_frame_id=6}
+<a id="__codelineno-4-58" name="__codelineno-4-58" href="#__codelineno-4-58"></a>  %mul.0 = f32[6,8]{1,0} multiply(%add.1, %param_0.2), metadata={op_name="jit(diamond)/mul" stack_frame_id=4}
+<a id="__codelineno-4-59" name="__codelineno-4-59" href="#__codelineno-4-59"></a>  %constant.2 = f32[] constant(0), metadata={op_name="jit(diamond)/jit(relu)" stack_frame_id=5}
+<a id="__codelineno-4-60" name="__codelineno-4-60" href="#__codelineno-4-60"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name="jit(diamond)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-4-61" name="__codelineno-4-61" href="#__codelineno-4-61"></a>  %max.4 = f32[6,8]{1,0} maximum(%add.1, %max.5), metadata={op_name="jit(diamond)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-4-62" name="__codelineno-4-62" href="#__codelineno-4-62"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%mul.0, %max.4), metadata={op_name="jit(diamond)/add" stack_frame_id=6}
 <a id="__codelineno-4-63" name="__codelineno-4-63" href="#__codelineno-4-63"></a>}
 <a id="__codelineno-4-64" name="__codelineno-4-64" href="#__codelineno-4-64"></a>
 <a id="__codelineno-4-65" name="__codelineno-4-65" href="#__codelineno-4-65"></a>ENTRY %main.2 (a.1: f32[6,8], b.1: f32[6,8], c.1: f32[6,8]) -&gt; f32[6,8] {
-<a id="__codelineno-4-66" name="__codelineno-4-66" href="#__codelineno-4-66"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-4-67" name="__codelineno-4-67" href="#__codelineno-4-67"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-4-68" name="__codelineno-4-68" href="#__codelineno-4-68"></a>  %c.1 = f32[6,8]{1,0} parameter(2), metadata={op_name=&quot;c&quot;}
-<a id="__codelineno-4-69" name="__codelineno-4-69" href="#__codelineno-4-69"></a>  ROOT %maximum_add_fusion = f32[6,8]{1,0} fusion(%c.1, %a.1, %b.1), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(diamond)/add&quot; stack_frame_id=6}
+<a id="__codelineno-4-66" name="__codelineno-4-66" href="#__codelineno-4-66"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-4-67" name="__codelineno-4-67" href="#__codelineno-4-67"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-4-68" name="__codelineno-4-68" href="#__codelineno-4-68"></a>  %c.1 = f32[6,8]{1,0} parameter(2), metadata={op_name="c"}
+<a id="__codelineno-4-69" name="__codelineno-4-69" href="#__codelineno-4-69"></a>  ROOT %maximum_add_fusion = f32[6,8]{1,0} fusion(%c.1, %a.1, %b.1), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(diamond)/add" stack_frame_id=6}
 <a id="__codelineno-4-70" name="__codelineno-4-70" href="#__codelineno-4-70"></a>}
 <a id="__codelineno-4-71" name="__codelineno-4-71" href="#__codelineno-4-71"></a>
 <a id="__codelineno-4-72" name="__codelineno-4-72" href="#__codelineno-4-72"></a>
@@ -2554,12 +2554,12 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-4-79" name="__codelineno-4-79" href="#__codelineno-4-79"></a>HloModule jit_diamond_multi_output, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0}, f32[6,8]{1,0})-&gt;(f32[6,8]{1,0}, f32[6,8]{1,0})}, allow_spmd_sharding_propagation_to_parameters={true,true,true}, allow_spmd_sharding_propagation_to_output={true,true}
 <a id="__codelineno-4-80" name="__codelineno-4-80" href="#__codelineno-4-80"></a>
 <a id="__codelineno-4-81" name="__codelineno-4-81" href="#__codelineno-4-81"></a>FileNames
-<a id="__codelineno-4-82" name="__codelineno-4-82" href="#__codelineno-4-82"></a>1 &quot;/home/claude/hammer_repo/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot;
+<a id="__codelineno-4-82" name="__codelineno-4-82" href="#__codelineno-4-82"></a>1 "/home/claude/hammer_repo/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py"
 <a id="__codelineno-4-83" name="__codelineno-4-83" href="#__codelineno-4-83"></a>
 <a id="__codelineno-4-84" name="__codelineno-4-84" href="#__codelineno-4-84"></a>FunctionNames
-<a id="__codelineno-4-85" name="__codelineno-4-85" href="#__codelineno-4-85"></a>1 &quot;&lt;module&gt;&quot;
-<a id="__codelineno-4-86" name="__codelineno-4-86" href="#__codelineno-4-86"></a>2 &quot;main&quot;
-<a id="__codelineno-4-87" name="__codelineno-4-87" href="#__codelineno-4-87"></a>3 &quot;diamond_multi_output&quot;
+<a id="__codelineno-4-85" name="__codelineno-4-85" href="#__codelineno-4-85"></a>1 "&lt;module&gt;"
+<a id="__codelineno-4-86" name="__codelineno-4-86" href="#__codelineno-4-86"></a>2 "main"
+<a id="__codelineno-4-87" name="__codelineno-4-87" href="#__codelineno-4-87"></a>3 "diamond_multi_output"
 <a id="__codelineno-4-88" name="__codelineno-4-88" href="#__codelineno-4-88"></a>
 <a id="__codelineno-4-89" name="__codelineno-4-89" href="#__codelineno-4-89"></a>FileLocations
 <a id="__codelineno-4-90" name="__codelineno-4-90" href="#__codelineno-4-90"></a>1 {file_name_id=1 function_name_id=1 line=102 end_line=102 column=4 end_column=10}
@@ -2581,25 +2581,25 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-4-106" name="__codelineno-4-106" href="#__codelineno-4-106"></a>%fused_computation (param_0.1: f32[6,8], param_1.2: f32[6,8]) -&gt; f32[6,8] {
 <a id="__codelineno-4-107" name="__codelineno-4-107" href="#__codelineno-4-107"></a>  %param_0.1 = f32[6,8]{1,0} parameter(0)
 <a id="__codelineno-4-108" name="__codelineno-4-108" href="#__codelineno-4-108"></a>  %param_1.2 = f32[6,8]{1,0} parameter(1)
-<a id="__codelineno-4-109" name="__codelineno-4-109" href="#__codelineno-4-109"></a>  %mul.0 = f32[6,8]{1,0} multiply(%param_0.1, %param_1.2), metadata={op_name=&quot;jit(diamond_multi_output)/mul&quot; stack_frame_id=4}
-<a id="__codelineno-4-110" name="__codelineno-4-110" href="#__codelineno-4-110"></a>  %constant.2 = f32[] constant(0), metadata={op_name=&quot;jit(diamond_multi_output)/jit(relu)&quot; stack_frame_id=5}
-<a id="__codelineno-4-111" name="__codelineno-4-111" href="#__codelineno-4-111"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name=&quot;jit(diamond_multi_output)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-4-112" name="__codelineno-4-112" href="#__codelineno-4-112"></a>  %max.4 = f32[6,8]{1,0} maximum(%param_0.1, %max.5), metadata={op_name=&quot;jit(diamond_multi_output)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-4-113" name="__codelineno-4-113" href="#__codelineno-4-113"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%mul.0, %max.4), metadata={op_name=&quot;jit(diamond_multi_output)/add&quot; stack_frame_id=6}
+<a id="__codelineno-4-109" name="__codelineno-4-109" href="#__codelineno-4-109"></a>  %mul.0 = f32[6,8]{1,0} multiply(%param_0.1, %param_1.2), metadata={op_name="jit(diamond_multi_output)/mul" stack_frame_id=4}
+<a id="__codelineno-4-110" name="__codelineno-4-110" href="#__codelineno-4-110"></a>  %constant.2 = f32[] constant(0), metadata={op_name="jit(diamond_multi_output)/jit(relu)" stack_frame_id=5}
+<a id="__codelineno-4-111" name="__codelineno-4-111" href="#__codelineno-4-111"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name="jit(diamond_multi_output)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-4-112" name="__codelineno-4-112" href="#__codelineno-4-112"></a>  %max.4 = f32[6,8]{1,0} maximum(%param_0.1, %max.5), metadata={op_name="jit(diamond_multi_output)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-4-113" name="__codelineno-4-113" href="#__codelineno-4-113"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%mul.0, %max.4), metadata={op_name="jit(diamond_multi_output)/add" stack_frame_id=6}
 <a id="__codelineno-4-114" name="__codelineno-4-114" href="#__codelineno-4-114"></a>}
 <a id="__codelineno-4-115" name="__codelineno-4-115" href="#__codelineno-4-115"></a>
 <a id="__codelineno-4-116" name="__codelineno-4-116" href="#__codelineno-4-116"></a>%wrapped_add_computation (param_0.2: f32[6,8], param_1.3: f32[6,8]) -&gt; f32[6,8] {
 <a id="__codelineno-4-117" name="__codelineno-4-117" href="#__codelineno-4-117"></a>  %param_0.2 = f32[6,8]{1,0} parameter(0)
 <a id="__codelineno-4-118" name="__codelineno-4-118" href="#__codelineno-4-118"></a>  %param_1.3 = f32[6,8]{1,0} parameter(1)
-<a id="__codelineno-4-119" name="__codelineno-4-119" href="#__codelineno-4-119"></a>  ROOT %add.1 = f32[6,8]{1,0} add(%param_0.2, %param_1.3), metadata={op_name=&quot;jit(diamond_multi_output)/add&quot; stack_frame_id=3}
+<a id="__codelineno-4-119" name="__codelineno-4-119" href="#__codelineno-4-119"></a>  ROOT %add.1 = f32[6,8]{1,0} add(%param_0.2, %param_1.3), metadata={op_name="jit(diamond_multi_output)/add" stack_frame_id=3}
 <a id="__codelineno-4-120" name="__codelineno-4-120" href="#__codelineno-4-120"></a>}
 <a id="__codelineno-4-121" name="__codelineno-4-121" href="#__codelineno-4-121"></a>
 <a id="__codelineno-4-122" name="__codelineno-4-122" href="#__codelineno-4-122"></a>ENTRY %main.2 (a.1: f32[6,8], b.1: f32[6,8], c.1: f32[6,8]) -&gt; (f32[6,8], f32[6,8]) {
-<a id="__codelineno-4-123" name="__codelineno-4-123" href="#__codelineno-4-123"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-4-124" name="__codelineno-4-124" href="#__codelineno-4-124"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-4-125" name="__codelineno-4-125" href="#__codelineno-4-125"></a>  %c.1 = f32[6,8]{1,0} parameter(2), metadata={op_name=&quot;c&quot;}
-<a id="__codelineno-4-126" name="__codelineno-4-126" href="#__codelineno-4-126"></a>  %wrapped_add = f32[6,8]{1,0} fusion(%a.1, %b.1), kind=kLoop, calls=%wrapped_add_computation, metadata={op_name=&quot;jit(diamond_multi_output)/add&quot; stack_frame_id=3}
-<a id="__codelineno-4-127" name="__codelineno-4-127" href="#__codelineno-4-127"></a>  %maximum_add_fusion = f32[6,8]{1,0} fusion(%wrapped_add, %c.1), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(diamond_multi_output)/add&quot; stack_frame_id=6}
+<a id="__codelineno-4-123" name="__codelineno-4-123" href="#__codelineno-4-123"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-4-124" name="__codelineno-4-124" href="#__codelineno-4-124"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-4-125" name="__codelineno-4-125" href="#__codelineno-4-125"></a>  %c.1 = f32[6,8]{1,0} parameter(2), metadata={op_name="c"}
+<a id="__codelineno-4-126" name="__codelineno-4-126" href="#__codelineno-4-126"></a>  %wrapped_add = f32[6,8]{1,0} fusion(%a.1, %b.1), kind=kLoop, calls=%wrapped_add_computation, metadata={op_name="jit(diamond_multi_output)/add" stack_frame_id=3}
+<a id="__codelineno-4-127" name="__codelineno-4-127" href="#__codelineno-4-127"></a>  %maximum_add_fusion = f32[6,8]{1,0} fusion(%wrapped_add, %c.1), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(diamond_multi_output)/add" stack_frame_id=6}
 <a id="__codelineno-4-128" name="__codelineno-4-128" href="#__codelineno-4-128"></a>  ROOT %tuple.1 = (f32[6,8]{1,0}, f32[6,8]{1,0}) tuple(%maximum_add_fusion, %wrapped_add)
 <a id="__codelineno-4-129" name="__codelineno-4-129" href="#__codelineno-4-129"></a>}
 <a id="__codelineno-4-130" name="__codelineno-4-130" href="#__codelineno-4-130"></a>
@@ -2614,7 +2614,7 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>PART 1: unoptimized HLO (StableHLO) for the diamond graph
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>==============================================================================
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>module @jit_diamond attributes {mhlo.num_partitions = 1 : i32, mhlo.num_replicas = 1 : i32} {
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  func.func public @main(%arg0: tensor&lt;6x8xf32&gt;, %arg1: tensor&lt;6x8xf32&gt;, %arg2: tensor&lt;6x8xf32&gt;) -&gt; (tensor&lt;6x8xf32&gt; {jax.result_info = &quot;result&quot;}) {
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  func.func public @main(%arg0: tensor&lt;6x8xf32&gt;, %arg1: tensor&lt;6x8xf32&gt;, %arg2: tensor&lt;6x8xf32&gt;) -&gt; (tensor&lt;6x8xf32&gt; {jax.result_info = "result"}) {
 <a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    %0 = stablehlo.add %arg0, %arg1 : tensor&lt;6x8xf32&gt;
 <a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    %1 = stablehlo.multiply %0, %arg2 : tensor&lt;6x8xf32&gt;
 <a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    %2 = call @relu(%0) : (tensor&lt;6x8xf32&gt;) -&gt; tensor&lt;6x8xf32&gt;
@@ -2637,20 +2637,20 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a>%fused_computation (param_0.2: f32[6,8], param_1.3: f32[6,8], param_2.2: f32[6,8]) -&gt; f32[6,8] {
 <a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a>  %param_1.3 = f32[6,8]{1,0} parameter(1)
 <a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a>  %param_2.2 = f32[6,8]{1,0} parameter(2)
-<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>  %add.1 = f32[6,8]{1,0} add(%param_1.3, %param_2.2), metadata={op_name=&quot;jit(diamond)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=44}
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a>  %add.1 = f32[6,8]{1,0} add(%param_1.3, %param_2.2), metadata={op_name="jit(diamond)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=44}
 <a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a>  %param_0.2 = f32[6,8]{1,0} parameter(0)
-<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>  %multiply.0 = f32[6,8]{1,0} multiply(%add.1, %param_0.2), metadata={op_name=&quot;jit(diamond)/jit(main)/mul&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=45}
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a>  %multiply.0 = f32[6,8]{1,0} multiply(%add.1, %param_0.2), metadata={op_name="jit(diamond)/jit(main)/mul" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=45}
 <a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a>  %constant.1 = f32[] constant(0)
-<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name=&quot;jit(diamond)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=46}
-<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%add.1, %broadcast.1), metadata={op_name=&quot;jit(diamond)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=46}
-<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%multiply.0, %maximum.1), metadata={op_name=&quot;jit(diamond)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=47}
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name="jit(diamond)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%add.1, %broadcast.1), metadata={op_name="jit(diamond)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%multiply.0, %maximum.1), metadata={op_name="jit(diamond)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=47}
 <a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a>}
 <a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a>
 <a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a>ENTRY %main.13 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8], Arg_2.3: f32[6,8]) -&gt; f32[6,8] {
-<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a>  %Arg_2.3 = f32[6,8]{1,0} parameter(2), metadata={op_name=&quot;c&quot;}
-<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a>  ROOT %maximum_add_fusion = f32[6,8]{1,0} fusion(%Arg_2.3, %Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(diamond)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=47}
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a>  %Arg_2.3 = f32[6,8]{1,0} parameter(2), metadata={op_name="c"}
+<a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a>  ROOT %maximum_add_fusion = f32[6,8]{1,0} fusion(%Arg_2.3, %Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(diamond)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=47}
 <a id="__codelineno-5-45" name="__codelineno-5-45" href="#__codelineno-5-45"></a>}
 <a id="__codelineno-5-46" name="__codelineno-5-46" href="#__codelineno-5-46"></a>
 <a id="__codelineno-5-47" name="__codelineno-5-47" href="#__codelineno-5-47"></a>
@@ -2665,19 +2665,19 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-5-56" name="__codelineno-5-56" href="#__codelineno-5-56"></a>%fused_computation (param_0.1: f32[6,8], param_1.2: f32[6,8]) -&gt; f32[6,8] {
 <a id="__codelineno-5-57" name="__codelineno-5-57" href="#__codelineno-5-57"></a>  %param_0.1 = f32[6,8]{1,0} parameter(0)
 <a id="__codelineno-5-58" name="__codelineno-5-58" href="#__codelineno-5-58"></a>  %param_1.2 = f32[6,8]{1,0} parameter(1)
-<a id="__codelineno-5-59" name="__codelineno-5-59" href="#__codelineno-5-59"></a>  %multiply.0 = f32[6,8]{1,0} multiply(%param_0.1, %param_1.2), metadata={op_name=&quot;jit(diamond_multi_output)/jit(main)/mul&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=53}
+<a id="__codelineno-5-59" name="__codelineno-5-59" href="#__codelineno-5-59"></a>  %multiply.0 = f32[6,8]{1,0} multiply(%param_0.1, %param_1.2), metadata={op_name="jit(diamond_multi_output)/jit(main)/mul" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=53}
 <a id="__codelineno-5-60" name="__codelineno-5-60" href="#__codelineno-5-60"></a>  %constant.1 = f32[] constant(0)
-<a id="__codelineno-5-61" name="__codelineno-5-61" href="#__codelineno-5-61"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name=&quot;jit(diamond_multi_output)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=46}
-<a id="__codelineno-5-62" name="__codelineno-5-62" href="#__codelineno-5-62"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%param_0.1, %broadcast.1), metadata={op_name=&quot;jit(diamond_multi_output)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=46}
-<a id="__codelineno-5-63" name="__codelineno-5-63" href="#__codelineno-5-63"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%multiply.0, %maximum.1), metadata={op_name=&quot;jit(diamond_multi_output)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=55}
+<a id="__codelineno-5-61" name="__codelineno-5-61" href="#__codelineno-5-61"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name="jit(diamond_multi_output)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+<a id="__codelineno-5-62" name="__codelineno-5-62" href="#__codelineno-5-62"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%param_0.1, %broadcast.1), metadata={op_name="jit(diamond_multi_output)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=46}
+<a id="__codelineno-5-63" name="__codelineno-5-63" href="#__codelineno-5-63"></a>  ROOT %add.0 = f32[6,8]{1,0} add(%multiply.0, %maximum.1), metadata={op_name="jit(diamond_multi_output)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=55}
 <a id="__codelineno-5-64" name="__codelineno-5-64" href="#__codelineno-5-64"></a>}
 <a id="__codelineno-5-65" name="__codelineno-5-65" href="#__codelineno-5-65"></a>
 <a id="__codelineno-5-66" name="__codelineno-5-66" href="#__codelineno-5-66"></a>ENTRY %main.14 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8], Arg_2.3: f32[6,8]) -&gt; (f32[6,8], f32[6,8]) {
-<a id="__codelineno-5-67" name="__codelineno-5-67" href="#__codelineno-5-67"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-5-68" name="__codelineno-5-68" href="#__codelineno-5-68"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-5-69" name="__codelineno-5-69" href="#__codelineno-5-69"></a>  %Arg_2.3 = f32[6,8]{1,0} parameter(2), metadata={op_name=&quot;c&quot;}
-<a id="__codelineno-5-70" name="__codelineno-5-70" href="#__codelineno-5-70"></a>  %add.4 = f32[6,8]{1,0} add(%Arg_0.1, %Arg_1.2), metadata={op_name=&quot;jit(diamond_multi_output)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=52}
-<a id="__codelineno-5-71" name="__codelineno-5-71" href="#__codelineno-5-71"></a>  %maximum_add_fusion = f32[6,8]{1,0} fusion(%add.4, %Arg_2.3), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(diamond_multi_output)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot; source_line=55}
+<a id="__codelineno-5-67" name="__codelineno-5-67" href="#__codelineno-5-67"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-5-68" name="__codelineno-5-68" href="#__codelineno-5-68"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-5-69" name="__codelineno-5-69" href="#__codelineno-5-69"></a>  %Arg_2.3 = f32[6,8]{1,0} parameter(2), metadata={op_name="c"}
+<a id="__codelineno-5-70" name="__codelineno-5-70" href="#__codelineno-5-70"></a>  %add.4 = f32[6,8]{1,0} add(%Arg_0.1, %Arg_1.2), metadata={op_name="jit(diamond_multi_output)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=52}
+<a id="__codelineno-5-71" name="__codelineno-5-71" href="#__codelineno-5-71"></a>  %maximum_add_fusion = f32[6,8]{1,0} fusion(%add.4, %Arg_2.3), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(diamond_multi_output)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/063_a_diamond_graph_through_real_xlas_hlo_ir.py" source_line=55}
 <a id="__codelineno-5-72" name="__codelineno-5-72" href="#__codelineno-5-72"></a>  ROOT %tuple.13 = (f32[6,8]{1,0}, f32[6,8]{1,0}) tuple(%maximum_add_fusion, %add.4)
 <a id="__codelineno-5-73" name="__codelineno-5-73" href="#__codelineno-5-73"></a>}
 <a id="__codelineno-5-74" name="__codelineno-5-74" href="#__codelineno-5-74"></a>
@@ -2740,33 +2740,33 @@ exactly where Chapter 13's own <code>consumers != 1</code> rule would also have 
 the boundary -- reached here by a different, more general test
 ("does every use stay inside this group") that happens to agree with
 Chapter 13's own simpler one in this particular case.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">&quot;063_a_diamond_graph_through_real_xlas_hlo_ir.py&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"063_a_diamond_graph_through_real_xlas_hlo_ir.py"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1"># Chapter 25, Section 25.2 (continued): the reduction half of the same</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># question File 063 asked about elementwise sharing -- this time against</span>
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Ch14&#39;s own reductionFusionPass() rule, which forces a Sum node&#39;s OUTPUT</span>
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="c1"># external unconditionally (&quot;a Sum node&#39;s output is ALWAYS external, any</span>
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># consumer count&quot; -- Ch14), not just when it is shared.</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Ch14's own reductionFusionPass() rule, which forces a Sum node's OUTPUT</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="c1"># external unconditionally ("a Sum node's output is ALWAYS external, any</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># consumer count" -- Ch14), not just when it is shared.</span>
 <a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1">#</span>
 <a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="c1"># Part 1 lowers an elementwise-into-reduction chain, structurally the same</span>
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1"># shape Ch14&#39;s own file 031/032 built (Add -&gt; ReLU -&gt; Sum), and prints</span>
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="c1"># XLA&#39;s real optimized HLO.</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="c1"># shape Ch14's own file 031/032 built (Add -&gt; ReLU -&gt; Sum), and prints</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="c1"># XLA's real optimized HLO.</span>
 <a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="c1">#</span>
-<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="c1"># Part 2 extends the chain with a REAL consumer of the reduction&#39;s scalar</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="c1"># Part 2 extends the chain with a REAL consumer of the reduction's scalar</span>
 <a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="c1"># result (`out = sum(...) * 2.0`) to ask the sharper question: does that</span>
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="c1"># downstream use force the reduction&#39;s own result to materialize to memory</span>
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="c1"># the way Ch14&#39;s rule always does, or does XLA fuse straight through a</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="c1"># downstream use force the reduction's own result to materialize to memory</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="c1"># the way Ch14's rule always does, or does XLA fuse straight through a</span>
 <a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="c1"># reduction the same way File 063 found it fusing straight through a</span>
 <a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="c1"># shared elementwise value?</span>
 <a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="c1">#</span>
 <a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a><span class="c1"># A caveat stated plainly, not discovered by accident: this sandbox has no</span>
 <a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a><span class="c1"># physical GPU (the same honest limitation Ch18 onward has lived with since</span>
-<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="c1"># Chapter 18&#39;s own CUDA codegen), so every HLO dump in this book comes from</span>
-<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="c1"># XLA&#39;s CPU backend. XLA&#39;s real GPU backend compiles &quot;always... to exactly</span>
-<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="c1"># one GPU kernel&quot; per fusion (OpenXLA&#39;s own GPU architecture docs) and a</span>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a><span class="c1"># Chapter 18's own CUDA codegen), so every HLO dump in this book comes from</span>
+<a id="__codelineno-9-22" name="__codelineno-9-22" href="#__codelineno-9-22"></a><span class="c1"># XLA's CPU backend. XLA's real GPU backend compiles "always... to exactly</span>
+<a id="__codelineno-9-23" name="__codelineno-9-23" href="#__codelineno-9-23"></a><span class="c1"># one GPU kernel" per fusion (OpenXLA's own GPU architecture docs) and a</span>
 <a id="__codelineno-9-24" name="__codelineno-9-24" href="#__codelineno-9-24"></a><span class="c1"># full reduction on a GPU genuinely needs cross-thread-block synchronization</span>
-<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a><span class="c1"># that a CPU loop does not -- so XLA:GPU&#39;s own fusion boundary around a</span>
+<a id="__codelineno-9-25" name="__codelineno-9-25" href="#__codelineno-9-25"></a><span class="c1"># that a CPU loop does not -- so XLA:GPU's own fusion boundary around a</span>
 <a id="__codelineno-9-26" name="__codelineno-9-26" href="#__codelineno-9-26"></a><span class="c1"># reduction may be stricter than what this file observes on XLA:CPU. That</span>
 <a id="__codelineno-9-27" name="__codelineno-9-27" href="#__codelineno-9-27"></a><span class="c1"># gap is named here explicitly rather than left implicit.</span>
 <a id="__codelineno-9-28" name="__codelineno-9-28" href="#__codelineno-9-28"></a>
@@ -2793,56 +2793,56 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-9-49" name="__codelineno-9-49" href="#__codelineno-9-49"></a>    <span class="n">a</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 <a id="__codelineno-9-50" name="__codelineno-9-50" href="#__codelineno-9-50"></a>    <span class="n">b</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">jnp</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 <a id="__codelineno-9-51" name="__codelineno-9-51" href="#__codelineno-9-51"></a>
-<a id="__codelineno-9-52" name="__codelineno-9-52" href="#__codelineno-9-52"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;jax version: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-53" name="__codelineno-9-53" href="#__codelineno-9-53"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;real backend device: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-52" name="__codelineno-9-52" href="#__codelineno-9-52"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"jax version: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-9-53" name="__codelineno-9-53" href="#__codelineno-9-53"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"real backend device: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-9-54" name="__codelineno-9-54" href="#__codelineno-9-54"></a>    <span class="nb">print</span><span class="p">()</span>
 <a id="__codelineno-9-55" name="__codelineno-9-55" href="#__codelineno-9-55"></a>
-<a id="__codelineno-9-56" name="__codelineno-9-56" href="#__codelineno-9-56"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-9-57" name="__codelineno-9-57" href="#__codelineno-9-57"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 1: optimized HLO for Add -&gt; ReLU -&gt; Sum (Ch14&#39;s own shape)&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-58" name="__codelineno-9-58" href="#__codelineno-9-58"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-9-56" name="__codelineno-9-56" href="#__codelineno-9-56"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-9-57" name="__codelineno-9-57" href="#__codelineno-9-57"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"PART 1: optimized HLO for Add -&gt; ReLU -&gt; Sum (Ch14's own shape)"</span><span class="p">)</span>
+<a id="__codelineno-9-58" name="__codelineno-9-58" href="#__codelineno-9-58"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
 <a id="__codelineno-9-59" name="__codelineno-9-59" href="#__codelineno-9-59"></a>    <span class="n">compiled1</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">reduce_chain</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 <a id="__codelineno-9-60" name="__codelineno-9-60" href="#__codelineno-9-60"></a>    <span class="n">text1</span> <span class="o">=</span> <span class="n">compiled1</span><span class="o">.</span><span class="n">as_text</span><span class="p">()</span>
 <a id="__codelineno-9-61" name="__codelineno-9-61" href="#__codelineno-9-61"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">text1</span><span class="p">)</span>
-<a id="__codelineno-9-62" name="__codelineno-9-62" href="#__codelineno-9-62"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- fusion(...) instructions in ENTRY: </span><span class="si">{</span><span class="n">text1</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39; fusion(&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-63" name="__codelineno-9-63" href="#__codelineno-9-63"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- the reduce(...) op is inside the SAME fused_computation body &quot;</span>
-<a id="__codelineno-9-64" name="__codelineno-9-64" href="#__codelineno-9-64"></a>          <span class="sa">f</span><span class="s2">&quot;as the add/relu (not its own materialized buffer): &quot;</span>
-<a id="__codelineno-9-65" name="__codelineno-9-65" href="#__codelineno-9-65"></a>          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;reduce(&#39;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">text1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-62" name="__codelineno-9-62" href="#__codelineno-9-62"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-- fusion(...) instructions in ENTRY: </span><span class="si">{</span><span class="n">text1</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">' fusion('</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-9-63" name="__codelineno-9-63" href="#__codelineno-9-63"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-- the reduce(...) op is inside the SAME fused_computation body "</span>
+<a id="__codelineno-9-64" name="__codelineno-9-64" href="#__codelineno-9-64"></a>          <span class="sa">f</span><span class="s2">"as the add/relu (not its own materialized buffer): "</span>
+<a id="__codelineno-9-65" name="__codelineno-9-65" href="#__codelineno-9-65"></a>          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'reduce('</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">text1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-9-66" name="__codelineno-9-66" href="#__codelineno-9-66"></a>
 <a id="__codelineno-9-67" name="__codelineno-9-67" href="#__codelineno-9-67"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-9-68" name="__codelineno-9-68" href="#__codelineno-9-68"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-9-69" name="__codelineno-9-69" href="#__codelineno-9-69"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 2: Sum&#39;s result now feeds a real downstream consumer (*2.0)&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-70" name="__codelineno-9-70" href="#__codelineno-9-70"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-9-68" name="__codelineno-9-68" href="#__codelineno-9-68"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-9-69" name="__codelineno-9-69" href="#__codelineno-9-69"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"PART 2: Sum's result now feeds a real downstream consumer (*2.0)"</span><span class="p">)</span>
+<a id="__codelineno-9-70" name="__codelineno-9-70" href="#__codelineno-9-70"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
 <a id="__codelineno-9-71" name="__codelineno-9-71" href="#__codelineno-9-71"></a>    <span class="n">compiled2</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">reduce_then_use</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span><span class="o">.</span><span class="n">compile</span><span class="p">()</span>
 <a id="__codelineno-9-72" name="__codelineno-9-72" href="#__codelineno-9-72"></a>    <span class="n">text2</span> <span class="o">=</span> <span class="n">compiled2</span><span class="o">.</span><span class="n">as_text</span><span class="p">()</span>
 <a id="__codelineno-9-73" name="__codelineno-9-73" href="#__codelineno-9-73"></a>    <span class="nb">print</span><span class="p">(</span><span class="n">text2</span><span class="p">)</span>
-<a id="__codelineno-9-74" name="__codelineno-9-74" href="#__codelineno-9-74"></a>    <span class="n">entry_fusion_count</span> <span class="o">=</span> <span class="n">text2</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot; fusion(&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-75" name="__codelineno-9-75" href="#__codelineno-9-75"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- fusion(...) instructions in ENTRY: </span><span class="si">{</span><span class="n">entry_fusion_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-9-76" name="__codelineno-9-76" href="#__codelineno-9-76"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;-- the downstream multiply is fused into the SAME single kernel &quot;</span>
-<a id="__codelineno-9-77" name="__codelineno-9-77" href="#__codelineno-9-77"></a>          <span class="sa">f</span><span class="s2">&quot;as the reduce, not split into a second one: &quot;</span>
-<a id="__codelineno-9-78" name="__codelineno-9-78" href="#__codelineno-9-78"></a>          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">entry_fusion_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-74" name="__codelineno-9-74" href="#__codelineno-9-74"></a>    <span class="n">entry_fusion_count</span> <span class="o">=</span> <span class="n">text2</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">" fusion("</span><span class="p">)</span>
+<a id="__codelineno-9-75" name="__codelineno-9-75" href="#__codelineno-9-75"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-- fusion(...) instructions in ENTRY: </span><span class="si">{</span><span class="n">entry_fusion_count</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-9-76" name="__codelineno-9-76" href="#__codelineno-9-76"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"-- the downstream multiply is fused into the SAME single kernel "</span>
+<a id="__codelineno-9-77" name="__codelineno-9-77" href="#__codelineno-9-77"></a>          <span class="sa">f</span><span class="s2">"as the reduce, not split into a second one: "</span>
+<a id="__codelineno-9-78" name="__codelineno-9-78" href="#__codelineno-9-78"></a>          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">entry_fusion_count</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-9-79" name="__codelineno-9-79" href="#__codelineno-9-79"></a>
 <a id="__codelineno-9-80" name="__codelineno-9-80" href="#__codelineno-9-80"></a>
-<a id="__codelineno-9-81" name="__codelineno-9-81" href="#__codelineno-9-81"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-9-81" name="__codelineno-9-81" href="#__codelineno-9-81"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-9-82" name="__codelineno-9-82" href="#__codelineno-9-82"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>python3<span class="w"> </span><span class="s2">&quot;064_reduction_fusion_under_real_xla.py&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>python3<span class="w"> </span><span class="s2">"064_reduction_fusion_under_real_xla.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated XLA output):</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>jax version: 0.10.2
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>real backend device: cpu:0
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>==============================================================================
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>PART 1: optimized HLO for Add -&gt; ReLU -&gt; Sum (Ch14&#39;s own shape)
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>PART 1: optimized HLO for Add -&gt; ReLU -&gt; Sum (Ch14's own shape)
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>==============================================================================
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>HloModule jit_reduce_chain, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0})-&gt;f32[]}, allow_spmd_sharding_propagation_to_parameters={true,true}, allow_spmd_sharding_propagation_to_output={true}
 <a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>
 <a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>FileNames
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>1 &quot;/home/claude/hammer_repo/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot;
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>1 "/home/claude/hammer_repo/docs/part6/code/064_reduction_fusion_under_real_xla.py"
 <a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>
 <a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>FunctionNames
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>1 &quot;&lt;module&gt;&quot;
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>2 &quot;main&quot;
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>3 &quot;reduce_chain&quot;
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>1 "&lt;module&gt;"
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>2 "main"
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>3 "reduce_chain"
 <a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>
 <a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>FileLocations
 <a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>1 {file_name_id=1 function_name_id=1 line=82 end_line=82 column=4 end_column=10}
@@ -2860,25 +2860,25 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a>
 <a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a>
 <a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a>%region_0.2 (reduce_sum.3: f32[], reduce_sum.4: f32[]) -&gt; f32[] {
-<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a>  %reduce_sum.3 = f32[] parameter(0), metadata={op_name=&quot;reduce_sum&quot;}
-<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a>  %reduce_sum.4 = f32[] parameter(1), metadata={op_name=&quot;reduce_sum&quot;}
-<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a>  ROOT %reduce_sum.5 = f32[] add(%reduce_sum.3, %reduce_sum.4), metadata={op_name=&quot;jit(reduce_chain)/reduce_sum&quot; stack_frame_id=3}
+<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a>  %reduce_sum.3 = f32[] parameter(0), metadata={op_name="reduce_sum"}
+<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a>  %reduce_sum.4 = f32[] parameter(1), metadata={op_name="reduce_sum"}
+<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a>  ROOT %reduce_sum.5 = f32[] add(%reduce_sum.3, %reduce_sum.4), metadata={op_name="jit(reduce_chain)/reduce_sum" stack_frame_id=3}
 <a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a>}
 <a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a>
 <a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a>%fused_computation (param_0.3: f32[6,8], param_1.2: f32[6,8]) -&gt; f32[] {
 <a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a>  %param_0.3 = f32[6,8]{1,0} parameter(0)
 <a id="__codelineno-11-40" name="__codelineno-11-40" href="#__codelineno-11-40"></a>  %param_1.2 = f32[6,8]{1,0} parameter(1)
-<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.3, %param_1.2), metadata={op_name=&quot;jit(reduce_chain)/add&quot; stack_frame_id=4}
+<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.3, %param_1.2), metadata={op_name="jit(reduce_chain)/add" stack_frame_id=4}
 <a id="__codelineno-11-42" name="__codelineno-11-42" href="#__codelineno-11-42"></a>  %constant.1 = f32[] constant(0)
-<a id="__codelineno-11-43" name="__codelineno-11-43" href="#__codelineno-11-43"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name=&quot;jit(reduce_chain)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-11-44" name="__codelineno-11-44" href="#__codelineno-11-44"></a>  %max.4 = f32[6,8]{1,0} maximum(%add.0, %max.5), metadata={op_name=&quot;jit(reduce_chain)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-11-45" name="__codelineno-11-45" href="#__codelineno-11-45"></a>  ROOT %reduce_sum.0 = f32[] reduce(%max.4, %constant.1), dimensions={0,1}, to_apply=%region_0.2, metadata={op_name=&quot;jit(reduce_chain)/reduce_sum&quot; stack_frame_id=3}
+<a id="__codelineno-11-43" name="__codelineno-11-43" href="#__codelineno-11-43"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name="jit(reduce_chain)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-11-44" name="__codelineno-11-44" href="#__codelineno-11-44"></a>  %max.4 = f32[6,8]{1,0} maximum(%add.0, %max.5), metadata={op_name="jit(reduce_chain)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-11-45" name="__codelineno-11-45" href="#__codelineno-11-45"></a>  ROOT %reduce_sum.0 = f32[] reduce(%max.4, %constant.1), dimensions={0,1}, to_apply=%region_0.2, metadata={op_name="jit(reduce_chain)/reduce_sum" stack_frame_id=3}
 <a id="__codelineno-11-46" name="__codelineno-11-46" href="#__codelineno-11-46"></a>}
 <a id="__codelineno-11-47" name="__codelineno-11-47" href="#__codelineno-11-47"></a>
 <a id="__codelineno-11-48" name="__codelineno-11-48" href="#__codelineno-11-48"></a>ENTRY %main.3 (a.1: f32[6,8], b.1: f32[6,8]) -&gt; f32[] {
-<a id="__codelineno-11-49" name="__codelineno-11-49" href="#__codelineno-11-49"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-11-50" name="__codelineno-11-50" href="#__codelineno-11-50"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-11-51" name="__codelineno-11-51" href="#__codelineno-11-51"></a>  ROOT %maximum_reduce_fusion = f32[] fusion(%a.1, %b.1), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(reduce_chain)/reduce_sum&quot; stack_frame_id=3}
+<a id="__codelineno-11-49" name="__codelineno-11-49" href="#__codelineno-11-49"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-11-50" name="__codelineno-11-50" href="#__codelineno-11-50"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-11-51" name="__codelineno-11-51" href="#__codelineno-11-51"></a>  ROOT %maximum_reduce_fusion = f32[] fusion(%a.1, %b.1), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(reduce_chain)/reduce_sum" stack_frame_id=3}
 <a id="__codelineno-11-52" name="__codelineno-11-52" href="#__codelineno-11-52"></a>}
 <a id="__codelineno-11-53" name="__codelineno-11-53" href="#__codelineno-11-53"></a>
 <a id="__codelineno-11-54" name="__codelineno-11-54" href="#__codelineno-11-54"></a>
@@ -2886,17 +2886,17 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-11-56" name="__codelineno-11-56" href="#__codelineno-11-56"></a>-- the reduce(...) op is inside the SAME fused_computation body as the add/relu (not its own materialized buffer): True
 <a id="__codelineno-11-57" name="__codelineno-11-57" href="#__codelineno-11-57"></a>
 <a id="__codelineno-11-58" name="__codelineno-11-58" href="#__codelineno-11-58"></a>==============================================================================
-<a id="__codelineno-11-59" name="__codelineno-11-59" href="#__codelineno-11-59"></a>PART 2: Sum&#39;s result now feeds a real downstream consumer (*2.0)
+<a id="__codelineno-11-59" name="__codelineno-11-59" href="#__codelineno-11-59"></a>PART 2: Sum's result now feeds a real downstream consumer (*2.0)
 <a id="__codelineno-11-60" name="__codelineno-11-60" href="#__codelineno-11-60"></a>==============================================================================
 <a id="__codelineno-11-61" name="__codelineno-11-61" href="#__codelineno-11-61"></a>HloModule jit_reduce_then_use, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0})-&gt;f32[]}, allow_spmd_sharding_propagation_to_parameters={true,true}, allow_spmd_sharding_propagation_to_output={true}
 <a id="__codelineno-11-62" name="__codelineno-11-62" href="#__codelineno-11-62"></a>
 <a id="__codelineno-11-63" name="__codelineno-11-63" href="#__codelineno-11-63"></a>FileNames
-<a id="__codelineno-11-64" name="__codelineno-11-64" href="#__codelineno-11-64"></a>1 &quot;/home/claude/hammer_repo/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot;
+<a id="__codelineno-11-64" name="__codelineno-11-64" href="#__codelineno-11-64"></a>1 "/home/claude/hammer_repo/docs/part6/code/064_reduction_fusion_under_real_xla.py"
 <a id="__codelineno-11-65" name="__codelineno-11-65" href="#__codelineno-11-65"></a>
 <a id="__codelineno-11-66" name="__codelineno-11-66" href="#__codelineno-11-66"></a>FunctionNames
-<a id="__codelineno-11-67" name="__codelineno-11-67" href="#__codelineno-11-67"></a>1 &quot;&lt;module&gt;&quot;
-<a id="__codelineno-11-68" name="__codelineno-11-68" href="#__codelineno-11-68"></a>2 &quot;main&quot;
-<a id="__codelineno-11-69" name="__codelineno-11-69" href="#__codelineno-11-69"></a>3 &quot;reduce_then_use&quot;
+<a id="__codelineno-11-67" name="__codelineno-11-67" href="#__codelineno-11-67"></a>1 "&lt;module&gt;"
+<a id="__codelineno-11-68" name="__codelineno-11-68" href="#__codelineno-11-68"></a>2 "main"
+<a id="__codelineno-11-69" name="__codelineno-11-69" href="#__codelineno-11-69"></a>3 "reduce_then_use"
 <a id="__codelineno-11-70" name="__codelineno-11-70" href="#__codelineno-11-70"></a>
 <a id="__codelineno-11-71" name="__codelineno-11-71" href="#__codelineno-11-71"></a>FileLocations
 <a id="__codelineno-11-72" name="__codelineno-11-72" href="#__codelineno-11-72"></a>1 {file_name_id=1 function_name_id=1 line=82 end_line=82 column=4 end_column=10}
@@ -2916,27 +2916,27 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-11-86" name="__codelineno-11-86" href="#__codelineno-11-86"></a>
 <a id="__codelineno-11-87" name="__codelineno-11-87" href="#__codelineno-11-87"></a>
 <a id="__codelineno-11-88" name="__codelineno-11-88" href="#__codelineno-11-88"></a>%region_0.2 (reduce_sum.3: f32[], reduce_sum.4: f32[]) -&gt; f32[] {
-<a id="__codelineno-11-89" name="__codelineno-11-89" href="#__codelineno-11-89"></a>  %reduce_sum.3 = f32[] parameter(0), metadata={op_name=&quot;reduce_sum&quot;}
-<a id="__codelineno-11-90" name="__codelineno-11-90" href="#__codelineno-11-90"></a>  %reduce_sum.4 = f32[] parameter(1), metadata={op_name=&quot;reduce_sum&quot;}
-<a id="__codelineno-11-91" name="__codelineno-11-91" href="#__codelineno-11-91"></a>  ROOT %reduce_sum.5 = f32[] add(%reduce_sum.3, %reduce_sum.4), metadata={op_name=&quot;jit(reduce_then_use)/reduce_sum&quot; stack_frame_id=3}
+<a id="__codelineno-11-89" name="__codelineno-11-89" href="#__codelineno-11-89"></a>  %reduce_sum.3 = f32[] parameter(0), metadata={op_name="reduce_sum"}
+<a id="__codelineno-11-90" name="__codelineno-11-90" href="#__codelineno-11-90"></a>  %reduce_sum.4 = f32[] parameter(1), metadata={op_name="reduce_sum"}
+<a id="__codelineno-11-91" name="__codelineno-11-91" href="#__codelineno-11-91"></a>  ROOT %reduce_sum.5 = f32[] add(%reduce_sum.3, %reduce_sum.4), metadata={op_name="jit(reduce_then_use)/reduce_sum" stack_frame_id=3}
 <a id="__codelineno-11-92" name="__codelineno-11-92" href="#__codelineno-11-92"></a>}
 <a id="__codelineno-11-93" name="__codelineno-11-93" href="#__codelineno-11-93"></a>
 <a id="__codelineno-11-94" name="__codelineno-11-94" href="#__codelineno-11-94"></a>%fused_computation (param_0.5: f32[6,8], param_1.4: f32[6,8]) -&gt; f32[] {
 <a id="__codelineno-11-95" name="__codelineno-11-95" href="#__codelineno-11-95"></a>  %param_0.5 = f32[6,8]{1,0} parameter(0)
 <a id="__codelineno-11-96" name="__codelineno-11-96" href="#__codelineno-11-96"></a>  %param_1.4 = f32[6,8]{1,0} parameter(1)
-<a id="__codelineno-11-97" name="__codelineno-11-97" href="#__codelineno-11-97"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.5, %param_1.4), metadata={op_name=&quot;jit(reduce_then_use)/add&quot; stack_frame_id=4}
+<a id="__codelineno-11-97" name="__codelineno-11-97" href="#__codelineno-11-97"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.5, %param_1.4), metadata={op_name="jit(reduce_then_use)/add" stack_frame_id=4}
 <a id="__codelineno-11-98" name="__codelineno-11-98" href="#__codelineno-11-98"></a>  %constant.2 = f32[] constant(0)
-<a id="__codelineno-11-99" name="__codelineno-11-99" href="#__codelineno-11-99"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name=&quot;jit(reduce_then_use)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-11-100" name="__codelineno-11-100" href="#__codelineno-11-100"></a>  %max.4 = f32[6,8]{1,0} maximum(%add.0, %max.5), metadata={op_name=&quot;jit(reduce_then_use)/jit(relu)/max&quot; stack_frame_id=5}
-<a id="__codelineno-11-101" name="__codelineno-11-101" href="#__codelineno-11-101"></a>  %reduce_sum.0 = f32[] reduce(%max.4, %constant.2), dimensions={0,1}, to_apply=%region_0.2, metadata={op_name=&quot;jit(reduce_then_use)/reduce_sum&quot; stack_frame_id=3}
+<a id="__codelineno-11-99" name="__codelineno-11-99" href="#__codelineno-11-99"></a>  %max.5 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name="jit(reduce_then_use)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-11-100" name="__codelineno-11-100" href="#__codelineno-11-100"></a>  %max.4 = f32[6,8]{1,0} maximum(%add.0, %max.5), metadata={op_name="jit(reduce_then_use)/jit(relu)/max" stack_frame_id=5}
+<a id="__codelineno-11-101" name="__codelineno-11-101" href="#__codelineno-11-101"></a>  %reduce_sum.0 = f32[] reduce(%max.4, %constant.2), dimensions={0,1}, to_apply=%region_0.2, metadata={op_name="jit(reduce_then_use)/reduce_sum" stack_frame_id=3}
 <a id="__codelineno-11-102" name="__codelineno-11-102" href="#__codelineno-11-102"></a>  %constant.1 = f32[] constant(2)
-<a id="__codelineno-11-103" name="__codelineno-11-103" href="#__codelineno-11-103"></a>  ROOT %mul.0 = f32[] multiply(%reduce_sum.0, %constant.1), metadata={op_name=&quot;jit(reduce_then_use)/mul&quot; stack_frame_id=6}
+<a id="__codelineno-11-103" name="__codelineno-11-103" href="#__codelineno-11-103"></a>  ROOT %mul.0 = f32[] multiply(%reduce_sum.0, %constant.1), metadata={op_name="jit(reduce_then_use)/mul" stack_frame_id=6}
 <a id="__codelineno-11-104" name="__codelineno-11-104" href="#__codelineno-11-104"></a>}
 <a id="__codelineno-11-105" name="__codelineno-11-105" href="#__codelineno-11-105"></a>
 <a id="__codelineno-11-106" name="__codelineno-11-106" href="#__codelineno-11-106"></a>ENTRY %main.3 (a.1: f32[6,8], b.1: f32[6,8]) -&gt; f32[] {
-<a id="__codelineno-11-107" name="__codelineno-11-107" href="#__codelineno-11-107"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-11-108" name="__codelineno-11-108" href="#__codelineno-11-108"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-11-109" name="__codelineno-11-109" href="#__codelineno-11-109"></a>  ROOT %reduce_multiply_fusion = f32[] fusion(%a.1, %b.1), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(reduce_then_use)/mul&quot; stack_frame_id=6}
+<a id="__codelineno-11-107" name="__codelineno-11-107" href="#__codelineno-11-107"></a>  %a.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-11-108" name="__codelineno-11-108" href="#__codelineno-11-108"></a>  %b.1 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-11-109" name="__codelineno-11-109" href="#__codelineno-11-109"></a>  ROOT %reduce_multiply_fusion = f32[] fusion(%a.1, %b.1), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(reduce_then_use)/mul" stack_frame_id=6}
 <a id="__codelineno-11-110" name="__codelineno-11-110" href="#__codelineno-11-110"></a>}
 <a id="__codelineno-11-111" name="__codelineno-11-111" href="#__codelineno-11-111"></a>
 <a id="__codelineno-11-112" name="__codelineno-11-112" href="#__codelineno-11-112"></a>
@@ -2948,30 +2948,30 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>real backend device: TFRT_CPU_0
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>==============================================================================
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>PART 1: optimized HLO for Add -&gt; ReLU -&gt; Sum (Ch14&#39;s own shape)
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>PART 1: optimized HLO for Add -&gt; ReLU -&gt; Sum (Ch14's own shape)
 <a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>==============================================================================
 <a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>HloModule jit_reduce_chain, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0})-&gt;f32[]}, allow_spmd_sharding_propagation_to_parameters={true,true}, allow_spmd_sharding_propagation_to_output={true}
 <a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
 <a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>%region_0.14 (Arg_0.11: f32[], Arg_1.12: f32[]) -&gt; f32[] {
-<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>  %Arg_0.11 = f32[] parameter(0), metadata={op_name=&quot;jit(reduce_chain)/jit(main)/reduce_sum&quot;}
-<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>  %Arg_1.12 = f32[] parameter(1), metadata={op_name=&quot;jit(reduce_chain)/jit(main)/reduce_sum&quot;}
-<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>  ROOT %add.13 = f32[] add(%Arg_0.11, %Arg_1.12), metadata={op_name=&quot;jit(reduce_chain)/jit(main)/reduce_sum&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=36}
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>  %Arg_0.11 = f32[] parameter(0), metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum"}
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>  %Arg_1.12 = f32[] parameter(1), metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum"}
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>  ROOT %add.13 = f32[] add(%Arg_0.11, %Arg_1.12), metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=36}
 <a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>}
 <a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>
 <a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>%fused_computation (param_0.3: f32[6,8], param_1.2: f32[6,8]) -&gt; f32[] {
 <a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>  %param_0.3 = f32[6,8]{1,0} parameter(0)
 <a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>  %param_1.2 = f32[6,8]{1,0} parameter(1)
-<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.3, %param_1.2), metadata={op_name=&quot;jit(reduce_chain)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=34}
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.3, %param_1.2), metadata={op_name="jit(reduce_chain)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=34}
 <a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>  %constant.1 = f32[] constant(0)
-<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name=&quot;jit(reduce_chain)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=35}
-<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%add.0, %broadcast.1), metadata={op_name=&quot;jit(reduce_chain)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=35}
-<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>  ROOT %reduce.0 = f32[] reduce(%maximum.1, %constant.1), dimensions={0,1}, to_apply=%region_0.14, metadata={op_name=&quot;jit(reduce_chain)/jit(main)/reduce_sum&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=36}
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.1), dimensions={}, metadata={op_name="jit(reduce_chain)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+<a id="__codelineno-12-21" name="__codelineno-12-21" href="#__codelineno-12-21"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%add.0, %broadcast.1), metadata={op_name="jit(reduce_chain)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+<a id="__codelineno-12-22" name="__codelineno-12-22" href="#__codelineno-12-22"></a>  ROOT %reduce.0 = f32[] reduce(%maximum.1, %constant.1), dimensions={0,1}, to_apply=%region_0.14, metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=36}
 <a id="__codelineno-12-23" name="__codelineno-12-23" href="#__codelineno-12-23"></a>}
 <a id="__codelineno-12-24" name="__codelineno-12-24" href="#__codelineno-12-24"></a>
 <a id="__codelineno-12-25" name="__codelineno-12-25" href="#__codelineno-12-25"></a>ENTRY %main.16 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8]) -&gt; f32[] {
-<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>  ROOT %maximum_reduce_fusion = f32[] fusion(%Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(reduce_chain)/jit(main)/reduce_sum&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=36}
+<a id="__codelineno-12-26" name="__codelineno-12-26" href="#__codelineno-12-26"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-12-27" name="__codelineno-12-27" href="#__codelineno-12-27"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-12-28" name="__codelineno-12-28" href="#__codelineno-12-28"></a>  ROOT %maximum_reduce_fusion = f32[] fusion(%Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(reduce_chain)/jit(main)/reduce_sum" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=36}
 <a id="__codelineno-12-29" name="__codelineno-12-29" href="#__codelineno-12-29"></a>}
 <a id="__codelineno-12-30" name="__codelineno-12-30" href="#__codelineno-12-30"></a>
 <a id="__codelineno-12-31" name="__codelineno-12-31" href="#__codelineno-12-31"></a>
@@ -2979,32 +2979,32 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-12-33" name="__codelineno-12-33" href="#__codelineno-12-33"></a>-- the reduce(...) op is inside the SAME fused_computation body as the add/relu (not its own materialized buffer): True
 <a id="__codelineno-12-34" name="__codelineno-12-34" href="#__codelineno-12-34"></a>
 <a id="__codelineno-12-35" name="__codelineno-12-35" href="#__codelineno-12-35"></a>==============================================================================
-<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>PART 2: Sum&#39;s result now feeds a real downstream consumer (*2.0)
+<a id="__codelineno-12-36" name="__codelineno-12-36" href="#__codelineno-12-36"></a>PART 2: Sum's result now feeds a real downstream consumer (*2.0)
 <a id="__codelineno-12-37" name="__codelineno-12-37" href="#__codelineno-12-37"></a>==============================================================================
 <a id="__codelineno-12-38" name="__codelineno-12-38" href="#__codelineno-12-38"></a>HloModule jit_reduce_then_use, is_scheduled=true, entry_computation_layout={(f32[6,8]{1,0}, f32[6,8]{1,0})-&gt;f32[]}, allow_spmd_sharding_propagation_to_parameters={true,true}, allow_spmd_sharding_propagation_to_output={true}
 <a id="__codelineno-12-39" name="__codelineno-12-39" href="#__codelineno-12-39"></a>
 <a id="__codelineno-12-40" name="__codelineno-12-40" href="#__codelineno-12-40"></a>%region_0.15 (Arg_0.12: f32[], Arg_1.13: f32[]) -&gt; f32[] {
-<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a>  %Arg_0.12 = f32[] parameter(0), metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/reduce_sum&quot;}
-<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a>  %Arg_1.13 = f32[] parameter(1), metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/reduce_sum&quot;}
-<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a>  ROOT %add.14 = f32[] add(%Arg_0.12, %Arg_1.13), metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/reduce_sum&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=43}
+<a id="__codelineno-12-41" name="__codelineno-12-41" href="#__codelineno-12-41"></a>  %Arg_0.12 = f32[] parameter(0), metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum"}
+<a id="__codelineno-12-42" name="__codelineno-12-42" href="#__codelineno-12-42"></a>  %Arg_1.13 = f32[] parameter(1), metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum"}
+<a id="__codelineno-12-43" name="__codelineno-12-43" href="#__codelineno-12-43"></a>  ROOT %add.14 = f32[] add(%Arg_0.12, %Arg_1.13), metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=43}
 <a id="__codelineno-12-44" name="__codelineno-12-44" href="#__codelineno-12-44"></a>}
 <a id="__codelineno-12-45" name="__codelineno-12-45" href="#__codelineno-12-45"></a>
 <a id="__codelineno-12-46" name="__codelineno-12-46" href="#__codelineno-12-46"></a>%fused_computation (param_0.5: f32[6,8], param_1.4: f32[6,8]) -&gt; f32[] {
 <a id="__codelineno-12-47" name="__codelineno-12-47" href="#__codelineno-12-47"></a>  %param_0.5 = f32[6,8]{1,0} parameter(0)
 <a id="__codelineno-12-48" name="__codelineno-12-48" href="#__codelineno-12-48"></a>  %param_1.4 = f32[6,8]{1,0} parameter(1)
-<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.5, %param_1.4), metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/add&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=41}
+<a id="__codelineno-12-49" name="__codelineno-12-49" href="#__codelineno-12-49"></a>  %add.0 = f32[6,8]{1,0} add(%param_0.5, %param_1.4), metadata={op_name="jit(reduce_then_use)/jit(main)/add" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=41}
 <a id="__codelineno-12-50" name="__codelineno-12-50" href="#__codelineno-12-50"></a>  %constant.2 = f32[] constant(0)
-<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=35}
-<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%add.0, %broadcast.1), metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/jit(relu)/max&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=35}
-<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a>  %reduce.0 = f32[] reduce(%maximum.1, %constant.2), dimensions={0,1}, to_apply=%region_0.15, metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/reduce_sum&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=43}
+<a id="__codelineno-12-51" name="__codelineno-12-51" href="#__codelineno-12-51"></a>  %broadcast.1 = f32[6,8]{1,0} broadcast(%constant.2), dimensions={}, metadata={op_name="jit(reduce_then_use)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+<a id="__codelineno-12-52" name="__codelineno-12-52" href="#__codelineno-12-52"></a>  %maximum.1 = f32[6,8]{1,0} maximum(%add.0, %broadcast.1), metadata={op_name="jit(reduce_then_use)/jit(main)/jit(relu)/max" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=35}
+<a id="__codelineno-12-53" name="__codelineno-12-53" href="#__codelineno-12-53"></a>  %reduce.0 = f32[] reduce(%maximum.1, %constant.2), dimensions={0,1}, to_apply=%region_0.15, metadata={op_name="jit(reduce_then_use)/jit(main)/reduce_sum" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=43}
 <a id="__codelineno-12-54" name="__codelineno-12-54" href="#__codelineno-12-54"></a>  %constant.1 = f32[] constant(2)
-<a id="__codelineno-12-55" name="__codelineno-12-55" href="#__codelineno-12-55"></a>  ROOT %multiply.0 = f32[] multiply(%reduce.0, %constant.1), metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/mul&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=44}
+<a id="__codelineno-12-55" name="__codelineno-12-55" href="#__codelineno-12-55"></a>  ROOT %multiply.0 = f32[] multiply(%reduce.0, %constant.1), metadata={op_name="jit(reduce_then_use)/jit(main)/mul" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=44}
 <a id="__codelineno-12-56" name="__codelineno-12-56" href="#__codelineno-12-56"></a>}
 <a id="__codelineno-12-57" name="__codelineno-12-57" href="#__codelineno-12-57"></a>
 <a id="__codelineno-12-58" name="__codelineno-12-58" href="#__codelineno-12-58"></a>ENTRY %main.18 (Arg_0.1: f32[6,8], Arg_1.2: f32[6,8]) -&gt; f32[] {
-<a id="__codelineno-12-59" name="__codelineno-12-59" href="#__codelineno-12-59"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name=&quot;a&quot;}
-<a id="__codelineno-12-60" name="__codelineno-12-60" href="#__codelineno-12-60"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name=&quot;b&quot;}
-<a id="__codelineno-12-61" name="__codelineno-12-61" href="#__codelineno-12-61"></a>  ROOT %reduce_multiply_fusion = f32[] fusion(%Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name=&quot;jit(reduce_then_use)/jit(main)/mul&quot; source_file=&quot;/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py&quot; source_line=44}
+<a id="__codelineno-12-59" name="__codelineno-12-59" href="#__codelineno-12-59"></a>  %Arg_0.1 = f32[6,8]{1,0} parameter(0), metadata={op_name="a"}
+<a id="__codelineno-12-60" name="__codelineno-12-60" href="#__codelineno-12-60"></a>  %Arg_1.2 = f32[6,8]{1,0} parameter(1), metadata={op_name="b"}
+<a id="__codelineno-12-61" name="__codelineno-12-61" href="#__codelineno-12-61"></a>  ROOT %reduce_multiply_fusion = f32[] fusion(%Arg_0.1, %Arg_1.2), kind=kLoop, calls=%fused_computation, metadata={op_name="jit(reduce_then_use)/jit(main)/mul" source_file="/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/mnt/hammer_compiler_from_scratch/docs/part6/code/064_reduction_fusion_under_real_xla.py" source_line=44}
 <a id="__codelineno-12-62" name="__codelineno-12-62" href="#__codelineno-12-62"></a>}
 <a id="__codelineno-12-63" name="__codelineno-12-63" href="#__codelineno-12-63"></a>
 <a id="__codelineno-12-64" name="__codelineno-12-64" href="#__codelineno-12-64"></a>
@@ -3037,11 +3037,11 @@ treat "this is a reduction" as an automatic fusion boundary by itself --
 only "does every consumer of this value stay inside the same group"
 matters, the same rule Section 25.1 already found for ordinary elementwise
 sharing.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">&quot;064_reduction_fusion_under_real_xla.py&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">"064_reduction_fusion_under_real_xla.py"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="ch">#!/usr/bin/env python3</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1"># Chapter 25, Section 25.3 (capstone): CUDA Hammer&#39;s own Schedule/TuningCache</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># machinery (Ch21, Ch24) laid directly next to the real record types XLA&#39;s</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1"># Chapter 25, Section 25.3 (capstone): CUDA Hammer's own Schedule/TuningCache</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># machinery (Ch21, Ch24) laid directly next to the real record types XLA's</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># own GPU autotuner uses in production.</span>
 <a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="c1">#</span>
 <a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="c1"># This sandbox has no physical GPU (same limitation named in File 064 and in</span>
@@ -3049,19 +3049,19 @@ sharing.</p>
 <a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="c1"># to execute here the way File 063/064 executed real XLA fusion. What CAN be</span>
 <a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="c1"># done honestly is a direct structural comparison: this file is real,</span>
 <a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="c1"># runnable Python -- not prose -- built from field names taken verbatim from</span>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="c1"># XLA&#39;s own real, public source (openxla/xla, xla/autotuning.proto, and the</span>
-<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="c1"># OpenXLA determinism docs), laid next to this book&#39;s own real C++ types</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="c1"># XLA's own real, public source (openxla/xla, xla/autotuning.proto, and the</span>
+<a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="c1"># OpenXLA determinism docs), laid next to this book's own real C++ types</span>
 <a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="c1"># from Ch21 and Ch24, so the comparison is inspectable rather than asserted.</span>
 <a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a><span class="c1">#</span>
 <a id="__codelineno-14-15" name="__codelineno-14-15" href="#__codelineno-14-15"></a><span class="c1"># Three real XLA facts anchor this comparison (all cited, none invented):</span>
-<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="c1">#   1. XLA&#39;s GPU autotuner is measurement-based: &quot;During compilation, XLA&#39;s</span>
+<a id="__codelineno-14-16" name="__codelineno-14-16" href="#__codelineno-14-16"></a><span class="c1">#   1. XLA's GPU autotuner is measurement-based: "During compilation, XLA's</span>
 <a id="__codelineno-14-17" name="__codelineno-14-17" href="#__codelineno-14-17"></a><span class="c1">#      autotuner profiles multiple candidate kernel implementations ... live</span>
-<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="c1">#      on the host&#39;s GPU to find the fastest algorithm&quot; (OpenXLA</span>
-<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="c1">#      determinism docs) -- the same &quot;rank cheaply, then measure for real&quot;</span>
-<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="c1">#      shape as Ch23.3&#39;s own hybrid autotuner, at production scale.</span>
+<a id="__codelineno-14-18" name="__codelineno-14-18" href="#__codelineno-14-18"></a><span class="c1">#      on the host's GPU to find the fastest algorithm" (OpenXLA</span>
+<a id="__codelineno-14-19" name="__codelineno-14-19" href="#__codelineno-14-19"></a><span class="c1">#      determinism docs) -- the same "rank cheaply, then measure for real"</span>
+<a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a><span class="c1">#      shape as Ch23.3's own hybrid autotuner, at production scale.</span>
 <a id="__codelineno-14-21" name="__codelineno-14-21" href="#__codelineno-14-21"></a><span class="c1">#   2. A TritonGemmKey (xla/autotuning.proto) records real tuning knobs:</span>
 <a id="__codelineno-14-22" name="__codelineno-14-22" href="#__codelineno-14-22"></a><span class="c1">#      block_m, block_n, block_k, num_stages, num_warps, num_ctas -- a GPU</span>
-<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="c1">#      GEMM&#39;s own tile-shape-and-launch-configuration analogue of Ch21&#39;s own</span>
+<a id="__codelineno-14-23" name="__codelineno-14-23" href="#__codelineno-14-23"></a><span class="c1">#      GEMM's own tile-shape-and-launch-configuration analogue of Ch21's own</span>
 <a id="__codelineno-14-24" name="__codelineno-14-24" href="#__codelineno-14-24"></a><span class="c1">#      Schedule{tileSizePerLoop, loopOrder, unrollFactor}.</span>
 <a id="__codelineno-14-25" name="__codelineno-14-25" href="#__codelineno-14-25"></a><span class="c1">#   3. AutotuningLog records context, not the cache key or a reuse guarantee.</span>
 <a id="__codelineno-14-26" name="__codelineno-14-26" href="#__codelineno-14-26"></a><span class="c1">#      Current AutotuneCacheKey uses a device-model description, canonical HLO</span>
@@ -3071,7 +3071,7 @@ sharing.</p>
 <a id="__codelineno-14-30" name="__codelineno-14-30" href="#__codelineno-14-30"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">fields</span>
 <a id="__codelineno-14-31" name="__codelineno-14-31" href="#__codelineno-14-31"></a>
 <a id="__codelineno-14-32" name="__codelineno-14-32" href="#__codelineno-14-32"></a>
-<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="c1"># --- CUDA Hammer&#39;s own Ch21 Schedule, transcribed field-for-field from the</span>
+<a id="__codelineno-14-33" name="__codelineno-14-33" href="#__codelineno-14-33"></a><span class="c1"># --- CUDA Hammer's own Ch21 Schedule, transcribed field-for-field from the</span>
 <a id="__codelineno-14-34" name="__codelineno-14-34" href="#__codelineno-14-34"></a><span class="c1"># real C++ struct (docs/part5/code/051-053) -----------------------------</span>
 <a id="__codelineno-14-35" name="__codelineno-14-35" href="#__codelineno-14-35"></a><span class="nd">@dataclass</span>
 <a id="__codelineno-14-36" name="__codelineno-14-36" href="#__codelineno-14-36"></a><span class="k">class</span><span class="w"> </span><span class="nc">CudaHammerSchedule</span><span class="p">:</span>
@@ -3080,7 +3080,7 @@ sharing.</p>
 <a id="__codelineno-14-39" name="__codelineno-14-39" href="#__codelineno-14-39"></a>    <span class="n">unroll_factor</span><span class="p">:</span> <span class="nb">int</span>         <span class="c1"># innermost-loop unroll factor</span>
 <a id="__codelineno-14-40" name="__codelineno-14-40" href="#__codelineno-14-40"></a>
 <a id="__codelineno-14-41" name="__codelineno-14-41" href="#__codelineno-14-41"></a>
-<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="c1"># --- XLA&#39;s real TritonGemmKey, transcribed field-for-field from</span>
+<a id="__codelineno-14-42" name="__codelineno-14-42" href="#__codelineno-14-42"></a><span class="c1"># --- XLA's real TritonGemmKey, transcribed field-for-field from</span>
 <a id="__codelineno-14-43" name="__codelineno-14-43" href="#__codelineno-14-43"></a><span class="c1"># xla/autotuning.proto (openxla/xla, fetched 2026) ------------------------</span>
 <a id="__codelineno-14-44" name="__codelineno-14-44" href="#__codelineno-14-44"></a><span class="nd">@dataclass</span>
 <a id="__codelineno-14-45" name="__codelineno-14-45" href="#__codelineno-14-45"></a><span class="k">class</span><span class="w"> </span><span class="nc">XlaTritonGemmKey</span><span class="p">:</span>
@@ -3093,12 +3093,12 @@ sharing.</p>
 <a id="__codelineno-14-52" name="__codelineno-14-52" href="#__codelineno-14-52"></a>    <span class="n">is_tma_allowed</span><span class="p">:</span> <span class="nb">bool</span>
 <a id="__codelineno-14-53" name="__codelineno-14-53" href="#__codelineno-14-53"></a>
 <a id="__codelineno-14-54" name="__codelineno-14-54" href="#__codelineno-14-54"></a>
-<a id="__codelineno-14-55" name="__codelineno-14-55" href="#__codelineno-14-55"></a><span class="c1"># --- CUDA Hammer&#39;s own Ch24.3 cache key -----------------------------------</span>
+<a id="__codelineno-14-55" name="__codelineno-14-55" href="#__codelineno-14-55"></a><span class="c1"># --- CUDA Hammer's own Ch24.3 cache key -----------------------------------</span>
 <a id="__codelineno-14-56" name="__codelineno-14-56" href="#__codelineno-14-56"></a><span class="k">def</span><span class="w"> </span><span class="nf">loop_nest_key_for_target</span><span class="p">(</span><span class="n">shape_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<a id="__codelineno-14-57" name="__codelineno-14-57" href="#__codelineno-14-57"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">shape_str</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="__codelineno-14-57" name="__codelineno-14-57" href="#__codelineno-14-57"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">shape_str</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">target</span><span class="si">}</span><span class="s2">"</span>
 <a id="__codelineno-14-58" name="__codelineno-14-58" href="#__codelineno-14-58"></a>
 <a id="__codelineno-14-59" name="__codelineno-14-59" href="#__codelineno-14-59"></a>
-<a id="__codelineno-14-60" name="__codelineno-14-60" href="#__codelineno-14-60"></a><span class="c1"># --- XLA&#39;s real AutotuningLog target-context fields, transcribed from</span>
+<a id="__codelineno-14-60" name="__codelineno-14-60" href="#__codelineno-14-60"></a><span class="c1"># --- XLA's real AutotuningLog target-context fields, transcribed from</span>
 <a id="__codelineno-14-61" name="__codelineno-14-61" href="#__codelineno-14-61"></a><span class="c1"># xla/autotuning.proto (the fields that accompany a logged result) -----</span>
 <a id="__codelineno-14-62" name="__codelineno-14-62" href="#__codelineno-14-62"></a><span class="nd">@dataclass</span>
 <a id="__codelineno-14-63" name="__codelineno-14-63" href="#__codelineno-14-63"></a><span class="k">class</span><span class="w"> </span><span class="nc">XlaAutotuningLogContext</span><span class="p">:</span>
@@ -3108,81 +3108,81 @@ sharing.</p>
 <a id="__codelineno-14-67" name="__codelineno-14-67" href="#__codelineno-14-67"></a>
 <a id="__codelineno-14-68" name="__codelineno-14-68" href="#__codelineno-14-68"></a>
 <a id="__codelineno-14-69" name="__codelineno-14-69" href="#__codelineno-14-69"></a><span class="k">def</span><span class="w"> </span><span class="nf">print_fields</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">instance</span><span class="p">):</span>
-<a id="__codelineno-14-70" name="__codelineno-14-70" href="#__codelineno-14-70"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-70" name="__codelineno-14-70" href="#__codelineno-14-70"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">:"</span><span class="p">)</span>
 <a id="__codelineno-14-71" name="__codelineno-14-71" href="#__codelineno-14-71"></a>    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
-<a id="__codelineno-14-72" name="__codelineno-14-72" href="#__codelineno-14-72"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-72" name="__codelineno-14-72" href="#__codelineno-14-72"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    </span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-14-73" name="__codelineno-14-73" href="#__codelineno-14-73"></a>
 <a id="__codelineno-14-74" name="__codelineno-14-74" href="#__codelineno-14-74"></a>
 <a id="__codelineno-14-75" name="__codelineno-14-75" href="#__codelineno-14-75"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<a id="__codelineno-14-76" name="__codelineno-14-76" href="#__codelineno-14-76"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-14-77" name="__codelineno-14-77" href="#__codelineno-14-77"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 1: the tuning-knob record itself&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-78" name="__codelineno-14-78" href="#__codelineno-14-78"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-14-76" name="__codelineno-14-76" href="#__codelineno-14-76"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-14-77" name="__codelineno-14-77" href="#__codelineno-14-77"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"PART 1: the tuning-knob record itself"</span><span class="p">)</span>
+<a id="__codelineno-14-78" name="__codelineno-14-78" href="#__codelineno-14-78"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
 <a id="__codelineno-14-79" name="__codelineno-14-79" href="#__codelineno-14-79"></a>    <span class="n">ch_sched</span> <span class="o">=</span> <span class="n">CudaHammerSchedule</span><span class="p">(</span>
 <a id="__codelineno-14-80" name="__codelineno-14-80" href="#__codelineno-14-80"></a>        <span class="n">tile_size_per_loop</span><span class="o">=</span><span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span> <span class="n">loop_order</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">unroll_factor</span><span class="o">=</span><span class="mi">4</span>
-<a id="__codelineno-14-81" name="__codelineno-14-81" href="#__codelineno-14-81"></a>    <span class="p">)</span>  <span class="c1"># this book&#39;s own real Chapter 23.3 cloud-sandbox winner</span>
-<a id="__codelineno-14-82" name="__codelineno-14-82" href="#__codelineno-14-82"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;CudaHammerSchedule (Ch21, this book&#39;s own struct)&quot;</span><span class="p">,</span> <span class="n">ch_sched</span><span class="p">)</span>
-<a id="__codelineno-14-83" name="__codelineno-14-83" href="#__codelineno-14-83"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">ch_sched</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-81" name="__codelineno-14-81" href="#__codelineno-14-81"></a>    <span class="p">)</span>  <span class="c1"># this book's own real Chapter 23.3 cloud-sandbox winner</span>
+<a id="__codelineno-14-82" name="__codelineno-14-82" href="#__codelineno-14-82"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">"CudaHammerSchedule (Ch21, this book's own struct)"</span><span class="p">,</span> <span class="n">ch_sched</span><span class="p">)</span>
+<a id="__codelineno-14-83" name="__codelineno-14-83" href="#__codelineno-14-83"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">ch_sched</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields"</span><span class="p">)</span>
 <a id="__codelineno-14-84" name="__codelineno-14-84" href="#__codelineno-14-84"></a>    <span class="nb">print</span><span class="p">()</span>
 <a id="__codelineno-14-85" name="__codelineno-14-85" href="#__codelineno-14-85"></a>
 <a id="__codelineno-14-86" name="__codelineno-14-86" href="#__codelineno-14-86"></a>    <span class="n">xla_key</span> <span class="o">=</span> <span class="n">XlaTritonGemmKey</span><span class="p">(</span>
 <a id="__codelineno-14-87" name="__codelineno-14-87" href="#__codelineno-14-87"></a>        <span class="n">block_m</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">block_n</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">block_k</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
 <a id="__codelineno-14-88" name="__codelineno-14-88" href="#__codelineno-14-88"></a>        <span class="n">num_stages</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">num_warps</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">num_ctas</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">is_tma_allowed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <a id="__codelineno-14-89" name="__codelineno-14-89" href="#__codelineno-14-89"></a>    <span class="p">)</span>
-<a id="__codelineno-14-90" name="__codelineno-14-90" href="#__codelineno-14-90"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: the field NAMES below are real (xla/autotuning.proto); the &quot;</span>
-<a id="__codelineno-14-91" name="__codelineno-14-91" href="#__codelineno-14-91"></a>          <span class="s2">&quot;VALUES are representative placeholders, not a measured result -- &quot;</span>
-<a id="__codelineno-14-92" name="__codelineno-14-92" href="#__codelineno-14-92"></a>          <span class="s2">&quot;this sandbox has no GPU for XLA&#39;s real autotuner to search on.&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-93" name="__codelineno-14-93" href="#__codelineno-14-93"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;XlaTritonGemmKey (real field names, xla/autotuning.proto)&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-90" name="__codelineno-14-90" href="#__codelineno-14-90"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"NOTE: the field NAMES below are real (xla/autotuning.proto); the "</span>
+<a id="__codelineno-14-91" name="__codelineno-14-91" href="#__codelineno-14-91"></a>          <span class="s2">"VALUES are representative placeholders, not a measured result -- "</span>
+<a id="__codelineno-14-92" name="__codelineno-14-92" href="#__codelineno-14-92"></a>          <span class="s2">"this sandbox has no GPU for XLA's real autotuner to search on."</span><span class="p">)</span>
+<a id="__codelineno-14-93" name="__codelineno-14-93" href="#__codelineno-14-93"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">"XlaTritonGemmKey (real field names, xla/autotuning.proto)"</span><span class="p">,</span>
 <a id="__codelineno-14-94" name="__codelineno-14-94" href="#__codelineno-14-94"></a>                 <span class="n">xla_key</span><span class="p">)</span>
-<a id="__codelineno-14-95" name="__codelineno-14-95" href="#__codelineno-14-95"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">xla_key</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-95" name="__codelineno-14-95" href="#__codelineno-14-95"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    -- </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">(</span><span class="n">xla_key</span><span class="p">))</span><span class="si">}</span><span class="s2"> fields"</span><span class="p">)</span>
 <a id="__codelineno-14-96" name="__codelineno-14-96" href="#__codelineno-14-96"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-14-97" name="__codelineno-14-97" href="#__codelineno-14-97"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- both records answer the exact same question for their own &quot;</span>
-<a id="__codelineno-14-98" name="__codelineno-14-98" href="#__codelineno-14-98"></a>          <span class="s2">&quot;system: how should ONE loop nest / GEMM be tiled and launched. &quot;</span>
-<a id="__codelineno-14-99" name="__codelineno-14-99" href="#__codelineno-14-99"></a>          <span class="s2">&quot;CUDA Hammer&#39;s Schedule generalizes over ANY LoopNest shape (Ch21&#39;s &quot;</span>
-<a id="__codelineno-14-100" name="__codelineno-14-100" href="#__codelineno-14-100"></a>          <span class="s2">&quot;own enumerateSchedules()); XLA&#39;s TritonGemmKey is specific to one &quot;</span>
-<a id="__codelineno-14-101" name="__codelineno-14-101" href="#__codelineno-14-101"></a>          <span class="s2">&quot;matmul-shaped Triton kernel template -- CUDA Hammer&#39;s toy IR never &quot;</span>
-<a id="__codelineno-14-102" name="__codelineno-14-102" href="#__codelineno-14-102"></a>          <span class="s2">&quot;grew a matmul op (Ch4&#39;s own scope, unchanged through Ch24).&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-97" name="__codelineno-14-97" href="#__codelineno-14-97"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"-- both records answer the exact same question for their own "</span>
+<a id="__codelineno-14-98" name="__codelineno-14-98" href="#__codelineno-14-98"></a>          <span class="s2">"system: how should ONE loop nest / GEMM be tiled and launched. "</span>
+<a id="__codelineno-14-99" name="__codelineno-14-99" href="#__codelineno-14-99"></a>          <span class="s2">"CUDA Hammer's Schedule generalizes over ANY LoopNest shape (Ch21's "</span>
+<a id="__codelineno-14-100" name="__codelineno-14-100" href="#__codelineno-14-100"></a>          <span class="s2">"own enumerateSchedules()); XLA's TritonGemmKey is specific to one "</span>
+<a id="__codelineno-14-101" name="__codelineno-14-101" href="#__codelineno-14-101"></a>          <span class="s2">"matmul-shaped Triton kernel template -- CUDA Hammer's toy IR never "</span>
+<a id="__codelineno-14-102" name="__codelineno-14-102" href="#__codelineno-14-102"></a>          <span class="s2">"grew a matmul op (Ch4's own scope, unchanged through Ch24)."</span><span class="p">)</span>
 <a id="__codelineno-14-103" name="__codelineno-14-103" href="#__codelineno-14-103"></a>
 <a id="__codelineno-14-104" name="__codelineno-14-104" href="#__codelineno-14-104"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-14-105" name="__codelineno-14-105" href="#__codelineno-14-105"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-14-106" name="__codelineno-14-106" href="#__codelineno-14-106"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;PART 2: target context is not a complete cache key&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-107" name="__codelineno-14-107" href="#__codelineno-14-107"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;=&quot;</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
-<a id="__codelineno-14-108" name="__codelineno-14-108" href="#__codelineno-14-108"></a>    <span class="n">ch_key</span> <span class="o">=</span> <span class="n">loop_nest_key_for_target</span><span class="p">(</span><span class="s2">&quot;dim0:6,dim1:8&quot;</span><span class="p">,</span> <span class="s2">&quot;aarch64&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-109" name="__codelineno-14-109" href="#__codelineno-14-109"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;CUDA Hammer&#39;s own Ch24.3 key: </span><span class="si">{</span><span class="n">ch_key</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-105" name="__codelineno-14-105" href="#__codelineno-14-105"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-14-106" name="__codelineno-14-106" href="#__codelineno-14-106"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"PART 2: target context is not a complete cache key"</span><span class="p">)</span>
+<a id="__codelineno-14-107" name="__codelineno-14-107" href="#__codelineno-14-107"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">78</span><span class="p">)</span>
+<a id="__codelineno-14-108" name="__codelineno-14-108" href="#__codelineno-14-108"></a>    <span class="n">ch_key</span> <span class="o">=</span> <span class="n">loop_nest_key_for_target</span><span class="p">(</span><span class="s2">"dim0:6,dim1:8"</span><span class="p">,</span> <span class="s2">"aarch64"</span><span class="p">)</span>
+<a id="__codelineno-14-109" name="__codelineno-14-109" href="#__codelineno-14-109"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"CUDA Hammer's own Ch24.3 key: </span><span class="si">{</span><span class="n">ch_key</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 <a id="__codelineno-14-110" name="__codelineno-14-110" href="#__codelineno-14-110"></a>
 <a id="__codelineno-14-111" name="__codelineno-14-111" href="#__codelineno-14-111"></a>    <span class="n">xla_ctx</span> <span class="o">=</span> <span class="n">XlaAutotuningLogContext</span><span class="p">(</span>
-<a id="__codelineno-14-112" name="__codelineno-14-112" href="#__codelineno-14-112"></a>        <span class="n">cudnn_version</span><span class="o">=</span><span class="s2">&quot;9.x&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-113" name="__codelineno-14-113" href="#__codelineno-14-113"></a>        <span class="n">compute_capability</span><span class="o">=</span><span class="s2">&quot;sm_90&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-114" name="__codelineno-14-114" href="#__codelineno-14-114"></a>        <span class="n">device_pci_bus_id</span><span class="o">=</span><span class="s2">&quot;0000:00:00.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-14-112" name="__codelineno-14-112" href="#__codelineno-14-112"></a>        <span class="n">cudnn_version</span><span class="o">=</span><span class="s2">"9.x"</span><span class="p">,</span>
+<a id="__codelineno-14-113" name="__codelineno-14-113" href="#__codelineno-14-113"></a>        <span class="n">compute_capability</span><span class="o">=</span><span class="s2">"sm_90"</span><span class="p">,</span>
+<a id="__codelineno-14-114" name="__codelineno-14-114" href="#__codelineno-14-114"></a>        <span class="n">device_pci_bus_id</span><span class="o">=</span><span class="s2">"0000:00:00.0"</span><span class="p">,</span>
 <a id="__codelineno-14-115" name="__codelineno-14-115" href="#__codelineno-14-115"></a>    <span class="p">)</span>
-<a id="__codelineno-14-116" name="__codelineno-14-116" href="#__codelineno-14-116"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NOTE: again, real field names, placeholder values -- no GPU here &quot;</span>
-<a id="__codelineno-14-117" name="__codelineno-14-117" href="#__codelineno-14-117"></a>          <span class="s2">&quot;to read real ones from.&quot;</span><span class="p">)</span>
-<a id="__codelineno-14-118" name="__codelineno-14-118" href="#__codelineno-14-118"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">&quot;XLA&#39;s own real AutotuningLog context fields &quot;</span>
-<a id="__codelineno-14-119" name="__codelineno-14-119" href="#__codelineno-14-119"></a>                 <span class="s2">&quot;(xla/autotuning.proto)&quot;</span><span class="p">,</span> <span class="n">xla_ctx</span><span class="p">)</span>
+<a id="__codelineno-14-116" name="__codelineno-14-116" href="#__codelineno-14-116"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"NOTE: again, real field names, placeholder values -- no GPU here "</span>
+<a id="__codelineno-14-117" name="__codelineno-14-117" href="#__codelineno-14-117"></a>          <span class="s2">"to read real ones from."</span><span class="p">)</span>
+<a id="__codelineno-14-118" name="__codelineno-14-118" href="#__codelineno-14-118"></a>    <span class="n">print_fields</span><span class="p">(</span><span class="s2">"XLA's own real AutotuningLog context fields "</span>
+<a id="__codelineno-14-119" name="__codelineno-14-119" href="#__codelineno-14-119"></a>                 <span class="s2">"(xla/autotuning.proto)"</span><span class="p">,</span> <span class="n">xla_ctx</span><span class="p">)</span>
 <a id="__codelineno-14-120" name="__codelineno-14-120" href="#__codelineno-14-120"></a>    <span class="nb">print</span><span class="p">()</span>
-<a id="__codelineno-14-121" name="__codelineno-14-121" href="#__codelineno-14-121"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;-- AutotuningLog retains diagnostic context; these placeholder fields &quot;</span>
-<a id="__codelineno-14-122" name="__codelineno-14-122" href="#__codelineno-14-122"></a>          <span class="s2">&quot;do not specify cache equality or guarantee exact-device reuse. &quot;</span>
-<a id="__codelineno-14-123" name="__codelineno-14-123" href="#__codelineno-14-123"></a>          <span class="s2">&quot;Current XLA AutotuneCacheKey combines a device-model description, &quot;</span>
-<a id="__codelineno-14-124" name="__codelineno-14-124" href="#__codelineno-14-124"></a>          <span class="s2">&quot;canonical HLO and a cache version. Persisted cache version separation &quot;</span>
-<a id="__codelineno-14-125" name="__codelineno-14-125" href="#__codelineno-14-125"></a>          <span class="s2">&quot;and invalidation also require user care. CUDA Hammer&#39;s simple target &quot;</span>
-<a id="__codelineno-14-126" name="__codelineno-14-126" href="#__codelineno-14-126"></a>          <span class="s2">&quot;string is an educational comparison, not XLA&#39;s full reuse policy.&quot;</span><span class="p">)</span>
+<a id="__codelineno-14-121" name="__codelineno-14-121" href="#__codelineno-14-121"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"-- AutotuningLog retains diagnostic context; these placeholder fields "</span>
+<a id="__codelineno-14-122" name="__codelineno-14-122" href="#__codelineno-14-122"></a>          <span class="s2">"do not specify cache equality or guarantee exact-device reuse. "</span>
+<a id="__codelineno-14-123" name="__codelineno-14-123" href="#__codelineno-14-123"></a>          <span class="s2">"Current XLA AutotuneCacheKey combines a device-model description, "</span>
+<a id="__codelineno-14-124" name="__codelineno-14-124" href="#__codelineno-14-124"></a>          <span class="s2">"canonical HLO and a cache version. Persisted cache version separation "</span>
+<a id="__codelineno-14-125" name="__codelineno-14-125" href="#__codelineno-14-125"></a>          <span class="s2">"and invalidation also require user care. CUDA Hammer's simple target "</span>
+<a id="__codelineno-14-126" name="__codelineno-14-126" href="#__codelineno-14-126"></a>          <span class="s2">"string is an educational comparison, not XLA's full reuse policy."</span><span class="p">)</span>
 <a id="__codelineno-14-127" name="__codelineno-14-127" href="#__codelineno-14-127"></a>
 <a id="__codelineno-14-128" name="__codelineno-14-128" href="#__codelineno-14-128"></a>
-<a id="__codelineno-14-129" name="__codelineno-14-129" href="#__codelineno-14-129"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="__codelineno-14-129" name="__codelineno-14-129" href="#__codelineno-14-129"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-14-130" name="__codelineno-14-130" href="#__codelineno-14-130"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python3<span class="w"> </span><span class="s2">&quot;065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python3<span class="w"> </span><span class="s2">"065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py"</span>
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>==============================================================================
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>PART 1: the tuning-knob record itself
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>==============================================================================
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>CudaHammerSchedule (Ch21, this book&#39;s own struct):
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>CudaHammerSchedule (Ch21, this book's own struct):
 <a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    tile_size_per_loop = [6, 8]
 <a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    loop_order = [0, 1]
 <a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>    unroll_factor = 4
 <a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    -- 3 fields
 <a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>
-<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>NOTE: the field NAMES below are real (xla/autotuning.proto); the VALUES are representative placeholders, not a measured result -- this sandbox has no GPU for XLA&#39;s real autotuner to search on.
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>NOTE: the field NAMES below are real (xla/autotuning.proto); the VALUES are representative placeholders, not a measured result -- this sandbox has no GPU for XLA's real autotuner to search on.
 <a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>XlaTritonGemmKey (real field names, xla/autotuning.proto):
 <a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>    block_m = 128
 <a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a>    block_n = 128
@@ -3193,19 +3193,19 @@ sharing.</p>
 <a id="__codelineno-16-18" name="__codelineno-16-18" href="#__codelineno-16-18"></a>    is_tma_allowed = False
 <a id="__codelineno-16-19" name="__codelineno-16-19" href="#__codelineno-16-19"></a>    -- 7 fields
 <a id="__codelineno-16-20" name="__codelineno-16-20" href="#__codelineno-16-20"></a>
-<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>-- both records answer the exact same question for their own system: how should ONE loop nest / GEMM be tiled and launched. CUDA Hammer&#39;s Schedule generalizes over ANY LoopNest shape (Ch21&#39;s own enumerateSchedules()); XLA&#39;s TritonGemmKey is specific to one matmul-shaped Triton kernel template -- CUDA Hammer&#39;s toy IR never grew a matmul op (Ch4&#39;s own scope, unchanged through Ch24).
+<a id="__codelineno-16-21" name="__codelineno-16-21" href="#__codelineno-16-21"></a>-- both records answer the exact same question for their own system: how should ONE loop nest / GEMM be tiled and launched. CUDA Hammer's Schedule generalizes over ANY LoopNest shape (Ch21's own enumerateSchedules()); XLA's TritonGemmKey is specific to one matmul-shaped Triton kernel template -- CUDA Hammer's toy IR never grew a matmul op (Ch4's own scope, unchanged through Ch24).
 <a id="__codelineno-16-22" name="__codelineno-16-22" href="#__codelineno-16-22"></a>
 <a id="__codelineno-16-23" name="__codelineno-16-23" href="#__codelineno-16-23"></a>==============================================================================
 <a id="__codelineno-16-24" name="__codelineno-16-24" href="#__codelineno-16-24"></a>PART 2: target context is not a complete cache key
 <a id="__codelineno-16-25" name="__codelineno-16-25" href="#__codelineno-16-25"></a>==============================================================================
-<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>CUDA Hammer&#39;s own Ch24.3 key: &#39;dim0:6,dim1:8@aarch64&#39;
+<a id="__codelineno-16-26" name="__codelineno-16-26" href="#__codelineno-16-26"></a>CUDA Hammer's own Ch24.3 key: 'dim0:6,dim1:8@aarch64'
 <a id="__codelineno-16-27" name="__codelineno-16-27" href="#__codelineno-16-27"></a>NOTE: again, real field names, placeholder values -- no GPU here to read real ones from.
-<a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a>XLA&#39;s own real AutotuningLog context fields (xla/autotuning.proto):
-<a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a>    cudnn_version = &#39;9.x&#39;
-<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>    compute_capability = &#39;sm_90&#39;
-<a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a>    device_pci_bus_id = &#39;0000:00:00.0&#39;
+<a id="__codelineno-16-28" name="__codelineno-16-28" href="#__codelineno-16-28"></a>XLA's own real AutotuningLog context fields (xla/autotuning.proto):
+<a id="__codelineno-16-29" name="__codelineno-16-29" href="#__codelineno-16-29"></a>    cudnn_version = '9.x'
+<a id="__codelineno-16-30" name="__codelineno-16-30" href="#__codelineno-16-30"></a>    compute_capability = 'sm_90'
+<a id="__codelineno-16-31" name="__codelineno-16-31" href="#__codelineno-16-31"></a>    device_pci_bus_id = '0000:00:00.0'
 <a id="__codelineno-16-32" name="__codelineno-16-32" href="#__codelineno-16-32"></a>
-<a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a>-- AutotuningLog retains diagnostic context; these placeholder fields do not specify cache equality or guarantee exact-device reuse. Current XLA AutotuneCacheKey combines a device-model description, canonical HLO and a cache version. Persisted cache version separation and invalidation also require user care. CUDA Hammer&#39;s simple target string is an educational comparison, not XLA&#39;s full reuse policy.
+<a id="__codelineno-16-33" name="__codelineno-16-33" href="#__codelineno-16-33"></a>-- AutotuningLog retains diagnostic context; these placeholder fields do not specify cache equality or guarantee exact-device reuse. Current XLA AutotuneCacheKey combines a device-model description, canonical HLO and a cache version. Persisted cache version separation and invalidation also require user care. CUDA Hammer's simple target string is an educational comparison, not XLA's full reuse policy.
 </code></pre></div>
 <p><em>This file calls no XLA API at all -- it is deterministic Python -- so both machines' output matches exactly, as expected; it is included here for the same cross-machine-verification discipline every other chapter in this book has followed since Chapter 17.</em></p>
 <h2 id="253-a-real-production-autotuners-own-tuning-knob-and-cache-key-records">25.3 A Real Production Autotuner's Own Tuning-Knob and Cache-Key Records<a class="headerlink" href="#253-a-real-production-autotuners-own-tuning-knob-and-cache-key-records" title="Permanent link">&para;</a></h2>
@@ -3257,7 +3257,7 @@ version-specific. OpenXLA's <a href="https://openxla.org/xla/persisted_autotunin
 also requires user-managed version separation/invalidation. CUDA Hammer's
 one-string target key illustrates why context matters, without implementing
 or experimentally verifying XLA's complete cache-reuse policy.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>python3<span class="w"> </span><span class="s2">&quot;065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>python3<span class="w"> </span><span class="s2">"065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py"</span>
 </code></pre></div>
 <h3 id="what-a-real-independent-mature-fusion-engine-still-leaves-on-the-table">What a real, independent, mature fusion engine still leaves on the table<a class="headerlink" href="#what-a-real-independent-mature-fusion-engine-still-leaves-on-the-table" title="Permanent link">&para;</a></h3>
 <p>Snider and Liang's 2023 paper "Operator Fusion in XLA: Analysis and

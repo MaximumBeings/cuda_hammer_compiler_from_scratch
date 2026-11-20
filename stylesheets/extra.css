@@ -18,3 +18,11 @@
 .md-typeset .chapter-figure p,.md-typeset .chapter-figure a { display:block; width:100%; }
 .md-typeset .chapter-figure img { display:block; width:100%; max-width:100%; height:auto; }
 .md-typeset .chapter-figure figcaption { color:var(--md-default-fg-color--light); font-size:.8rem; margin:.7rem 0 0; }
+
+/* Soft-wrap code only; text diagrams retain their fixed-column geometry. */
+.md-typeset .highlight code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  tab-size: 4;
+  line-height: 1.55;
+}

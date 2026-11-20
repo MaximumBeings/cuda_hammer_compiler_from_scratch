@@ -2436,7 +2436,7 @@
 <p><strong>What you need to know first:</strong> Chapter 2's vocabulary (lexer/parser/AST are not needed again here, but IR, pass, and codegen are used throughout). No prior exposure to XLA, TVM, or Triton is assumed.</p>
 <hr />
 <p>Every fact this chapter states about XLA, TVM, or Triton is cited to that project's own real, current documentation -- this chapter's own honesty discipline, stated once in <a href="../../getting-started/">Getting Started</a> and followed here rather than repeated on every paragraph. That also means this chapter's <code>code/</code> directory is empty: there is nothing to compile, because the claims here are about what three <em>other</em> projects' own real source and documentation say, not about anything this book measures itself. Chapter 4 returns to genuinely compiled, genuinely run C++ when CUDA Hammer's own graph IR starts.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2&#39;S VOCABULARY:   source --&gt; AST --&gt; lower --&gt; IR --&gt; passes --&gt; codegen
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2'S VOCABULARY:   source --&gt; AST --&gt; lower --&gt; IR --&gt; passes --&gt; codegen
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>XLA     : StableHLO graph --&gt; HLO --&gt; HLO passes (fusion, CSE, DCE, ...) --&gt; LLVM --&gt; machine code
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>TVM     : Relay graph --&gt; TensorIR (TIR) --&gt; schedule primitives (split, fuse, reorder, ...) --&gt; codegen
@@ -2490,7 +2490,7 @@
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  schedule 3: reorder k outermost, no tiling at all        --&gt; a third real kernel
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>all three schedules compute the identical C -- only their real, measured
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>speed on real hardware differs, which is exactly what CUDA Hammer&#39;s own
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>speed on real hardware differs, which is exactly what CUDA Hammer's own
 <a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>Part 5 autotuner will search over.
 </code></pre></div>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
@@ -2510,12 +2510,12 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Giving driving directions to a single driver is one kind of instruction: turn left here, merge there, one vehicle following one route. Giving a route to a convoy's own dispatcher is a different kind of instruction entirely: the dispatcher receives the destination and decides internally how the convoy's individual vehicles space themselves, merge lanes, and pass through checkpoints -- details the original route never had to specify. CUDA's own programming model is the first kind: a programmer writes the code <em>one thread</em> executes, and the hardware replicates that same scalar program across every thread in a block. Triton's programming model is the second kind.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CUDA   -- &quot;Scalar Program, Blocked Threads&quot;:
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  programmer writes:    one thread&#39;s-worth of code, operating on a single acc[i]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CUDA   -- "Scalar Program, Blocked Threads":
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  programmer writes:    one thread's-worth of code, operating on a single acc[i]
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  hardware replicates:  that same scalar program across every thread in the block
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>Triton -- &quot;Blocked Program, Scalar Threads&quot;:
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  programmer writes:    one block&#39;s-worth of code, operating on a whole acc[MB, NB]
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>Triton -- "Blocked Program, Scalar Threads":
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  programmer writes:    one block's-worth of code, operating on a whole acc[MB, NB]
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  compiler figures out: how that block-level array maps onto real threads,
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>                         real shared memory, and real coalesced memory loads
 </code></pre></div>

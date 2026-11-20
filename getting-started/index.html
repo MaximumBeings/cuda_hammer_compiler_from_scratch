@@ -353,10 +353,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installing-a-toolchain" class="md-nav__link">
+  <a href="#1-choose-the-machine-and-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Installing a toolchain
+        1 — Choose the machine and scope
       
     </span>
   </a>
@@ -364,10 +364,87 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-honesty-discipline-this-book-follows" class="md-nav__link">
+  <a href="#2-install-host-tools-and-obtain-the-book" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The honesty discipline this book follows
+        2 — Install host tools and obtain the book
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-compile-your-first-host-lesson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3 — Compile your first host lesson
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-install-the-nvidia-driver-and-cuda-toolkit-on-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4 — Install the NVIDIA driver and CUDA toolkit on Linux
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-select-the-gpu-target-and-run-the-generated-programs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5 — Select the GPU target and run the generated programs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-add-optional-case-study-dependencies-separately" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6 — Add optional case-study dependencies separately
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-troubleshoot-the-first-failing-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7 — Troubleshoot the first failing step
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#historical-authoring-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical authoring context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-original-editions-validation-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The original edition’s validation discipline
       
     </span>
   </a>
@@ -2127,10 +2204,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#installing-a-toolchain" class="md-nav__link">
+  <a href="#1-choose-the-machine-and-scope" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Installing a toolchain
+        1 — Choose the machine and scope
       
     </span>
   </a>
@@ -2138,10 +2215,87 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-honesty-discipline-this-book-follows" class="md-nav__link">
+  <a href="#2-install-host-tools-and-obtain-the-book" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The honesty discipline this book follows
+        2 — Install host tools and obtain the book
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-compile-your-first-host-lesson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3 — Compile your first host lesson
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-install-the-nvidia-driver-and-cuda-toolkit-on-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4 — Install the NVIDIA driver and CUDA toolkit on Linux
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-select-the-gpu-target-and-run-the-generated-programs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5 — Select the GPU target and run the generated programs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-add-optional-case-study-dependencies-separately" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6 — Add optional case-study dependencies separately
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-troubleshoot-the-first-failing-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7 — Troubleshoot the first failing step
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#historical-authoring-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Historical authoring context
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-original-editions-validation-discipline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The original edition’s validation discipline
       
     </span>
   </a>
@@ -2192,17 +2346,190 @@
 
 <h1 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h1>
 <p>This book builds CUDA Hammer entirely in C++17, with three real, distinct backends by the time Part 4 is done: a plain host C++ interpreter for CUDA Hammer's own IR (useful for testing a pass before trusting its output), a vectorized CPU code generator (real AVX2/FMA or NEON, whichever the machine actually has), and a CUDA C++ code generator that emits real kernels for <code>nvcc</code>. No external compiler framework -- no LLVM, no MLIR -- is used to build CUDA Hammer itself; Appendix C covers what a real production compiler gets by building on one of those instead, once CUDA Hammer's own from-scratch version exists to compare it against.</p>
-<h2 id="installing-a-toolchain">Installing a toolchain<a class="headerlink" href="#installing-a-toolchain" title="Permanent link">&para;</a></h2>
-<p>A working <code>g++</code> (or <code>clang++</code>) supporting C++17 is all Part 0 through Part 3 need. The CUDA examples require a toolkit; the CPU and JIT examples do not require an NVIDIA GPU. The historical authoring environments below are distinct from the current audit instance:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>g++<span class="w"> </span>--version<span class="w">      </span><span class="c1"># C++17 host compiler, needed for everything</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>nvcc<span class="w"> </span>--version<span class="w">      </span><span class="c1"># CUDA compiler, needed for the CUDA examples</span>
+<h2 id="1-choose-the-machine-and-scope">1 — Choose the machine and scope<a class="headerlink" href="#1-choose-the-machine-and-scope" title="Permanent link">&para;</a></h2>
+<p>The host lessons run on Linux or macOS with a C++17 compiler. Use <strong>Linux with a supported NVIDIA GPU</strong> for the CUDA lessons and Triton device examples. Apple Silicon runs the NEON CPU backend; current CUDA toolkits do not support macOS. Windows readers should use a supported Linux environment; the JIT examples rely on POSIX process handling and <code>dlopen</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Work</th>
+<th>Required</th>
+<th>Optional</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read/build this website</td>
+<td>Python 3 and <code>requirements-docs.txt</code></td>
+<td>No CUDA or compiler needed</td>
+</tr>
+<tr>
+<td>Standalone host lessons</td>
+<td>C++17 compiler; POSIX host</td>
+<td>Graphviz for viewing DOT output</td>
+</tr>
+<tr>
+<td>SIMD CPU generation</td>
+<td>AVX2 <strong>and</strong> FMA on x86, or NEON on AArch64</td>
+<td>No NVIDIA driver needed</td>
+</tr>
+<tr>
+<td>Generated CUDA programs</td>
+<td>Linux, NVIDIA driver, CUDA toolkit, compatible GPU</td>
+<td>Compute Sanitizer for diagnostic runs</td>
+</tr>
+<tr>
+<td>Framework case studies</td>
+<td>Separate Python environment and the chapter's compatible framework versions</td>
+<td>LLVM/MLIR, Polly and CUTLASS only for their appendix comparisons</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-install-host-tools-and-obtain-the-book">2 — Install host tools and obtain the book<a class="headerlink" href="#2-install-host-tools-and-obtain-the-book" title="Permanent link">&para;</a></h2>
+<p>On Ubuntu 22.04/24.04:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span>clang<span class="w"> </span>git<span class="w"> </span>python3<span class="w"> </span>python3-venv<span class="w"> </span>python3-pip<span class="w"> </span>graphviz
 </code></pre></div>
-<p>A CPU that actually supports AVX2 and FMA (check with <code>grep avx2 /proc/cpuinfo</code> on Linux, or <code>sysctl -a | grep -i avx</code> on Intel Mac) is what Chapter 19's x86 path needs to genuinely compile <em>and run</em>; a NEON-capable ARM CPU (essentially every Apple Silicon Mac and modern ARM server, confirmed by compiling and running a real <code>&lt;arm_neon.h&gt;</code> program against <code>asimd</code> in <code>/proc/cpuinfo</code>) is what its ARM path needs for the same. <code>nvcc</code> needs a CUDA toolkit install (<code>apt-get install nvidia-cuda-toolkit</code> on Debian/Ubuntu, or the installer from developer.nvidia.com) -- compiling for a target architecture with <code>nvcc -arch=sm_XX</code> never requires a matching physical GPU to be present, only to <em>run</em> the result.</p>
-<div class="admonition note">
-<p class="admonition-title">Historical authoring context and current validation</p>
-<p>The two-machine description below records the original edition. The November 20 audit also uses a physical A100 instance. Current host, GPU and framework results are listed on <a href="../validation-status/">Validation Status</a>; old no-device transcripts remain historical diagnostics.</p>
-</div>
-<h2 id="the-honesty-discipline-this-book-follows">The honesty discipline this book follows<a class="headerlink" href="#the-honesty-discipline-this-book-follows" title="Permanent link">&para;</a></h2>
+<p>On macOS, install Apple's command-line tools and complete their installer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>xcode-select<span class="w"> </span>--install
+</code></pre></div>
+<p>Use an installed Python 3 interpreter (for example from python.org). Apple <code>g++</code> is normally a Clang frontend; check <code>clang++ --version</code>. Both compiler families can build the host lessons. On Linux, <code>lscpu</code> reports CPU features; the x86 SIMD lessons need both <code>avx2</code> and <code>fma</code>, not just an x86 architecture label. Apple Silicon uses the ARM path.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch.git
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>cuda_hammer_compiler_from_scratch
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements-docs.txt
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>python<span class="w"> </span>-m<span class="w"> </span>mkdocs<span class="w"> </span>build<span class="w"> </span>--strict
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>python<span class="w"> </span>tools/verify_book.py<span class="w"> </span>--site<span class="w"> </span>site
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>python<span class="w"> </span>tools/verify_site_links.py<span class="w"> </span>--site<span class="w"> </span>site
+</code></pre></div>
+<p>Use <code>python -m pip</code> and <code>python -m mkdocs</code> from the same environment. Website packages are distinct from the optional numerical frameworks. To preview, run <code>python -m mkdocs serve</code> and open the local address it prints.</p>
+<h2 id="3-compile-your-first-host-lesson">3 — Compile your first host lesson<a class="headerlink" href="#3-compile-your-first-host-lesson" title="Permanent link">&para;</a></h2>
+<p>From the repository root:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>clang++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>docs/part0/code/001_eager_vs_fused_memory_traffic.cpp<span class="w"> </span>-o<span class="w"> </span>/tmp/hammer-first
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>/tmp/hammer-first
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>python<span class="w"> </span>tools/validate_host.py<span class="w"> </span>--jobs<span class="w"> </span><span class="m">3</span><span class="w"> </span>--log-dir<span class="w"> </span>/tmp/hammer-host-check
+</code></pre></div>
+<p>Compare the lesson's calculated array traffic with its displayed explanation. A compiler error stops this step; do not continue to later backends until this works. JIT lessons also execute <code>g++</code> at runtime, so that command must be on <code>PATH</code> even if their driver was built with Clang. On Linux their compile recipes additionally link <code>-ldl</code>; the host runner supplies that flag automatically.</p>
+<h2 id="4-install-the-nvidia-driver-and-cuda-toolkit-on-linux">4 — Install the NVIDIA driver and CUDA toolkit on Linux<a class="headerlink" href="#4-install-the-nvidia-driver-and-cuda-toolkit-on-linux" title="Permanent link">&para;</a></h2>
+<p>This concrete recipe targets <strong>Ubuntu 22.04/24.04, x86_64</strong> and the book's <strong>CUDA 12.8</strong> baseline. Other architectures/distributions need their own packages. First run <code>nvidia-smi</code> and <code>nvcc --version</code>: a provisioned GPU image may already contain both. Keep a working provider driver. <code>nvidia-smi</code>'s CUDA version describes driver capability; it does not establish that <code>nvcc</code> is installed.</p>
+<p>For a fresh supported Ubuntu machine, enable NVIDIA's repository:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>.<span class="w"> </span>/etc/os-release
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">case</span><span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION_ID</span><span class="s2">"</span><span class="w"> </span><span class="k">in</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="m">22</span>.04<span class="o">)</span><span class="w"> </span><span class="nv">hammer_distro</span><span class="o">=</span>ubuntu2204<span class="w"> </span><span class="p">;;</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="m">24</span>.04<span class="o">)</span><span class="w"> </span><span class="nv">hammer_distro</span><span class="o">=</span>ubuntu2404<span class="w"> </span><span class="p">;;</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span>*<span class="o">)</span><span class="w"> </span><span class="nb">echo</span><span class="w"> </span><span class="s1">'Use the NVIDIA guide for this Ubuntu version'</span><span class="p">;</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="p">;;</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">esac</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="nb">test</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>uname<span class="w"> </span>-m<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>x86_64<span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>wget<span class="w"> </span>ca-certificates
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>wget<span class="w"> </span><span class="s2">"https://developer.download.nvidia.com/compute/cuda/repos/</span><span class="si">${</span><span class="nv">hammer_distro</span><span class="si">}</span><span class="s2">/x86_64/cuda-keyring_1.1-1_all.deb"</span><span class="w"> </span>-O<span class="w"> </span>/tmp/hammer-cuda-keyring.deb
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>sudo<span class="w"> </span>dpkg<span class="w"> </span>-i<span class="w"> </span>/tmp/hammer-cuda-keyring.deb
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+</code></pre></div>
+<p><strong>Only if a driver is missing</strong>, install the supported driver for the GPU. For the A100/H100/B200 families, NVIDIA's open-module driver packages support these architectures; older GPUs require a different choice. The following driver installation needs matching kernel headers and a reboot. Complete Secure Boot module enrollment if prompted; on a managed image use its provider's driver procedure.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>linux-headers-<span class="s2">"</span><span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span><span class="s2">"</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nvidia-open
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>sudo<span class="w"> </span>reboot
+</code></pre></div>
+<p>Reconnect and confirm <code>nvidia-smi</code> works before installing the toolkit:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>cuda-toolkit-12-8
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/usr/local/cuda-12.8/bin:<span class="s2">"</span><span class="nv">$PATH</span><span class="s2">"</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/usr/local/cuda-12.8/lib64<span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="p">:+:</span><span class="nv">$LD_LIBRARY_PATH</span><span class="si">}</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>nvcc<span class="w"> </span>--version
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>compute-sanitizer<span class="w"> </span>--version
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>nvidia-smi
+</code></pre></div>
+<p>Save the two exports in your shell startup file for later sessions. The versioned toolkit package does not replace the driver. CUDA 12.8 GA lists Linux driver 570.26 or newer as its corresponding driver baseline; the recorded A100 used 580.105.08. This setup does not rely on older-driver minor-version compatibility. A PyTorch CUDA wheel alone does not supply the standalone <code>nvcc</code> toolchain required by the book's generators.</p>
+<p>Sources, checked November 20, 2026: <a href="https://docs.nvidia.com/cuda/archive/12.8.0/cuda-installation-guide-linux/">CUDA 12.8 installation</a>, <a href="https://docs.nvidia.com/datacenter/tesla/driver-installation-guide/latest/ubuntu.html">Ubuntu driver installation</a>, <a href="https://docs.nvidia.com/cuda/archive/12.8.0/cuda-toolkit-release-notes/index.html">CUDA 12.8 driver table</a>, <a href="https://docs.nvidia.com/cuda/archive/10.2/cuda-toolkit-release-notes/index.html">macOS CUDA support boundary</a>.</p>
+<h2 id="5-select-the-gpu-target-and-run-the-generated-programs">5 — Select the GPU target and run the generated programs<a class="headerlink" href="#5-select-the-gpu-target-and-run-the-generated-programs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>GPU</th>
+<th>Architecture argument</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A100</td>
+<td><code>sm_80</code></td>
+</tr>
+<tr>
+<td>A10</td>
+<td><code>sm_86</code></td>
+</tr>
+<tr>
+<td>H100/H200</td>
+<td><code>sm_90</code></td>
+</tr>
+<tr>
+<td>B200</td>
+<td><code>sm_100</code> (CUDA 12.8 or newer)</td>
+</tr>
+</tbody>
+</table>
+<p>These are architecture selections, not claims that this revision was executed on every device. See <a href="../validation-status/">Validation Status</a> for actual evidence. The CUDA drivers generate and compile their own child programs; compiling only the driver is insufficient.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>tools/validate_gpu.py<span class="w"> </span>--arch<span class="w"> </span>sm_80<span class="w"> </span>--sanitize<span class="w"> </span>--log-dir<span class="w"> </span>/tmp/hammer-gpu-check
+</code></pre></div>
+<p>Use a <strong>new empty output directory</strong> for each run. The three drivers use fixed <code>/tmp/hammer_ch18_*</code> child paths, so run one GPU validation process at a time on a host. No-device/skipped executions and missing sanitizers are failures of this acceptance run, not device passes. Compiling CUDA for a supported target does not require that target GPU; executing the result does.</p>
+<h2 id="6-add-optional-case-study-dependencies-separately">6 — Add optional case-study dependencies separately<a class="headerlink" href="#6-add-optional-case-study-dependencies-separately" title="Permanent link">&para;</a></h2>
+<p>The compiler itself does not depend on PyTorch, JAX, TVM, Triton, LLVM or CUTLASS. Install only the dependencies for the chapter you are studying, in a separate environment. The earlier Linux/A100 record used Python 3.12.3, NumPy 1.26.4, PyTorch 2.7.0, Triton 3.3.0 and JAX 0.6.0. TVM was not installed in that validation. Those recorded versions are not a claim that every historical framework transcript uses that same API.</p>
+<p>For the local NumPy-based acceptance/calibration regressions:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">numpy</span><span class="o">==</span><span class="m">1</span>.26.4
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>python<span class="w"> </span>tests/cases_regressions.py
+</code></pre></div>
+<p>For actual framework execution, follow the chapter's explicit version and the project's installation guide: <a href="https://pytorch.org/get-started/locally/">PyTorch</a>, <a href="https://docs.jax.dev/en/latest/installation.html">JAX</a>, <a href="https://triton-lang.org/main/getting-started/installation.html">Triton</a>, <a href="https://tvm.apache.org/docs/install/index.html">TVM</a>. TVM examples using <code>s_tir</code> require that namespace; a wheel exposing only older <code>tir</code> APIs is not interchangeable. Do not infer execution of these stacks from passing the NumPy/AST adapter tests.</p>
+<p>After installing compatible GPU framework packages, the additional numerical checks are:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>python<span class="w"> </span>validation/accuracy-fixes/gpu_case_validation.py
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>compute-sanitizer<span class="w"> </span>--tool<span class="w"> </span>memcheck<span class="w"> </span>--error-exitcode<span class="w"> </span><span class="m">99</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>python<span class="w"> </span>validation/accuracy-fixes/gpu_case_validation.py
+</code></pre></div>
+<h2 id="7-troubleshoot-the-first-failing-step">7 — Troubleshoot the first failing step<a class="headerlink" href="#7-troubleshoot-the-first-failing-step" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Check before proceeding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>g++</code>/<code>clang++</code> missing</td>
+<td>Install host tools; JIT subprocesses require <code>g++</code> on <code>PATH</code>.</td>
+</tr>
+<tr>
+<td><code>Illegal instruction</code></td>
+<td>Check AVX2 <strong>and</strong> FMA availability; a compiler accepting intrinsics does not prove CPU support.</td>
+</tr>
+<tr>
+<td><code>nvidia-smi</code> fails</td>
+<td>Driver/kernel/module or GPU access is unresolved; installing Python libraries will not repair it.</td>
+</tr>
+<tr>
+<td><code>nvcc</code> missing</td>
+<td>Install/select the toolkit and restore its <code>bin</code> directory on <code>PATH</code>.</td>
+</tr>
+<tr>
+<td>Unsupported GPU architecture</td>
+<td>Select the actual target and a toolkit that supports it; <code>sm_100</code> requires CUDA 12.8+.</td>
+</tr>
+<tr>
+<td>Shared CUDA library missing</td>
+<td>Check the selected toolkit's <code>lib64</code> and dynamic-loader configuration.</td>
+</tr>
+<tr>
+<td>Sanitizer missing or denied</td>
+<td>Check <code>compute-sanitizer --version</code> and GPU access; do not classify an unexecuted diagnostic as clean.</td>
+</tr>
+<tr>
+<td>Framework import/API failure</td>
+<td>Check that environment's versions against the chapter, rather than mixing installations.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="historical-authoring-context">Historical authoring context<a class="headerlink" href="#historical-authoring-context" title="Permanent link">&para;</a></h2>
+<p>The original cloud/device transcripts below predate the later A100 baseline. They explain the provenance of the historical outputs, not the current state of every example. The latest CUDA-generator corrections still need a fresh device run; the current host sanitizer checks do not replace it.</p>
+<h2 id="the-original-editions-validation-discipline">The original edition’s validation discipline<a class="headerlink" href="#the-original-editions-validation-discipline" title="Permanent link">&para;</a></h2>
 <p>This book's own two authoring machines are, between them, real and different: a cloud sandbox (x86_64, real AVX2/AVX512F/FMA, real <code>g++</code>, real <code>clang++</code>, and a real, complete <code>nvcc</code> toolchain) and a connected device (aarch64, real NEON, real <code>g++</code>, <strong>no</strong> <code>nvcc</code>, <strong>no</strong> physical GPU on either machine). That split is treated as a feature, not a limitation to route around -- it means CUDA Hammer's CPU backend gets to be genuinely, fully honest in a way its GPU backend structurally cannot:</p>
 <ul>
 <li><strong>CUDA Hammer's IR, its pass manager, and its host-side interpreter</strong> (no vector intrinsics, no CUDA) are plain C++. They are genuinely compiled and genuinely run wherever they're touched, with exact output locked into the page and re-verified by a fresh recompile-and-rerun before publication.</li>

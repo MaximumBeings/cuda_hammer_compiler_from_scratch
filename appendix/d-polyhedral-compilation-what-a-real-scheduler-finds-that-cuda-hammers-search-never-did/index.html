@@ -2241,20 +2241,20 @@ by a real heuristic cost function -- with zero real-hardware
 measurement, the opposite of Chapter 23's own discipline.</p>
 <h2 id="appendix-ds-own-shape">Appendix D's own shape<a class="headerlink" href="#appendix-ds-own-shape" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix D&#39;s own shape, section by section                       |
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix D's own shape, section by section                       |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  D.1  A Genuine SCoP -- Chapter 33.2&#39;s stencil update rule,        |
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  D.1  A Genuine SCoP -- Chapter 33.2's stencil update rule,        |
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>|       written as an ACTUAL nested loop instead of a host-unrolled  |
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>|       chain: a real static control part (SCoP), detected and       |
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>|       dependence-analyzed by Polly directly.                       |
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>|                                                                    |
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>|  D.2  What Polly&#39;s Own Scheduler Finds, With Zero Measurement --   |
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>|  D.2  What Polly's Own Scheduler Finds, With Zero Measurement --   |
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>|       a real automatic tiling AND loop-skewing transformation,     |
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|       picked by isl&#39;s own cost heuristic; real codegen, compiled,  |
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>|       picked by isl's own cost heuristic; real codegen, compiled,  |
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>|       and run, confirmed to still produce the exact same real      |
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>|       numbers as the untransformed program.                        |
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>|                                                                    |
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>|  D.3  Capstone: What&#39;s Actually Safe to Parallelize -- Polly&#39;s     |
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>|  D.3  Capstone: What's Actually Safe to Parallelize -- Polly's     |
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>|       real dependence-based reasoning about two different SCoPs,   |
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>|       reaching two different, correct real answers, backed by a    |
 <a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>|       real runtime non-aliasing check where the compiler cannot    |
@@ -2283,20 +2283,20 @@ subscript an affine function of the surrounding indices <code>t</code> and <code
 exactly the shape a polyhedral compiler needs. <code>stencil()</code> is kept
 separate from <code>main()</code> so Polly's own function-scoped analysis below
 stays focused on the one function that matters.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="cm">/* Appendix D -- the real loop CUDA Hammer&#39;s own IR has never been able</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="cm"> * to express. Chapter 33.2&#39;s own honest boundary named this directly:</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="cm"> * &quot;CUDA Hammer&#39;s IR has never had a loop/control-flow construct...</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="cm">/* Appendix D -- the real loop CUDA Hammer's own IR has never been able</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="cm"> * to express. Chapter 33.2's own honest boundary named this directly:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="cm"> * "CUDA Hammer's IR has never had a loop/control-flow construct...</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="cm"> * unrolls a FIXED, compile-time-known step count directly into the</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="cm"> * host driver.&quot; This file writes that same update rule --</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="cm"> * host driver." This file writes that same update rule --</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="cm"> *</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="cm"> *   w[t+1][i] = r*w[t][i-1] + (1-2r)*w[t][i] + r*w[t][i+1]</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="cm"> *</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="cm"> * -- with r=0.25 (Chapter 33&#39;s own real stability condition and</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="cm"> * -- with r=0.25 (Chapter 33's own real stability condition and</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="cm"> * formula) -- as an ACTUAL nested for-loop, not a host-unrolled chain.</span>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="cm"> * `stencil()` is a real static control part (SCoP): every loop bound</span>
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="cm"> * and every array subscript is an affine function of the surrounding</span>
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="cm"> * loop indices, exactly what a polyhedral compiler like Polly (part of</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="cm"> * this book&#39;s own LLVM 18.1.3 toolchain since Appendix C) analyzes and</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="cm"> * this book's own LLVM 18.1.3 toolchain since Appendix C) analyzes and</span>
 <a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="cm"> * transforms directly.</span>
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="cm"> */</span>
 <a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdio.h&gt;</span>
@@ -2322,8 +2322,8 @@ stays focused on the one function that matters.</p>
 <a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a>
 <a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">    </span><span class="n">stencil</span><span class="p">(</span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="mf">0.25</span><span class="p">);</span>
 <a id="__codelineno-1-39" name="__codelineno-1-39" href="#__codelineno-1-39"></a>
-<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;%.4f &quot;</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">[</span><span class="n">STEPS</span><span class="p">][</span><span class="n">i</span><span class="p">]);</span>
-<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a id="__codelineno-1-40" name="__codelineno-1-40" href="#__codelineno-1-40"></a><span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">N</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="n">printf</span><span class="p">(</span><span class="s">"%.4f "</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">[</span><span class="n">STEPS</span><span class="p">][</span><span class="n">i</span><span class="p">]);</span>
+<a id="__codelineno-1-41" name="__codelineno-1-41" href="#__codelineno-1-41"></a><span class="w">    </span><span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
 <a id="__codelineno-1-42" name="__codelineno-1-42" href="#__codelineno-1-42"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-1-43" name="__codelineno-1-43" href="#__codelineno-1-43"></a><span class="p">}</span>
 </code></pre></div>
@@ -2335,9 +2335,9 @@ stays focused on the one function that matters.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>opt<span class="w"> </span>-polly-only-func<span class="o">=</span>stencil<span class="w"> </span>-polly-print-detect<span class="w"> </span>-disable-output<span class="w"> </span>stencil_canon.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Printing analysis &#39;Polly - Detect static control parts (SCoPs)&#39; for function &#39;stencil&#39;:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Printing analysis 'Polly - Detect static control parts (SCoPs)' for function 'stencil':
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Printing analysis &#39;Polly - Detect static control parts (SCoPs)&#39; for function &#39;main&#39;:
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Printing analysis 'Polly - Detect static control parts (SCoPs)' for function 'main':
 </code></pre></div>
 <p>Nothing detected -- not even reported as an invalid candidate. This
 loop nest is small enough (3 timesteps, 8 interior points) that Polly's
@@ -2350,10 +2350,10 @@ kind of inspection) finds it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>opt<span class="w"> </span>-polly-process-unprofitable<span class="w"> </span>-polly-only-func<span class="o">=</span>stencil<span class="w"> </span>-polly-print-detect<span class="w"> </span>-disable-output<span class="w"> </span>stencil_canon.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Printing analysis &#39;Polly - Detect static control parts (SCoPs)&#39; for function &#39;stencil&#39;:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Printing analysis 'Polly - Detect static control parts (SCoPs)' for function 'stencil':
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>Valid Region for Scop: .preheader =&gt; %35
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>Printing analysis &#39;Polly - Detect static control parts (SCoPs)&#39; for function &#39;main&#39;:
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>Printing analysis 'Polly - Detect static control parts (SCoPs)' for function 'main':
 </code></pre></div>
 <p>A real, valid SCoP, <code>.preheader =&gt; %35</code>. With the region confirmed,
 Polly's own real dependence analysis computes every genuine
@@ -2365,7 +2365,7 @@ stated range") -- not asserted, not estimated, computed:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>opt<span class="w"> </span>-polly-process-unprofitable<span class="w"> </span>-polly-only-func<span class="o">=</span>stencil<span class="w"> </span>-polly-print-dependences<span class="w"> </span>-disable-output<span class="w"> </span>stencil_canon.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Printing analysis &#39;Polly - Calculate dependences&#39; for region: &#39;.preheader =&gt; %35&#39; in function &#39;stencil&#39;:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Printing analysis 'Polly - Calculate dependences' for region: '.preheader =&gt; %35' in function 'stencil':
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    RAW dependences:
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>        { Stmt2[i0] -&gt; Stmt1[1 + i0, 0] : 0 &lt;= i0 &lt;= 1; Stmt2[i0] -&gt; Stmt2[1 + i0] : 0 &lt;= i0 &lt;= 1; Stmt2b[i0] -&gt; Stmt2b[1 + i0] : 0 &lt;= i0 &lt;= 1; Stmt2b[i0] -&gt; Stmt1[1 + i0, 7] : 0 &lt;= i0 &lt;= 1; Stmt1[i0, i1] -&gt; Stmt1[1 + i0, o1] : 0 &lt;= i0 &lt;= 1 and 0 &lt;= i1 &lt;= 7 and o1 &gt;= -1 + i1 and 0 &lt;= o1 &lt;= 7 and o1 &lt;= 1 + i1 }
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    WAR dependences:
@@ -2402,29 +2402,29 @@ File 101's own <code>stencil()</code>, unchanged, is the input:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>opt<span class="w"> </span>-polly-process-unprofitable<span class="w"> </span>-polly-only-func<span class="o">=</span>stencil<span class="w"> </span>-polly-opt-isl<span class="w"> </span>-polly-print-opt-isl<span class="w"> </span>-disable-output<span class="w"> </span>stencil_canon.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Printing analysis &#39;Polly - Optimize schedule of SCoP&#39; for region: &#39;.preheader =&gt; %35&#39; in function &#39;stencil&#39;:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Printing analysis 'Polly - Optimize schedule of SCoP' for region: '.preheader =&gt; %35' in function 'stencil':
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>Calculated schedule:
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>domain: &quot;{ Stmt2b[i0] : 0 &lt;= i0 &lt;= 2; Stmt2[i0] : 0 &lt;= i0 &lt;= 2; Stmt1[i0, i1] : 0 &lt;= i0 &lt;= 2 and 0 &lt;= i1 &lt;= 7 }&quot;
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>domain: "{ Stmt2b[i0] : 0 &lt;= i0 &lt;= 2; Stmt2[i0] : 0 &lt;= i0 &lt;= 2; Stmt1[i0, i1] : 0 &lt;= i0 &lt;= 2 and 0 &lt;= i1 &lt;= 7 }"
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>child:
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  sequence:
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  - filter: &quot;{ Stmt2[i0] }&quot;
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>  - filter: "{ Stmt2[i0] }"
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    child:
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>      schedule: &quot;[{ Stmt2[i0] -&gt; [(i0)] }]&quot;
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>      schedule: "[{ Stmt2[i0] -&gt; [(i0)] }]"
 <a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>      permutable: 1
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>  - filter: &quot;{ Stmt2b[i0] }&quot;
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>  - filter: "{ Stmt2b[i0] }"
 <a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>    child:
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>      schedule: &quot;[{ Stmt2b[i0] -&gt; [(i0)] }]&quot;
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>      schedule: "[{ Stmt2b[i0] -&gt; [(i0)] }]"
 <a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>      permutable: 1
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  - filter: &quot;{ Stmt1[i0, i1] }&quot;
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>  - filter: "{ Stmt1[i0, i1] }"
 <a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>    child:
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>      mark: &quot;1st level tiling - Tiles&quot;
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>      mark: "1st level tiling - Tiles"
 <a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>      child:
-<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>        schedule: &quot;[{ Stmt1[i0, i1] -&gt; [(floor((i0)/32))] }, { Stmt1[i0, i1] -&gt; [(floor((i0 + i1)/32))] }]&quot;
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>        schedule: "[{ Stmt1[i0, i1] -&gt; [(floor((i0)/32))] }, { Stmt1[i0, i1] -&gt; [(floor((i0 + i1)/32))] }]"
 <a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>        permutable: 1
 <a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>        child:
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>          mark: &quot;1st level tiling - Points&quot;
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>          mark: "1st level tiling - Points"
 <a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>          child:
-<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>            schedule: &quot;[{ Stmt1[i0, i1] -&gt; [((i0) mod 32)] }, { Stmt1[i0, i1] -&gt; [((i0 + i1) mod 32)] }]&quot;
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>            schedule: "[{ Stmt1[i0, i1] -&gt; [((i0) mod 32)] }, { Stmt1[i0, i1] -&gt; [((i0 + i1) mod 32)] }]"
 <a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>            permutable: 1
 </code></pre></div>
 <p>Two real, substantive decisions are visible directly in this real isl
@@ -2443,8 +2443,8 @@ own stencil actually uses (3 timesteps, 8 interior points):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>opt<span class="w"> </span>-polly-process-unprofitable<span class="w"> </span>-polly-only-func<span class="o">=</span>stencil<span class="w"> </span>-polly-opt-isl<span class="w"> </span>-polly-ast<span class="w"> </span>-polly-print-ast<span class="w"> </span>-disable-output<span class="w"> </span>stencil_canon.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Printing analysis &#39;Polly - Generate an AST from the SCoP (isl)&#39; for region: &#39;.preheader =&gt; %35&#39; in function &#39;stencil&#39;:
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>Printing analysis &#39;Polly - Generate an AST of the SCoP (isl)&#39;.preheader =&gt; %35&#39; in function &#39;stencil&#39;:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Printing analysis 'Polly - Generate an AST from the SCoP (isl)' for region: '.preheader =&gt; %35' in function 'stencil':
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>Printing analysis 'Polly - Generate an AST of the SCoP (isl)'.preheader =&gt; %35' in function 'stencil':
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>:: isl ast :: stencil :: %.preheader---%35
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>if (1)
@@ -2522,10 +2522,10 @@ directly with File 101's stencil: every iteration of this loop touches
 completely independent array elements, with no loop-carried dependence
 at all.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="cm">/* Appendix D.3 -- a second, independent real SCoP, chosen to contrast</span>
-<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="cm"> * directly with File 101&#39;s stencil: every iteration of this loop reads</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="cm"> * directly with File 101's stencil: every iteration of this loop reads</span>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="cm"> * and writes completely independent elements, with no loop-carried</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="cm"> * dependence at all. Used to show what Polly&#39;s real dependence analysis</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="cm"> * concludes is SAFE to parallelize, laid next to File 101&#39;s stencil</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="cm"> * dependence at all. Used to show what Polly's real dependence analysis</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="cm"> * concludes is SAFE to parallelize, laid next to File 101's stencil</span>
 <a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="cm"> * (reused unchanged), where the same real analysis correctly finds the</span>
 <a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="cm"> * opposite answer for the outer, time-carried loop.</span>
 <a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="cm"> */</span>
@@ -2544,8 +2544,8 @@ at all.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>opt<span class="w"> </span>-polly-process-unprofitable<span class="w"> </span>-polly-parallel<span class="w"> </span>-polly-ast<span class="w"> </span>-polly-ast-print-accesses<span class="w"> </span>-polly-print-ast<span class="w"> </span>-disable-output<span class="w"> </span>axpy_canon.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>Printing analysis &#39;Polly - Generate an AST from the SCoP (isl)&#39; for region: &#39;%4 =&gt; %13&#39; in function &#39;axpy&#39;:
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>Printing analysis &#39;Polly - Generate an AST of the SCoP (isl)&#39;%4 =&gt; %13&#39; in function &#39;axpy&#39;:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>Printing analysis 'Polly - Generate an AST from the SCoP (isl)' for region: '%4 =&gt; %13' in function 'axpy':
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>Printing analysis 'Polly - Generate an AST of the SCoP (isl)'%4 =&gt; %13' in function 'axpy':
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>:: isl ast :: axpy :: %4---%13
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
 <a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>if (1 &amp;&amp; (&amp;MemRef1[100] &lt;= &amp;MemRef0[0] || &amp;MemRef0[100] &lt;= &amp;MemRef1[0]))
@@ -2585,8 +2585,8 @@ question asked of it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>opt<span class="w"> </span>-polly-process-unprofitable<span class="w"> </span>-polly-only-func<span class="o">=</span>stencil<span class="w"> </span>-polly-parallel<span class="w"> </span>-polly-ast<span class="w"> </span>-polly-print-ast<span class="w"> </span>-disable-output<span class="w"> </span>stencil_canon.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>Printing analysis &#39;Polly - Generate an AST from the SCoP (isl)&#39; for region: &#39;.preheader =&gt; %35&#39; in function &#39;stencil&#39;:
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>Printing analysis &#39;Polly - Generate an AST of the SCoP (isl)&#39;.preheader =&gt; %35&#39; in function &#39;stencil&#39;:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>Printing analysis 'Polly - Generate an AST from the SCoP (isl)' for region: '.preheader =&gt; %35' in function 'stencil':
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>Printing analysis 'Polly - Generate an AST of the SCoP (isl)'.preheader =&gt; %35' in function 'stencil':
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>:: isl ast :: stencil :: %.preheader---%35
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
 <a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>if (1)

@@ -380,6 +380,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#november-20-follow-up-publication-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        November 20 follow-up publication audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#current-local-correction-pass-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2116,6 +2127,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#november-20-follow-up-publication-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        November 20 follow-up publication audit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#current-local-correction-pass-checks" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2170,6 +2192,10 @@
 
 <h1 id="validation-status">Validation Status<a class="headerlink" href="#validation-status" title="Permanent link">&para;</a></h1>
 <p>The November 20, 2026 independent re-audit found 12 further defects after the first publication, including a constant-folding heap overflow and incorrect generated constants. All 12 have been corrected. <a href="https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/blob/main/SECOND_PASS_CORRECTIONS.md">The second-pass correction record</a> links implementation changes, actual results and remaining limits. Passing ordinary exit-code checks was insufficient; current checks include sanitizer and deliberate-failure regressions.</p>
+<h2 id="november-20-follow-up-publication-audit">November 20 follow-up publication audit<a class="headerlink" href="#november-20-follow-up-publication-audit" title="Permanent link">&para;</a></h2>
+<p>A fresh follow-up reran all <strong>78 host lessons with sanitizers</strong>, 21 foundations regressions, 15 local case-study acceptance/calibration checks, all 12 application safety drivers, and five C++ code-generation/JIT/numerical regression programs. All passed on native macOS. The built-site checker additionally checks relative HTML links, assets, anchor targets and duplicate IDs across all 44 generated HTML pages (43 content pages plus the 404 page).</p>
+<p>The follow-up repaired incomplete fresh-machine setup instructions, removed stray editing instructions, supplied the missing <code>c</code> input in three shared-value diagrams, and added soft wrapping for syntax-highlighted code. GPU-runner regressions now reject overwriting existing evidence and prevent sanitizer checks against stale child executables after driver failure. Those regression tests simulate process outcomes; they are not fresh device tests. A Linux/macOS workflow now gates publication on host and publication checks.</p>
+<p>The <a href="https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/blob/main/FINAL_REVIEW_2026-11-20.md">follow-up record</a> and <a href="https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch/tree/main/validation/final-followup-2026-11-20">captured evidence</a> preserve the scope. No GPU instance was used or provisioned for this follow-up. The changed CUDA generators still need the fresh device rerun described below.</p>
 <h2 id="current-local-correction-pass-checks">Current local correction-pass checks<a class="headerlink" href="#current-local-correction-pass-checks" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>78/78 standalone host C++ drivers pass</strong> native macOS/Apple Clang builds with AddressSanitizer, UndefinedBehaviorSanitizer and float-cast-overflow instrumentation. Generated child programs are exercised but are not automatically sanitizer-instrumented by that driver sweep.</li>
