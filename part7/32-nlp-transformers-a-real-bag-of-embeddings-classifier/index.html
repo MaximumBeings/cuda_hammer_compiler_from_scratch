@@ -2228,7 +2228,7 @@ set could not express on its own. Chapter 32 moves to a second domain,
 NLP, and finds a DIFFERENT gap in the same op set, worked around with a
 different real technique.</p>
 <h2 id="chapter-32s-own-shape">Chapter 32's own shape<a class="headerlink" href="#chapter-32s-own-shape" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 32's own shape, section by section                      |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  32.1  Per-token mean-centering -- a real LayerNorm building      |
@@ -2280,7 +2280,7 @@ this section does not: instead it runs Chapter 30/31's own two-pass
 "measure with <code>Sum</code>, then bake the result into a fresh graph as a
 <code>Const</code>" calibration pattern ONCE PER TOKEN, in a plain host-side C++
 loop -- four small, independent CUDA Hammer graphs, not one big one:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>+----------------------------+     +-----------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>+----------------------------+     +-----------------------------+
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>|  ONE CALL PER TOKEN t       |     |  repeated for t = 0, 1, 2, 3 |
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>|                              |     |  (4 independent, small,      |
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>|  PASS 1: token[t] -&gt; Sum     |     |   real CUDA Hammer graphs -- |
@@ -2307,7 +2307,7 @@ token is a constant vector (every feature identical -- centering, and a
 real variance, must send it to exactly zero), and one token is already
 exactly zero-mean (centering must be a genuine no-op, not a coincidence
 of rounding).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 32: NLP/Transformers -- A Real Bag-of-Embeddings Classifier</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 32: NLP/Transformers -- A Real Bag-of-Embeddings Classifier</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 084_per_token_mean_centering_a_real_layernorm_building_block.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 32.1 -- Part 7's own promise (no new OpKind, no new pass, no</span>
@@ -2615,11 +2615,11 @@ of rounding).</p>
 <a id="__codelineno-2-306" name="__codelineno-2-306" href="#__codelineno-2-306"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-2-307" name="__codelineno-2-307" href="#__codelineno-2-307"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>084_per_token_mean_centering_a_real_layernorm_building_block.cpp<span class="w"> </span>-o<span class="w"> </span>084_per_token_mean_centering_a_real_layernorm_building_block_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>084_per_token_mean_centering_a_real_layernorm_building_block.cpp<span class="w"> </span>-o<span class="w"> </span>084_per_token_mean_centering_a_real_layernorm_building_block_driver
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./084_per_token_mean_centering_a_real_layernorm_building_block_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Chapter 32 (Part 7): Section 32.1 -- per-token mean-centering, a real LayerNorm building block ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Chapter 32 (Part 7): Section 32.1 -- per-token mean-centering, a real LayerNorm building block ===
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>4 tokens, embedding dimension 8 -- token1 is a CONSTANT vector (an edge case: every
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>real variance computation must send it to exactly 0); token2 is already exactly zero-mean
@@ -2684,7 +2684,7 @@ TOKEN VECTORS are combined the identical way -- each multiplied by a
 uniform <code>1/4</code> <code>Const</code>, then folded together with an unrolled <code>Add</code>
 chain -- the same real technique, averaging over a different axis
 (tokens, not shifted pixels):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  4 centered token vectors           the bag-of-embeddings vector
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  4 centered token vectors           the bag-of-embeddings vector
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  (Section 32.1's own real output)
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>                                      token0 * 0.25  -+
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  token0[8]  token1[8]                token1 * 0.25   |
@@ -2704,7 +2704,7 @@ This section deliberately stops at raw logits -- a real softmax needs
 <code>exp</code> and division, neither of which this IR has ever had -- an honest
 scope boundary, not a hidden gap, stated the same way Chapter 31 stated
 its own.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 32: NLP/Transformers -- A Real Bag-of-Embeddings Classifier</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 32: NLP/Transformers -- A Real Bag-of-Embeddings Classifier</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1">// 085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1">//</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1">// Section 32.2 -- Section 32.1 closed with 4 real, independently</span>
@@ -3027,11 +3027,11 @@ its own.</p>
 <a id="__codelineno-6-321" name="__codelineno-6-321" href="#__codelineno-6-321"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-6-322" name="__codelineno-6-322" href="#__codelineno-6-322"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp<span class="w"> </span>-o<span class="w"> </span>085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier.cpp<span class="w"> </span>-o<span class="w"> </span>085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier_driver
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./085_bag_of_embeddings_averaging_and_a_small_unrolled_linear_classifier_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Chapter 32 (Part 7): Section 32.2 -- bag-of-embeddings averaging + a small unrolled linear classifier ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Chapter 32 (Part 7): Section 32.2 -- bag-of-embeddings averaging + a small unrolled linear classifier ===
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>--- Part 1: the bag-of-embeddings vector (real fastText-style sentence average) ---
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
@@ -3076,7 +3076,7 @@ real per-node vectorized-CPU dispatcher, compiled with this machine's
 own real AVX2/FMA or NEON flags and RUN, exactly Section 31.3's own
 capstone structure, now over a real (if tiny) NLP classifier instead of
 a vision pipeline:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  Section 32.1 (OUTSIDE the fused graph,     Section 32.2's graph
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  Section 32.1 (OUTSIDE the fused graph,     Section 32.2's graph
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  by real necessity -- Sum has no            (fed into Stage 1/2 below,
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  batched/per-row mode, so there is          UNCHANGED from File 085)
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  nothing for a whole-graph fusion
@@ -3111,7 +3111,7 @@ so there is nothing for a whole-graph fusion pass to do there. What
 Chapter 14/16's real pass CAN fuse -- and does -- is everything
 downstream of centering: the averaging chain and all three classifier
 branches.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 32: NLP/Transformers -- A Real Bag-of-Embeddings Classifier</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 32: NLP/Transformers -- A Real Bag-of-Embeddings Classifier</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1">// 086_the_whole_classifier_fused_and_vectorized_for_real.cpp</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1">//</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1">// Section 32.3 -- the capstone. Sections 32.1 and 32.2 each proved ONE</span>
@@ -3984,11 +3984,11 @@ branches.</p>
 <a id="__codelineno-10-871" name="__codelineno-10-871" href="#__codelineno-10-871"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-10-872" name="__codelineno-10-872" href="#__codelineno-10-872"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="o">[</span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>added<span class="w"> </span>automatically<span class="w"> </span>on<span class="w"> </span>x86_64<span class="o">]</span><span class="w"> </span>086_the_whole_classifier_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>086_the_whole_classifier_fused_and_vectorized_for_real_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="o">[</span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>added<span class="w"> </span>automatically<span class="w"> </span>on<span class="w"> </span>x86_64<span class="o">]</span><span class="w"> </span>086_the_whole_classifier_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>086_the_whole_classifier_fused_and_vectorized_for_real_driver
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./086_the_whole_classifier_fused_and_vectorized_for_real_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Chapter 32 (Part 7): Section 32.3 -- the whole classifier, fused and vectorized for real ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Chapter 32 (Part 7): Section 32.3 -- the whole classifier, fused and vectorized for real ===
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>--- Stage 0: rebuilding Section 32.2's own graph exactly ---
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>

@@ -2232,7 +2232,7 @@ needs no workaround at all, and one structural problem (Section 34.2)
 that this IR's own graph model already solves, without staging and
 without unrolling.</p>
 <h2 id="chapter-34s-own-shape">Chapter 34's own shape<a class="headerlink" href="#chapter-34s-own-shape" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 34's own shape, section by section                       |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  34.1  Terminal payoff via ReLU, a real exact fit -- a European   |
@@ -2293,7 +2293,7 @@ honest workaround, unchanged from Section 31.1's own pattern: <code>u</code>,
 <code>d</code>, and the risk-neutral probability are computed HOST-SIDE with
 plain <code>std::exp</code>/<code>std::sqrt</code>, then fed into the graph as real <code>Const</code>
 values:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  host-side (plain C++,           CUDA Hammer graph (real Const
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  host-side (plain C++,           CUDA Hammer graph (real Const
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  std::exp/std::sqrt):            values fed in, no exp/sqrt inside):
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  u   = exp(sigma*sqrt(dt))  --&gt;  Const(u)
@@ -2311,7 +2311,7 @@ values:</p>
 CUDA Hammer's graph) confirms the graph's own PUT and CALL payoffs
 exactly, at every terminal node. Section 34.2 continues with the
 harder part: the tree's own backward induction.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 090_terminal_payoff_via_relu_a_real_exact_fit.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 34.1 -- Part 7's fourth and final domain, and the first</span>
@@ -2629,11 +2629,11 @@ harder part: the tree's own backward induction.</p>
 <a id="__codelineno-2-316" name="__codelineno-2-316" href="#__codelineno-2-316"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-2-317" name="__codelineno-2-317" href="#__codelineno-2-317"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>090_terminal_payoff_via_relu_a_real_exact_fit.cpp<span class="w"> </span>-o<span class="w"> </span>090_terminal_payoff_via_relu_a_real_exact_fit_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>090_terminal_payoff_via_relu_a_real_exact_fit.cpp<span class="w"> </span>-o<span class="w"> </span>090_terminal_payoff_via_relu_a_real_exact_fit_driver
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./090_terminal_payoff_via_relu_a_real_exact_fit_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Chapter 34 (Part 7): Section 34.1 -- terminal payoff via ReLU, a real exact fit ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Chapter 34 (Part 7): Section 34.1 -- terminal payoff via ReLU, a real exact fit ===
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>real CRR (Cox, Ross, Rubinstein 1979) tree parameters, quoted verbatim (AnalystPrep FRM
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>study notes):
@@ -2696,7 +2696,7 @@ re-evaluation. Section 33.2's host orchestration is its chosen array-level
 implementation, not a mathematical requirement of regular stencil topology.
 Both approaches unroll a fixed amount of work; neither adds general runtime
 control flow to this IR.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  Section 33.2's chosen array-level implementation (host orchestration):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  Section 33.2's chosen array-level implementation (host orchestration):
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    graph#1 -&gt; real output -&gt; host re-shifts -&gt; graph#2 -&gt; ... -&gt; graph#5
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  Section 34.2's chosen scalar-node implementation (one graph):
@@ -2729,7 +2729,7 @@ a binomial tree of depth N is already exactly the shape CUDA Hammer's
 own graph model was built for since Chapter 4: a fixed, finite,
 completely statically-known DAG. Section 34.3 extends this SAME static
 graph to a harder real problem: American-style early exercise.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1">// 091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1">//</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1">// Section 34.2: statically expanded scalar backward induction for a CRR put.</span>
@@ -3050,11 +3050,11 @@ graph to a harder real problem: American-style early exercise.</p>
 <a id="__codelineno-6-319" name="__codelineno-6-319" href="#__codelineno-6-319"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-6-320" name="__codelineno-6-320" href="#__codelineno-6-320"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp<span class="w"> </span>-o<span class="w"> </span>091_the_whole_binomial_tree_as_one_static_graph_european_put_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>091_the_whole_binomial_tree_as_one_static_graph_european_put.cpp<span class="w"> </span>-o<span class="w"> </span>091_the_whole_binomial_tree_as_one_static_graph_european_put_driver
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./091_the_whole_binomial_tree_as_one_static_graph_european_put_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Chapter 34 (Part 7): Section 34.2 -- the whole binomial tree as ONE static graph (European put) ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Chapter 34 (Part 7): Section 34.2 -- the whole binomial tree as ONE static graph (European put) ===
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Both the fixed-grid stencil and CRR lattice have statically known connectivity.
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>Sections 31/33 chose array-valued nodes and host-side shifts; this section expands
@@ -3109,7 +3109,7 @@ the terminal ones). CUDA Hammer's IR has no <code>max</code> op and Part 7's own
 promise rules out adding one -- but it does not need one. A second
 real math identity, <code>max(a, b) = b + ReLU(a - b)</code>, is exactly what
 this IR's own <code>ReLU</code> already expresses:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  at every interior node (i, j):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  at every interior node (i, j):
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  S_interior  = real host-computed stock price at this exact node
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  intrinsic   = ReLU(K - S_interior)              -- exercise value
@@ -3132,7 +3132,7 @@ run over this graph, and Chapter 19's real per-node vectorized-CPU
 dispatcher, compiled and run with this machine's own real AVX2/FMA or
 NEON flags. Two things make this run a genuinely new test of both,
 rather than a repeat of Section 33.3's own test:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>  Section 33.3 tested boundedReductionFusionPass() on a FLAT CHAIN
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>  Section 33.3 tested boundedReductionFusionPass() on a FLAT CHAIN
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  (one elementwise step, no branching) -- 0 FusedReduction groups,
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  because that graph had no Sum node.
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
@@ -3159,7 +3159,7 @@ confirming that Chapter 14/16's fusion pass and Chapter 19's
 vectorized dispatcher both preserve a real TREE graph's own answer
 exactly -- not just a flat chain's, as Section 33.3 already showed,
 but a genuinely branching, converging DAG's.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Chapter 34: Quantitative Finance -- A Real Binomial Option Pricer</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1">// 092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1">//</span>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1">// Section 34.3 -- the capstone. An American option may be exercised at</span>
@@ -4125,11 +4125,11 @@ but a genuinely branching, converging DAG's.</p>
 <a id="__codelineno-11-964" name="__codelineno-11-964" href="#__codelineno-11-964"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-11-965" name="__codelineno-11-965" href="#__codelineno-11-965"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>./092_early_exercise_via_relu_as_max_the_american_put_fused_and_vectorized_for_real_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>=== Chapter 34 (Part 7): Section 34.3 -- early exercise via ReLU-as-max, the American put, fused and vectorized ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>=== Chapter 34 (Part 7): Section 34.3 -- early exercise via ReLU-as-max, the American put, fused and vectorized ===
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>real American early-exercise rule, quoted verbatim (Wikipedia, "Binomial options pricing
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>model"):

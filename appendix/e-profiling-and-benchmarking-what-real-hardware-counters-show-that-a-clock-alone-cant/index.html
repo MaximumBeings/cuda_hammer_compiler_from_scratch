@@ -2256,7 +2256,7 @@ wall-clock timing, which is precisely what makes it a good
 complement to Chapter 22's own honest, noisy, real-clock numbers
 rather than a replacement for them.</p>
 <h2 id="appendix-es-own-shape">Appendix E's own shape<a class="headerlink" href="#appendix-es-own-shape" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix E's own shape, section by section                       |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  E.1  Cachegrind: What Fusion Actually Saves -- File 039's own    |
@@ -2320,7 +2320,7 @@ and <code>out</code> and reads each intermediate back from memory on the next
 step, while <code>fused()</code> computes the whole chain for one element with
 <code>t1</code>/<code>t2</code>/<code>t3</code> as ordinary local <code>float</code> variables -- register-
 resident, never written to memory at all -- inside a single pass.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Appendix E: Profiling and Benchmarking</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">// Appendix E: Profiling and Benchmarking</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">// 103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1">//</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1">// Section E.1 -- Chapter 17's own File 039 built evaluateArrays() and ran it</span>
@@ -2433,7 +2433,7 @@ resident, never written to memory at all -- inside a single pass.</p>
 <p>Both <code>materialized()</code> and <code>fused()</code> are <code>static</code> and each has exactly
 one call site in <code>main()</code>, which means plain <code>-O1</code> already inlines
 both of them completely -- confirmed directly, not assumed:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-O1<span class="w"> </span>-g<span class="w"> </span>103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp<span class="w"> </span>-o<span class="w"> </span>/tmp/o1test
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-O1<span class="w"> </span>-g<span class="w"> </span>103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp<span class="w"> </span>-o<span class="w"> </span>/tmp/o1test
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>nm<span class="w"> </span>/tmp/o1test<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-iE<span class="w"> </span><span class="s2">"materialized|fused"</span>
 </code></pre></div>
 <p>produces no output at all -- both symbols are gone, folded into
@@ -2445,21 +2445,21 @@ fully register-allocated -- is what Chapter 12's own fusion argument is
 actually about, and <code>-O0</code>'s own lack of register allocation would
 change what is being measured. With the attribute in place at real
 <code>-O2</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-g<span class="w"> </span>103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp<span class="w"> </span>-o<span class="w"> </span>103_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-g<span class="w"> </span>103_the_same_diamond_graph_materialized_vs_fused_at_real_scale.cpp<span class="w"> </span>-o<span class="w"> </span>103_driver
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>nm<span class="w"> </span>103_driver<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-iE<span class="w"> </span><span class="s2">"materialized|fused"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>0000000000001610 t _ZL12materializedRKSt6vectorIfSaIfEES3_
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>0000000000001610 t _ZL12materializedRKSt6vectorIfSaIfEES3_
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>0000000000001120 t _ZL12materializedRKSt6vectorIfSaIfEES3_.cold
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>0000000000001570 t _ZL5fusedRKSt6vectorIfSaIfEES3_
 </code></pre></div>
 <p>Both symbols survive. Running the binary directly first confirms
 correctness, continuing this book's own discipline, before any
 profiler is involved at all:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./103_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./103_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>=== Appendix E.1/E.2: the same diamond graph, materialized vs. fused, N=20000000 ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>=== Appendix E.1/E.2: the same diamond graph, materialized vs. fused, N=20000000 ===
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>materialized.out[0]  = 40
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>fused.out[0]         = 40
@@ -2472,11 +2472,11 @@ profiler is involved at all:</p>
 <p>Bit-for-bit agreement at all 20,000,000 elements -- the same finding
 as File 039's own Part B, now at real scale. With correctness settled,
 Cachegrind asks the real question Chapter 12's prose never measured:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg103.out<span class="w"> </span>./103_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>==PID==</code> line-prefix stripped for readability; the counts themselves are the exact, real output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>I refs:        1,939,279,319
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>I refs:        1,939,279,319
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>I1  misses:            2,219
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>LLi misses:            2,175
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>I1  miss rate:          0.00%
@@ -2496,7 +2496,7 @@ Cachegrind asks the real question Chapter 12's prose never measured:</p>
 geometry -- a 34,603,008-byte (33MB) real LL (last-level) cache, used
 again in Section E.3:</p>
 <p><strong>Output (cloud sandbox -- real, live-executed output, same run, <code>==PID==</code>/<code>--PID--</code> prefixes stripped):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>warning: L3 cache found, using its data for the LL simulation.
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>warning: L3 cache found, using its data for the LL simulation.
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>warning: specified LL cache: line_size 64  assoc 11  total_size 34,603,008
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>warning: simulated LL cache: line_size 64  assoc 17  total_size 35,651,584
 </code></pre></div>
@@ -2505,10 +2505,10 @@ functions under test. <code>cg_annotate</code>, Cachegrind's own real per-
 function attribution tool, separates them -- narrowed here to the
 three columns (<code>Ir</code>, <code>D1mr</code>, <code>D1mw</code>) that matter for this comparison
 with <code>--show</code>, a real Cachegrind option, not a hand-edited table:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>cg_annotate<span class="w"> </span>--show<span class="o">=</span>Ir,D1mr,D1mw<span class="w"> </span>--no-show-percs<span class="w"> </span>--no-annotate<span class="w"> </span>cg103.out
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>cg_annotate<span class="w"> </span>--show<span class="o">=</span>Ir,D1mr,D1mw<span class="w"> </span>--no-show-percs<span class="w"> </span>--no-annotate<span class="w"> </span>cg103.out
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>--------------------------------------------------------------------------------
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>--------------------------------------------------------------------------------
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>-- Metadata
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>--------------------------------------------------------------------------------
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>Invocation:       /usr/bin/cg_annotate --show=Ir,D1mr,D1mw --no-show-percs --no-annotate cg103.out
@@ -2598,11 +2598,11 @@ real per-line, per-call-site instruction counts and (with
 <code>callgrind_annotate</code>) prints them directly against the original source
 line -- the same SAME binary from Section E.1, profiled with a
 different real tool asking a different real question.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>callgrind<span class="w"> </span>--callgrind-out-file<span class="o">=</span>cl103.out<span class="w"> </span>./103_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>callgrind<span class="w"> </span>--callgrind-out-file<span class="o">=</span>cl103.out<span class="w"> </span>./103_driver
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>callgrind_annotate<span class="w"> </span>cl103.out
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output, top-level function table):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>--------------------------------------------------------------------------------
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>--------------------------------------------------------------------------------
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>Ir                     
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>--------------------------------------------------------------------------------
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>1,939,268,383 (100.0%)  PROGRAM TOTALS
@@ -2628,7 +2628,7 @@ from. <code>callgrind_annotate</code>'s own real per-LINE view, auto-annotated
 directly against File 103's own source text, shows exactly how much of
 that falls on each of <code>materialized()</code>'s four steps individually:</p>
 <p><strong>Output (cloud sandbox -- real, live-executed output, auto-annotated source, <code>materialized()</code> and <code>fused()</code>):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>-- line 43 ----------------------------------------
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>-- line 43 ----------------------------------------
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>          .           #include &lt;vector&gt;
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>          .           #include &lt;cmath&gt;
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>          .           #include &lt;cstdlib&gt;
@@ -2717,7 +2717,7 @@ four-byte floats (40MB) still comfortably exceeds this same machine's
 own real, measured 33MB LL cache (Section E.1's own cache-config
 output), so the mechanism under test is still genuinely present at
 this size.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1">// Appendix E: Profiling and Benchmarking</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1">// Appendix E: Profiling and Benchmarking</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="c1">// 104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp</span>
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="c1">//</span>
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="c1">// Section E.3 (capstone) -- Chapter 22's own File 054 built</span>
@@ -2809,11 +2809,11 @@ this size.</p>
 <p>A fresh real wall-clock sweep first, at this file's own N=10,000,000
 (not reused from File 054's old 50,000,000-element numbers -- a
 self-contained, freshly measured comparison):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-g<span class="w"> </span>104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp<span class="w"> </span>-o<span class="w"> </span>104_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>-g<span class="w"> </span>104_ch22s_own_unroll_factor_experiment_under_a_real_instruction_counter.cpp<span class="w"> </span>-o<span class="w"> </span>104_driver
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="k">for</span><span class="w"> </span>f<span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="m">8</span><span class="w"> </span><span class="m">16</span><span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="m">64</span><span class="p">;</span><span class="w"> </span><span class="k">do</span><span class="w"> </span>./104_driver<span class="w"> </span><span class="nv">$f</span><span class="p">;</span><span class="w"> </span><span class="k">done</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output, all 7 factors):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>=== Appendix E.3: File 054's computeUnrolled(), unrollFactor=1, extent=10000000 ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>=== Appendix E.3: File 054's computeUnrolled(), unrollFactor=1, extent=10000000 ===
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>result[0]=1  result[9999999]=1.178
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>best-of-5 wall-clock: 58.938 ms
@@ -2863,11 +2863,11 @@ recommended 64 unconditionally. Cachegrind now checks each of Chapter
 22's own three named suspects against this exact real plateau, at the
 two endpoints (<code>unrollFactor=1</code> and <code>unrollFactor=64</code>) plus one real
 midpoint (<code>unrollFactor=8</code>, the real fastest factor):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span>--branch-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span>--branch-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg1.out<span class="w"> </span>./104_driver<span class="w"> </span><span class="m">1</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>unrollFactor=1</code>, <code>==PID==</code> prefix stripped):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>I refs:        1,621,986,349
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>I refs:        1,621,986,349
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>I1  misses:            2,249
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>LLi misses:            2,205
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>I1  miss rate:          0.00%
@@ -2887,11 +2887,11 @@ midpoint (<code>unrollFactor=8</code>, the real fastest factor):</p>
 <a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a>Mispredicts:          16,798  (     15,650 cond +       1,148 ind)
 <a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a>Mispred rate:            0.0% (        0.0%     +        21.7%   )
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg8.out<span class="w"> </span>./104_driver<span class="w"> </span><span class="m">8</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>unrollFactor=8</code>, <code>==PID==</code> prefix stripped):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>I refs:        1,096,986,215
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>I refs:        1,096,986,215
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>I1  misses:            2,250
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>LLi misses:            2,206
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>I1  miss rate:          0.00%
@@ -2907,11 +2907,11 @@ midpoint (<code>unrollFactor=8</code>, the real fastest factor):</p>
 <a id="__codelineno-21-14" name="__codelineno-21-14" href="#__codelineno-21-14"></a>LL misses:        13,761,948  ( 5,010,393 rd   +   8,751,555 wr)
 <a id="__codelineno-21-15" name="__codelineno-21-15" href="#__codelineno-21-15"></a>LL miss rate:            0.9% (       0.4%     +         2.5%  )
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span>--branch-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>valgrind<span class="w"> </span>--tool<span class="o">=</span>cachegrind<span class="w"> </span>--cache-sim<span class="o">=</span>yes<span class="w"> </span>--branch-sim<span class="o">=</span>yes<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">    </span>--cachegrind-out-file<span class="o">=</span>cg64.out<span class="w"> </span>./104_driver<span class="w"> </span><span class="m">64</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed program summary, <code>unrollFactor=64</code>, <code>==PID==</code> prefix stripped):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>I refs:        1,031,361,381
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>I refs:        1,031,361,381
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>I1  misses:            2,251
 <a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>LLi misses:            2,207
 <a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>I1  miss rate:          0.00%

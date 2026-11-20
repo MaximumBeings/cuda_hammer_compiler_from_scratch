@@ -2436,7 +2436,7 @@
 <p><strong>What you need to know first:</strong> Chapter 4's <code>Value</code>/<code>Node</code>/<code>Graph</code> and <code>topologicalSort()</code>, Chapter 7's <code>printGraphAsSource()</code>, Chapter 8's <code>TransformPass</code> and <code>runPasses()</code>, and Chapter 9's <code>constantFoldPass()</code>, <code>deadCodeEliminationPass()</code>, and <code>evaluate()</code> -- this chapter adds one more pass to that same, unmodified pipeline, and reuses Chapter 9's own passes directly in Section 10.3.</p>
 <hr />
 <p>Chapter 9 built two optimizing passes that each ask a narrow question about a single node in isolation: "is this computation's answer already fully known?" (constant folding), and "does anything still need this computation at all?" (dead code elimination). This chapter's pass asks a different kind of question, one that looks <em>across</em> the graph rather than at one node at a time: "has this exact computation already been done somewhere else?" A real tensor program can compute the same thing twice without anyone intending it -- the same normalization applied along two branches that happen to read the same two tensors, say -- and common subexpression elimination is the pass that notices the duplication and collapses it down to one computation, reused everywhere it was needed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO CHAPTERS 8 AND 9's OWN INFRASTRUCTURE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO CHAPTERS 8 AND 9's OWN INFRASTRUCTURE:
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  Chapter 8's passes:          Chapter 9's passes:              THIS chapter's pass:
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -2463,7 +2463,7 @@
 
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>Picture two people on the same team, working on different parts of a shared spreadsheet, who each independently need "revenue minus cost" for the same quarter. If neither one knows the other already computed it, they each write their own formula, and the spreadsheet now computes the identical subtraction twice -- more cells to maintain, more chances for the two copies to quietly drift apart if one gets edited later and the other doesn't. A good spreadsheet reviewer notices the duplication and points the second formula at the first one's cell instead: one computation, reused wherever the answer is needed. Common subexpression elimination is that reviewer, applied to a graph instead of a spreadsheet -- it looks for two nodes computing the identical thing and keeps only one of them, redirecting every consumer of the dropped node to the one that survives.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>TWO NODES THAT COMPUTE THE IDENTICAL THING, BEFORE AND AFTER CSE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>TWO NODES THAT COMPUTE THE IDENTICAL THING, BEFORE AND AFTER CSE:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  before:                              after:
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
@@ -2479,7 +2479,7 @@
 <p>Chapter 9's <code>constantFoldPass()</code> and <code>deadCodeEliminationPass()</code> both worked by looking at ONE node's own inputs. CSE has to compare a node against every OTHER node that came before it in the same graph -- a genuinely different kind of check, though it turns out to reuse the exact same "rebuild in topological order, remap by id" skeleton every <code>TransformPass</code> in this book has used since Chapter 8.</p>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p><code>commonSubexpressionEliminationPass()</code> walks the graph in topological order, exactly like <code>constantFoldPass()</code> and <code>deadCodeEliminationPass()</code> before it. Before building each node, it first computes a <strong>canonical key</strong> describing exactly what that node computes: for an <code>Input</code>, its own name; for a <code>Const</code>, its literal value; for an <code>Add</code>, <code>Mul</code>, or <code>ReLU</code>, its operation plus the <em>already-rebuilt</em> ids of its own operands. If some earlier node in this same walk already produced an identical key, the new node is never built at all -- everything that would have consumed it is simply pointed at the node that already exists.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>cseKey() FOR EACH KIND OF NODE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>cseKey() FOR EACH KIND OF NODE:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  Input   --&gt;  "input:" + the node's own debugName
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  Const   --&gt;  "const:" + the node's own literal value
@@ -2491,7 +2491,7 @@
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  identical thing -- whichever one is seen SECOND is redundant.
 </code></pre></div>
 <p>The word "already-rebuilt" is doing real work in that table, for the same reason it mattered in <code>constantFoldPass()</code>: the key for <code>Add</code>/<code>Mul</code>/<code>ReLU</code> is built from <code>oldIdToNewValue</code>, the map from old ids to the <em>new</em> graph's own ids, populated as the walk proceeds. A merge discovered early in the walk is immediately visible to whatever gets keyed later -- so if two <code>Const</code> nodes merge first, and two <code>Add</code> nodes each consumed one of those <code>Const</code>s, those two <code>Add</code> nodes now have identical keys too, and merge in the very same pass. Checking the old graph's ids instead would miss this entirely: the old graph never changes, so a node that consumed one of two now-merged duplicates would still see them as two <em>different</em> ids, and the second-level merge would be invisible until the pass ran again.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>A CASCADE, DISCOVERED IN ONE SINGLE PASS:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>A CASCADE, DISCOVERED IN ONE SINGLE PASS:
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  before CSE:                        walking in topological order...
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
@@ -2503,7 +2503,7 @@
 <a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>
 <a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  after CSE:  k1=const(7)  -&gt;  r1=add(k1,m)  -&gt;  out=add(r1,r1)
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Chapter 10: Common Subexpression Elimination for Tensor Graphs</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Chapter 10: Common Subexpression Elimination for Tensor Graphs</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">// 018_common_subexpression_elimination_reuses_what_already_exists.cpp</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">//</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">// Section 10.1 -- common subexpression elimination (CSE), this book's</span>
@@ -2873,11 +2873,11 @@
 <a id="__codelineno-4-368" name="__codelineno-4-368" href="#__codelineno-4-368"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>018_common_subexpression_elimination_reuses_what_already_exists.cpp<span class="w"> </span>-o<span class="w"> </span>018_common_subexpression_elimination_reuses_what_already_exists
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>018_common_subexpression_elimination_reuses_what_already_exists.cpp<span class="w"> </span>-o<span class="w"> </span>018_common_subexpression_elimination_reuses_what_already_exists
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>./018_common_subexpression_elimination_reuses_what_already_exists
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>=== Section 10.1: commonSubexpressionEliminationPass(), reusing an already-computed value ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>=== Section 10.1: commonSubexpressionEliminationPass(), reusing an already-computed value ===
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>Graph with one duplicate computation ('t3' duplicates 't1'):
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  %0 = Input(a)
@@ -2935,7 +2935,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>A strict but literal-minded assistant, told to "flag any two paragraphs that say the same thing," might correctly flag two paragraphs that are character-for-character identical, but miss two paragraphs that say the identical thing in a different word order -- "the cat sat on the mat" and "on the mat sat the cat" mean the same thing to a person, but they are not the same STRING. <code>cseKey()</code> is exactly that literal-minded assistant: it merges two nodes only when they are identical in a very specific, narrow sense -- same operation, same operands, in the same order -- and it is worth being precise about exactly where that narrowness shows up, because the gap between "always computes the same number" and "has an identical key" is a real, honestly-stated limitation of this chapter's pass, not an oversight to quietly patch over.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>TWO THINGS THAT ARE MATHEMATICALLY EQUAL, BUT NOT THE SAME cseKey():
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>TWO THINGS THAT ARE MATHEMATICALLY EQUAL, BUT NOT THE SAME cseKey():
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    a   b                    b   a
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>     \ /                      \ /
@@ -2949,7 +2949,7 @@
 </code></pre></div>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
 <p>Fixing this by sorting an <code>Add</code>/<code>Mul</code> node's operand ids before building its key -- so <code>add(a,b)</code> and <code>add(b,a)</code> would key identically -- sounds like a small change, but it only works when TWO separate things are both true: the operation actually is commutative for every possible pair of operands, and there is a stable, safe way to decide a canonical order. <code>Add</code> and <code>Mul</code> both genuinely qualify, for this book's own plain IEEE-754 floating point arithmetic. A real tensor compiler's op set, though, is full of operations that are emphatically NOT commutative -- subtraction, matrix multiplication, a <code>ReLU</code> applied after something else -- and teaching <code>cseKey()</code> exactly which operations are safe to reorder, and which are not, is real added logic this chapter leaves as an open extension rather than folding in silently. Getting it wrong in the unsafe direction -- merging two nodes that only LOOK the same -- would be a correctness bug, not merely a missed optimization; <code>commonSubexpressionEliminationPass()</code> stays on the conservative side of that line on purpose, at the cost of occasionally leaving a real, valid merge on the table.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>CONSERVATIVE (this chapter's own choice)     VS     UNSAFE IF DONE CARELESSLY
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>CONSERVATIVE (this chapter's own choice)     VS     UNSAFE IF DONE CARELESSLY
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  never merges add(a,b) with add(b,a)               sorts operand ids for EVERY op,
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  -- misses a real optimization                     including ones that are NOT
@@ -2958,7 +2958,7 @@
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  than necessary. Still CORRECT.                     answers. WRONG output. A real bug.
 </code></pre></div>
 <p>The same narrow, literal key mechanism gets a different case right for a genuinely good reason, not by luck. Two separately-created <code>Input</code> nodes that happen to share the same debugName are not a coincidence to worry about -- under this book's own <code>evaluate()</code> (Chapter 9), an <code>Input</code> node is looked up purely by its name, so two <code>Input</code> nodes both named <code>"x"</code> really do represent the identical runtime value, for every execution. <code>cseKey()</code>'s plain name-based key for <code>Input</code> merges them correctly with no special-casing at all -- it happens to be exactly the right rule for the right reason, in contrast to the <code>Add</code>/<code>Mul</code> case, where the same "compare by what's already written down" rule is too conservative.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">// Chapter 10: Common Subexpression Elimination for Tensor Graphs</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">// Chapter 10: Common Subexpression Elimination for Tensor Graphs</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1">// 019_what_counts_as_the_same_a_structural_keys_real_limits.cpp</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1">//</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1">// Section 10.2 -- Section 10.1's commonSubexpressionEliminationPass()</span>
@@ -3277,11 +3277,11 @@
 <a id="__codelineno-9-317" name="__codelineno-9-317" href="#__codelineno-9-317"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>019_what_counts_as_the_same_a_structural_keys_real_limits.cpp<span class="w"> </span>-o<span class="w"> </span>019_what_counts_as_the_same_a_structural_keys_real_limits
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>019_what_counts_as_the_same_a_structural_keys_real_limits.cpp<span class="w"> </span>-o<span class="w"> </span>019_what_counts_as_the_same_a_structural_keys_real_limits
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>./019_what_counts_as_the_same_a_structural_keys_real_limits
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>=== Section 10.2: what commonSubexpressionEliminationPass() does and does NOT recognize as duplicate ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>=== Section 10.2: what commonSubexpressionEliminationPass() does and does NOT recognize as duplicate ===
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>Part 1 -- add(a,b) and add(b,a), operand order swapped:
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  %0 = Input(a)
@@ -3331,7 +3331,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Section 9.3's own closing warning left a question open on purpose: could a more elaborate graph need constant folding and dead code elimination to alternate more than once each, each pass exposing new work for the other? It raised that question but did not resolve it -- and this section does not resolve it either. What it does instead is show the SAME underlying question appearing from a completely different angle: not "can removing dead code expose a new constant to fold," but "can folding a constant expose two nodes that are now duplicates of each other, which common subexpression elimination could never have recognized on its own, no matter when it ran, without folding having happened first."</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>THE SAME "COULD RUNNING THIS AGAIN FIND MORE" QUESTION, TWO ANGLES:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>THE SAME "COULD RUNNING THIS AGAIN FIND MORE" QUESTION, TWO ANGLES:
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  Section 9.3's angle:                    THIS section's angle:
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
@@ -3346,7 +3346,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p>The graph this section builds has two constants, <code>2</code> and <code>3</code>, added together and named <code>p</code> -- which folds, under <code>constantFoldPass()</code>, to <code>Const(5)</code>. A THIRD, independently created constant, <code>c3</code>, is given the literal value <code>5</code> directly -- the exact value <code>p</code> will eventually compute, but before folding runs, <code>p</code> is an <code>Add</code> node and <code>c3</code> is a <code>Const</code> node. <code>cseKey()</code> gives an <code>Add</code> node and a <code>Const</code> node completely different key prefixes regardless of what the <code>Add</code> would eventually evaluate to -- <code>commonSubexpressionEliminationPass()</code> has no arithmetic of its own, and cannot know an unfolded <code>Add</code> node's eventual value without actually computing it, which is precisely <code>constantFoldPass()</code>'s job, not CSE's.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>BEFORE FOLDING:  p and c3 have DIFFERENT keys, EVEN THOUGH THEY WILL
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>BEFORE FOLDING:  p and c3 have DIFFERENT keys, EVEN THOUGH THEY WILL
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>                  TURN OUT TO BE EQUAL -- CSE cannot see this yet.
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    c1  c2                    c3
@@ -3364,7 +3364,7 @@
 </code></pre></div>
 <p>Every downstream test in this book has proven "order matters" by actually running the alternative and measuring the result, not by asserting it, and this section keeps that discipline: before running the full pipeline, it runs <code>commonSubexpressionEliminationPass()</code> completely ALONE on the ORIGINAL, unfolded graph, and confirms directly that it finds nothing at all to merge -- ruling out the possibility that CSE could have found this particular reduction on its own, at any point, without folding running first.</p>
 <p>Once folding and CSE have both run, <code>c1</code> and <code>c2</code> -- the two constants that fed the now-vanished <code>p</code> -- are no longer referenced by anything at all: <code>p</code> itself was never kept, since CSE decided <code>c3</code> (or <code>p</code>, depending on which one the topological walk reaches first) was the survivor of that merge, and the other one simply disappears the same way <code>t3</code> disappeared in Section 10.1. That leaves <code>c1</code> and <code>c2</code> as genuinely NEW dead code -- unreachable from the graph's own output -- that only <code>deadCodeEliminationPass()</code>, run as the third and final pass, can clean up.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Chapter 10: Common Subexpression Elimination for Tensor Graphs</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Chapter 10: Common Subexpression Elimination for Tensor Graphs</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1">// 020_folding_cse_and_dce_together_a_three_chapter_pipeline.cpp</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1">//</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1">// Section 10.3 -- constantFoldPass() (9.1), commonSubexpressionEliminationPass()</span>
@@ -3798,11 +3798,11 @@
 <a id="__codelineno-14-432" name="__codelineno-14-432" href="#__codelineno-14-432"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>020_folding_cse_and_dce_together_a_three_chapter_pipeline.cpp<span class="w"> </span>-o<span class="w"> </span>020_folding_cse_and_dce_together_a_three_chapter_pipeline
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>020_folding_cse_and_dce_together_a_three_chapter_pipeline.cpp<span class="w"> </span>-o<span class="w"> </span>020_folding_cse_and_dce_together_a_three_chapter_pipeline
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>./020_folding_cse_and_dce_together_a_three_chapter_pipeline
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Section 10.3: folding creates a CSE opportunity; CSE creates new dead code ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Section 10.3: folding creates a CSE opportunity; CSE creates new dead code ===
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>&gt;&gt;&gt; Control: commonSubexpressionEliminationPass() ALONE, before any folding
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>

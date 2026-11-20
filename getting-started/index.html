@@ -2386,14 +2386,14 @@
 </table>
 <h2 id="2-install-host-tools-and-obtain-the-book">2 — Install host tools and obtain the book<a class="headerlink" href="#2-install-host-tools-and-obtain-the-book" title="Permanent link">&para;</a></h2>
 <p>On Ubuntu 22.04/24.04:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>build-essential<span class="w"> </span>clang<span class="w"> </span>git<span class="w"> </span>python3<span class="w"> </span>python3-venv<span class="w"> </span>python3-pip<span class="w"> </span>graphviz
 </code></pre></div>
 <p>On macOS, install Apple's command-line tools and complete their installer:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>xcode-select<span class="w"> </span>--install
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>xcode-select<span class="w"> </span>--install
 </code></pre></div>
 <p>Use an installed Python 3 interpreter (for example from python.org). Apple <code>g++</code> is normally a Clang frontend; check <code>clang++ --version</code>. Both compiler families can build the host lessons. On Linux, <code>lscpu</code> reports CPU features; the x86 SIMD lessons need both <code>avx2</code> and <code>fma</code>, not just an x86 architecture label. Apple Silicon uses the ARM path.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch.git
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/MaximumBeings/cuda_hammer_compiler_from_scratch.git
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>cuda_hammer_compiler_from_scratch
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
@@ -2405,7 +2405,7 @@
 <p>Use <code>python -m pip</code> and <code>python -m mkdocs</code> from the same environment. Website packages are distinct from the optional numerical frameworks. To preview, run <code>python -m mkdocs serve</code> and open the local address it prints.</p>
 <h2 id="3-compile-your-first-host-lesson">3 — Compile your first host lesson<a class="headerlink" href="#3-compile-your-first-host-lesson" title="Permanent link">&para;</a></h2>
 <p>From the repository root:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>clang++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>clang++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>docs/part0/code/001_eager_vs_fused_memory_traffic.cpp<span class="w"> </span>-o<span class="w"> </span>/tmp/hammer-first
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>/tmp/hammer-first
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>python<span class="w"> </span>tools/validate_host.py<span class="w"> </span>--jobs<span class="w"> </span><span class="m">3</span><span class="w"> </span>--log-dir<span class="w"> </span>/tmp/hammer-host-check
@@ -2414,7 +2414,7 @@
 <h2 id="4-install-the-nvidia-driver-and-cuda-toolkit-on-linux">4 — Install the NVIDIA driver and CUDA toolkit on Linux<a class="headerlink" href="#4-install-the-nvidia-driver-and-cuda-toolkit-on-linux" title="Permanent link">&para;</a></h2>
 <p>This concrete recipe targets <strong>Ubuntu 22.04/24.04, x86_64</strong> and the book's <strong>CUDA 12.8</strong> baseline. Other architectures/distributions need their own packages. First run <code>nvidia-smi</code> and <code>nvcc --version</code>: a provisioned GPU image may already contain both. Keep a working provider driver. <code>nvidia-smi</code>'s CUDA version describes driver capability; it does not establish that <code>nvcc</code> is installed.</p>
 <p>For a fresh supported Ubuntu machine, enable NVIDIA's repository:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>.<span class="w"> </span>/etc/os-release
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>.<span class="w"> </span>/etc/os-release
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="k">case</span><span class="w"> </span><span class="s2">"</span><span class="nv">$VERSION_ID</span><span class="s2">"</span><span class="w"> </span><span class="k">in</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="m">22</span>.04<span class="o">)</span><span class="w"> </span><span class="nv">hammer_distro</span><span class="o">=</span>ubuntu2204<span class="w"> </span><span class="p">;;</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="m">24</span>.04<span class="o">)</span><span class="w"> </span><span class="nv">hammer_distro</span><span class="o">=</span>ubuntu2404<span class="w"> </span><span class="p">;;</span>
@@ -2427,12 +2427,12 @@
 <a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
 </code></pre></div>
 <p><strong>Only if a driver is missing</strong>, install the supported driver for the GPU. For the A100/H100/B200 families, NVIDIA's open-module driver packages support these architectures; older GPUs require a different choice. The following driver installation needs matching kernel headers and a reboot. Complete Secure Boot module enrollment if prompted; on a managed image use its provider's driver procedure.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>linux-headers-<span class="s2">"</span><span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span><span class="s2">"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>linux-headers-<span class="s2">"</span><span class="k">$(</span>uname<span class="w"> </span>-r<span class="k">)</span><span class="s2">"</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>nvidia-open
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>sudo<span class="w"> </span>reboot
 </code></pre></div>
 <p>Reconnect and confirm <code>nvidia-smi</code> works before installing the toolkit:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>cuda-toolkit-12-8
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>cuda-toolkit-12-8
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">PATH</span><span class="o">=</span>/usr/local/cuda-12.8/bin:<span class="s2">"</span><span class="nv">$PATH</span><span class="s2">"</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/usr/local/cuda-12.8/lib64<span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="p">:+:</span><span class="nv">$LD_LIBRARY_PATH</span><span class="si">}</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>nvcc<span class="w"> </span>--version
@@ -2469,18 +2469,18 @@
 </tbody>
 </table>
 <p>These are architecture selections, not claims that this revision was executed on every device. See <a href="../validation-status/">Validation Status</a> for actual evidence. The CUDA drivers generate and compile their own child programs; compiling only the driver is insufficient.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>tools/validate_gpu.py<span class="w"> </span>--arch<span class="w"> </span>sm_80<span class="w"> </span>--sanitize<span class="w"> </span>--log-dir<span class="w"> </span>/tmp/hammer-gpu-check
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python<span class="w"> </span>tools/validate_gpu.py<span class="w"> </span>--arch<span class="w"> </span>sm_80<span class="w"> </span>--sanitize<span class="w"> </span>--log-dir<span class="w"> </span>/tmp/hammer-gpu-check
 </code></pre></div>
 <p>Use a <strong>new empty output directory</strong> for each run. The three drivers use fixed <code>/tmp/hammer_ch18_*</code> child paths, so run one GPU validation process at a time on a host. No-device/skipped executions and missing sanitizers are failures of this acceptance run, not device passes. Compiling CUDA for a supported target does not require that target GPU; executing the result does.</p>
 <h2 id="6-add-optional-case-study-dependencies-separately">6 — Add optional case-study dependencies separately<a class="headerlink" href="#6-add-optional-case-study-dependencies-separately" title="Permanent link">&para;</a></h2>
 <p>The compiler itself does not depend on PyTorch, JAX, TVM, Triton, LLVM or CUTLASS. Install only the dependencies for the chapter you are studying, in a separate environment. The earlier Linux/A100 record used Python 3.12.3, NumPy 1.26.4, PyTorch 2.7.0, Triton 3.3.0 and JAX 0.6.0. TVM was not installed in that validation. Those recorded versions are not a claim that every historical framework transcript uses that same API.</p>
 <p>For the local NumPy-based acceptance/calibration regressions:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">numpy</span><span class="o">==</span><span class="m">1</span>.26.4
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">numpy</span><span class="o">==</span><span class="m">1</span>.26.4
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>python<span class="w"> </span>tests/cases_regressions.py
 </code></pre></div>
 <p>For actual framework execution, follow the chapter's explicit version and the project's installation guide: <a href="https://pytorch.org/get-started/locally/">PyTorch</a>, <a href="https://docs.jax.dev/en/latest/installation.html">JAX</a>, <a href="https://triton-lang.org/main/getting-started/installation.html">Triton</a>, <a href="https://tvm.apache.org/docs/install/index.html">TVM</a>. TVM examples using <code>s_tir</code> require that namespace; a wheel exposing only older <code>tir</code> APIs is not interchangeable. Do not infer execution of these stacks from passing the NumPy/AST adapter tests.</p>
 <p>After installing compatible GPU framework packages, the additional numerical checks are:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>python<span class="w"> </span>validation/accuracy-fixes/gpu_case_validation.py
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>python<span class="w"> </span>validation/accuracy-fixes/gpu_case_validation.py
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>compute-sanitizer<span class="w"> </span>--tool<span class="w"> </span>memcheck<span class="w"> </span>--error-exitcode<span class="w"> </span><span class="m">99</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span>python<span class="w"> </span>validation/accuracy-fixes/gpu_case_validation.py
 </code></pre></div>

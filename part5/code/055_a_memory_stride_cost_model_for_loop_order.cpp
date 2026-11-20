@@ -177,17 +177,16 @@ int main() {
     printf("  model predicts:  row-major cheaper by %.1fx\n", colMajorCost / rowMajorCost);
     printf("  measurement finds: row-major faster by %.2fx\n", bestColMs / bestRowMs);
     printf("  ranking matches: %s\n\n", modelRankingCorrect ? "yes" : "no");
-    printf("Unlike Section 22.1's loop-overhead model, this one gets the RANKING right. The magnitude is\n");
-    printf("off -- the model predicted an %.1fx gap and reality delivered %.2fx -- real memory hierarchies\n",
-           colMajorCost / rowMajorCost, bestColMs / bestRowMs);
-    printf("have effects this deliberately simple model never included (TLB misses under a stride this\n");
-    printf("large, and hardware prefetchers that help the contiguous case even more than a flat line-count\n");
-    printf("model assumes), so the real penalty for column-major turned out worse than predicted, not\n");
-    printf("better. Getting the DIRECTION right while getting the MAGNITUDE wrong is still a useful cost\n");
-    printf("model for ranking candidates, which is all an autotuner actually needs from it -- and it is a\n");
-    printf("different kind of honesty than Section 22.1's model, which got the direction wrong at high\n");
-    printf("unroll factors. Different mechanisms deserve different amounts of trust, which is exactly what\n");
-    printf("Section 22.3 has to decide when it combines both models into one score for a real schedule.\n");
+    printf("The measured ranking %s the model on this run.\n",
+           modelRankingCorrect ? "matches" : "does not match");
+    printf("The observed ratio %.2fx is %s the predicted ratio %.2fx.\n",
+           bestColMs / bestRowMs,
+           bestColMs / bestRowMs > colMajorCost / rowMajorCost ? "greater than" :
+           bestColMs / bestRowMs < colMajorCost / rowMajorCost ? "less than" : "equal to",
+           colMajorCost / rowMajorCost);
+    printf("This cache-line model omits prefetching, cache levels, TLB effects and compiler choices.\n");
+    printf("A timing discrepancy alone does not identify which mechanism caused it.\n");
+    printf("Use measured candidate timings to test rankings; do not assume a portable speed ratio.\n");
 
     bool allOk = (rowMajorCost < colMajorCost) && bothCorrect;
     return allOk ? 0 : 1;

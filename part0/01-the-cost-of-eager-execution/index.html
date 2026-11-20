@@ -2440,7 +2440,7 @@
 <p><strong>What you need to know first:</strong> basic C++ (loops, <code>std::vector</code>, functions) and the idea that a tensor operation -- an elementwise add, a matrix multiply, an activation function -- reads some input data and produces some output data. No CUDA or compiler background is assumed; that starts in Chapter 3.</p>
 <hr />
 <p>Every tensor framework a reader has used runs a chain of operations by executing them one at a time: allocate an output, compute it fully, move to the next operation, using that output as the next input. This is called eager execution, and it is not a design mistake -- it is what makes a framework interactive and easy to debug, since every intermediate value is a real, inspectable object the moment it's produced. But "the moment it's produced" is exactly the phrase that hides this chapter's whole argument: producing an intermediate value eagerly means writing it to memory in full, immediately, whether or not anything outside the current chain will ever look at it. This chapter makes that cost concrete and countable, in two independent ways, before Chapter 2 gets to what a compiler pipeline actually does about it.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>EAGER (op-at-a-time, chain length 3):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>EAGER (op-at-a-time, chain length 3):
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  input --&gt; +------+ --&gt; tmp1 --&gt; +------+ --&gt; tmp2 --&gt; +------+ --&gt; output
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>            | op 1 |              | op 2 |              | op 3 |
@@ -2470,7 +2470,7 @@
 
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>Picture a courier who has three packages to deliver to the same address, one after another. Instead of loading all three into the van at once, the courier drives to the warehouse, loads package one, drives to the address, drops it off, drives back to the warehouse, loads package two, drives to the address again, and so on. Each trip is a real, full round trip regardless of how small the package is. Eager execution is that courier: each operation in a chain is its own full round trip to memory, even when the "package" -- the intermediate result -- was never going anywhere except into the very next operation.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>op 1: read input (full array in memory) --&gt; compute --&gt; write tmp1 (full array)
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>op 1: read input (full array in memory) --&gt; compute --&gt; write tmp1 (full array)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>op 2: read tmp1  (full array in memory) --&gt; compute --&gt; write tmp2 (full array)
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>op 3: read tmp2  (full array in memory) --&gt; compute --&gt; write output (full array)
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
@@ -2480,7 +2480,7 @@
 </code></pre></div>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>The code below computes a real N-operation elementwise chain (alternating bias-add, scale, and ReLU, so a chain of any length exercises all three) two genuinely different ways over the exact same input array: EAGER, which allocates a brand-new full array for every operation's output, and FUSED, which computes the entire chain per element in a single pass with no intermediate array at all. Both modes are genuinely compiled and run; their final outputs are compared element-for-element (bit-identical is expected here, since both modes apply the exact same sequence of elementary operations in the exact same order -- there is no reduction or summation involved, so there is no floating-point associativity question the way there would be for a sum). The number of bytes each mode actually reads and writes is counted directly from real array sizes as the program runs, then checked against a closed-form formula.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 1: The Cost of Eager Execution</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 1: The Cost of Eager Execution</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 001_eager_vs_fused_memory_traffic.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 1.1 -- what "eager execution" actually does, step by step, and</span>
@@ -2627,11 +2627,11 @@
 <a id="__codelineno-2-145" name="__codelineno-2-145" href="#__codelineno-2-145"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>001_eager_vs_fused_memory_traffic.cpp<span class="w"> </span>-o<span class="w"> </span>001_eager_vs_fused_memory_traffic
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>001_eager_vs_fused_memory_traffic.cpp<span class="w"> </span>-o<span class="w"> </span>001_eager_vs_fused_memory_traffic
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./001_eager_vs_fused_memory_traffic
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 1.1 / 1.3: eager vs. fused execution of the same op chain ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 1.1 / 1.3: eager vs. fused execution of the same op chain ===
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Array size: 1000 float32 elements (4000 bytes)
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
@@ -2663,7 +2663,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>A tollbooth charges the same fixed toll no matter how much cargo is in the vehicle passing through. A truck carrying one crate and a truck carrying a hundred crates both stop, both pay, both wait for the gate. Launching a kernel -- asking the hardware to actually start executing a block of code -- has exactly this shape: a real, mostly-fixed cost paid at the moment of launch, independent of how much or how little work that kernel actually does. A chain of three small operations pays that toll three times; one fused operation covering the same work pays it once.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>EAGER: 3 kernel launches, each pays the fixed per-launch toll
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>EAGER: 3 kernel launches, each pays the fixed per-launch toll
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  [launch] --&gt; [launch] --&gt; [launch]
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>   9.6us         9.6us         9.6us     =  28.8us total, paid 3 times
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
@@ -2679,7 +2679,7 @@ that is the real, cited, end-to-end cost actually paid per launch -- overhead
 included, not subtracted out.)</p>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
 <p>The timing input is NVIDIA's historical V100 result: 9.6 microseconds per individually synchronized kernel, including 2.9 microseconds of GPU execution. This is end-to-end latency, not launch overhead alone. The table scales that latency for repeated equal-cost kernels and contrasts a hypothetical one-kernel baseline; a fused kernel performs different work, so its latency must be measured independently. Eager CUDA operations can be queued asynchronously on a stream; per-operation host synchronization is a worst-case reference pattern, not a requirement of eager execution.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 1: The Cost of Eager Execution</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 1: The Cost of Eager Execution</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1">// 002_launch_overhead_and_synthesis.cpp</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1">//</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1">// Section 1.2 -- cited synchronized per-kernel latency multiplied by chain length --</span>
@@ -2781,11 +2781,11 @@ included, not subtracted out.)</p>
 <a id="__codelineno-6-100" name="__codelineno-6-100" href="#__codelineno-6-100"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>002_launch_overhead_and_synthesis.cpp<span class="w"> </span>-o<span class="w"> </span>002_launch_overhead_and_synthesis
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>002_launch_overhead_and_synthesis.cpp<span class="w"> </span>-o<span class="w"> </span>002_launch_overhead_and_synthesis
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./002_launch_overhead_and_synthesis
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Section 1.2: cited synchronized per-kernel latency, multiplied by chain length ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Section 1.2: cited synchronized per-kernel latency, multiplied by chain length ===
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>NVIDIA's own cited figure (CUDA Graphs blog post): 9.6 us per synchronized kernel,
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>measured end to end with per-kernel host synchronization -- a worst-case
@@ -2836,7 +2836,7 @@ included, not subtracted out.)</p>
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Think of a relay race where, instead of runners handing the baton directly to each other, every handoff is routed through a separate judge's table off to the side: runner one carries the baton to the table, sets it down, runner two picks it up from the table, carries it to the next table, and so on. The baton travels the same total distance either way, but every off-to-the-side trip is pure overhead that direct hand-to-hand passing would never pay. File 1's own closed-form result already proved this chapter's version of that overhead exactly: eager execution's memory traffic grows linearly with chain length, while fused execution's memory traffic never grows past the one real read and one real write the computation actually needed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>memory traffic moved (in units of one full array, read+write), by chain length N:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>memory traffic moved (in units of one full array, read+write), by chain length N:
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>N=1   | --                    ( 2 units)
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>N=2   | ----                  ( 4 units)

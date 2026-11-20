@@ -2245,7 +2245,7 @@ cloud-sandbox-only for that reason; both C++ files are cross-verified
 on both machines as usual, since CUDA Hammer's own toolchain has no
 such dependency.</p>
 <h2 id="appendix-fs-own-shape">Appendix F's own shape<a class="headerlink" href="#appendix-fs-own-shape" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix F's own shape, section by section                       |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  Translation table -- concept by concept: TVM Relax/TIR/          |
@@ -2361,7 +2361,7 @@ unchanged (the real Relax pipeline on Chapter 4's own diamond graph),
 re-run fresh this session. Part 1 builds the graph and prints its
 unoptimized Relax IR; Part 2 runs it through TVM's own real fusion
 pipeline.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Appendix F: From torch.compile and TVM's Python API to C++: A Rosetta</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Stone</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># 105_the_same_diamond_graph_through_tvm_relaxs_own_real_fusion_pipeline.py</span>
@@ -2486,10 +2486,10 @@ pipeline.</p>
 <a id="__codelineno-1-123" name="__codelineno-1-123" href="#__codelineno-1-123"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-1-124" name="__codelineno-1-124" href="#__codelineno-1-124"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python3<span class="w"> </span>105_the_same_diamond_graph_through_tvm_relaxs_own_real_fusion_pipeline.py
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>python3<span class="w"> </span>105_the_same_diamond_graph_through_tvm_relaxs_own_real_fusion_pipeline.py
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output, Part 1, unoptimized IR):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tvm version: 0.26.0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tvm version: 0.26.0
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>==============================================================================
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>PART 1: unoptimized Relax IR for the diamond graph
@@ -2510,7 +2510,7 @@ pipeline.</p>
 <a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>        return out
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output, Part 2, after the real fusion pipeline):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>==============================================================================
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>==============================================================================
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>PART 2: after the real fusion pipeline (LegalizeOps -&gt; AnnotateTIROpPattern -&gt; FuseOps -&gt; FuseTIR)
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>==============================================================================
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a># from tvm.script import ir as I
@@ -2571,7 +2571,7 @@ fusion boundary does not treat "has more than one consumer" as a
 reason to keep a value external, the way Chapter 13's own rule has
 since it was written. File 106 now runs the identical graph shape
 through CUDA Hammer's own real machinery to check that directly.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// Appendix F: From torch.compile and TVM's Python API to C++: A Rosetta</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// Appendix F: From torch.compile and TVM's Python API to C++: A Rosetta</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1">// Stone</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">// 106_the_same_diamond_graph_through_cuda_hammers_own_real_fusion_pass.cpp</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1">//</span>
@@ -2929,11 +2929,11 @@ through CUDA Hammer's own real machinery to check that directly.</p>
 <a id="__codelineno-5-356" name="__codelineno-5-356" href="#__codelineno-5-356"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-5-357" name="__codelineno-5-357" href="#__codelineno-5-357"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>106_the_same_diamond_graph_through_cuda_hammers_own_real_fusion_pass.cpp<span class="w"> </span>-o<span class="w"> </span>106_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>106_the_same_diamond_graph_through_cuda_hammers_own_real_fusion_pass.cpp<span class="w"> </span>-o<span class="w"> </span>106_driver
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>./106_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox and device -- real, live-executed output, cross-verified byte-identical):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>=== Appendix F.1: the same diamond graph, through CUDA Hammer's own real fusion pass ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>=== Appendix F.1: the same diamond graph, through CUDA Hammer's own real fusion pass ===
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>--- Part 1: the unfused graph, printed node by node (CUDA Hammer's own IR, Chapter 7's own printGraphAsSource() shape) ---
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
@@ -2972,7 +2972,7 @@ CUDA Hammer's own rule, unchanged since Chapter 13, is about the
 STATIC CONSUMER COUNT alone -- <code>consumers != 1</code> -- with no concept of
 a "live output" distinct from "has a consumer" at all.</p>
 <p><strong>Output (cloud sandbox -- real, live-executed output, File 105's own Part 3, t1 also a live output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>==============================================================================
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>==============================================================================
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>PART 3: same graph, but t1 is ALSO returned as a live output
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>==============================================================================
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a># from tvm.script import ir as I
@@ -3037,7 +3037,7 @@ confirmed difference this section set out to find. File 105's own
 Part 4 (execution, reused unchanged) confirms the underlying
 computation is identical either way:</p>
 <p><strong>Output (cloud sandbox -- real, live-executed output, File 105's own Part 4):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>==============================================================================
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>==============================================================================
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>PART 4: real LLVM compile + real execution, checked against NumPy
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>==============================================================================
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>max abs error vs. NumPy reference: 0.0
@@ -3058,7 +3058,7 @@ session. File 108 runs the matching-size problem -- <code>LoopNest{dim0:6,
 dim1:8}</code>, the same 48 elements as TVM's own <code>n=48</code> -- through Chapter
 23.3's real hybrid autotuner and Chapter 24.1's real <code>TuningCache</code>,
 also freshly run.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># Appendix F: From torch.compile and TVM's Python API to C++: A Rosetta</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># Stone</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># 107_the_same_autotune_and_cache_problem_through_tvms_own_real_metaschedule.py</span>
@@ -3213,10 +3213,10 @@ also freshly run.</p>
 <a id="__codelineno-10-153" name="__codelineno-10-153" href="#__codelineno-10-153"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-10-154" name="__codelineno-10-154" href="#__codelineno-10-154"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python3<span class="w"> </span>107_the_same_autotune_and_cache_problem_through_tvms_own_real_metaschedule.py
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python3<span class="w"> </span>107_the_same_autotune_and_cache_problem_through_tvms_own_real_metaschedule.py
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<p><div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>tvm version: 0.26.0
+<p><div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>tvm version: 0.26.0
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>real meta_schedule module: &lt;module 'tvm.s_tir.meta_schedule' from '/usr/local/lib/python3.11/dist-packages/tvm/s_tir/meta_schedule/__init__.py'&gt;
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>real MetaSchedule Database classes available: ['Database', 'JSONDatabase', 'TuningRecord']
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
@@ -3237,7 +3237,7 @@ also freshly run.</p>
 <a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a>recovered run_secs: (T.float32(3.1643417894999856e-05),)
 <a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>recovered trace matches the original schedule's own trace: True
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1">// Appendix F: From torch.compile and TVM's Python API to C++: A Rosetta</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1">// Appendix F: From torch.compile and TVM's Python API to C++: A Rosetta</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1">// Stone</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="c1">// 108_the_same_autotune_and_cache_problem_through_cuda_hammers_own_real_hybrid_autotuner.cpp</span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1">//</span>
@@ -3711,11 +3711,11 @@ also freshly run.</p>
 <a id="__codelineno-13-472" name="__codelineno-13-472" href="#__codelineno-13-472"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-13-473" name="__codelineno-13-473" href="#__codelineno-13-473"></a><span class="p">}</span>
 </code></pre></div></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>108_the_same_autotune_and_cache_problem_through_cuda_hammers_own_real_hybrid_autotuner.cpp<span class="w"> </span>-o<span class="w"> </span>108_driver<span class="w"> </span>-ldl
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>108_the_same_autotune_and_cache_problem_through_cuda_hammers_own_real_hybrid_autotuner.cpp<span class="w"> </span>-o<span class="w"> </span>108_driver<span class="w"> </span>-ldl
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>./108_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox and device -- real, live-executed output, cross-verified byte-identical):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>=== Appendix F.2: the same autotune-and-cache problem, through CUDA Hammer's own real hybrid autotuner ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>=== Appendix F.2: the same autotune-and-cache problem, through CUDA Hammer's own real hybrid autotuner ===
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>LoopNest: dim0=6, dim1=8 (48 total elements, matching TVM's own File 107 n=48)
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>real legal schedule count for this LoopNest: 128 (Chapter 21's own enumerateSchedules())

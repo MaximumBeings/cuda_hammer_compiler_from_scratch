@@ -2250,7 +2250,7 @@ demonstration chapter. So, like Chapter 18's own CUDA backend, this
 chapter is verified for real ONLY on the cloud sandbox; the device still
 receives and md5-verifies every one of this chapter's own files, but does
 not execute them.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 28's own shape, section by section                      |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  28.1  torch.compile's real two-stage pipeline (TorchDynamo       |
@@ -2289,7 +2289,7 @@ generated code as a log record, which File 072 captures with a dedicated
 the real library's own log output" technique this book has not needed
 until now, because every prior chapter's IR was already sitting in a
 returned object's own field.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  Python function                    torch.compile(fn)
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  Python function                    torch.compile(fn)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  (diamond: t1=a+b, t2=t1*c,              |
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>   t3=relu(t1), out=t2+t3)                \/
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
@@ -2313,7 +2313,7 @@ CODEGEN: deciding what to fuse and emitting real, compilable source for
 it. File 072 runs the exact same diamond graph Chapters 4, 13, 25, 26,
 and 27 have all already used, and inspects Inductor's own real generated
 kernel directly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chapter 28, File 072: torch.compile's real two-stage pipeline, run on the</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chapter 28, File 072: torch.compile's real two-stage pipeline, run on the</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># exact same diamond graph Chapters 4, 13, 25, 26, and 27 have all already</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># used: t1 = a + b (shared by two consumers), t2 = t1 * c, t3 = relu(t1),</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># out = t2 + t3.</span>
@@ -2449,10 +2449,10 @@ kernel directly:</p>
 <a id="__codelineno-2-134" name="__codelineno-2-134" href="#__codelineno-2-134"></a>          <span class="sa">f</span><span class="s2">"XLA (Ch25) and Relax (Ch26) both drew on this identical graph, "</span>
 <a id="__codelineno-2-135" name="__codelineno-2-135" href="#__codelineno-2-135"></a>          <span class="sa">f</span><span class="s2">"reached here by a fourth independent real production compiler)"</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"072_torch_compiles_real_two_stage_pipeline_dynamo_capture_then_inductor_codegen.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"072_torch_compiles_real_two_stage_pipeline_dynamo_capture_then_inductor_codegen.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed torch.compile output; this chapter is verified on the cloud sandbox only, per the disk-space finding above):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Real torch.cuda.is_available(): False
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Real torch.cuda.is_available(): False
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Real correctness check: compiled vs. eager match = True
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>=== Real Inductor-generated C++ (one real kernel function) ===
@@ -2520,9 +2520,9 @@ opening delimiter itself, since the substring <code>'''</code> appears immediate
 after the <code>r</code>. The real fix explicitly consumes past that opening
 sequence (<code>r"(cpp_fused_\w+ = async_compile\.cpp_pybinding\([^\n]*r'''.*?''')"</code>)
 before the lazy <code>.*?'''</code> is allowed to find the REAL closing triple-quote.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python3<span class="w"> </span><span class="s2">"072_torch_compiles_real_two_stage_pipeline_dynamo_capture_then_inductor_codegen.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>python3<span class="w"> </span><span class="s2">"072_torch_compiles_real_two_stage_pipeline_dynamo_capture_then_inductor_codegen.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Chapter 28, File 073: a graph break -- TorchDynamo's own real tracing-</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Chapter 28, File 073: a graph break -- TorchDynamo's own real tracing-</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># capability boundary, genuinely different from the fusion boundary File 072</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1"># already confirmed Inductor draws automatically. Run on the same</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Ch4/13/25/26/27/72 diamond graph, split by inserting exactly one real</span>
@@ -2650,10 +2650,10 @@ before the lazy <code>.*?'''</code> is allowed to find the REAL closing triple-q
 <a id="__codelineno-6-126" name="__codelineno-6-126" href="#__codelineno-6-126"></a>          <span class="sa">f</span><span class="s2">"here by a completely different real mechanism (a tracing "</span>
 <a id="__codelineno-6-127" name="__codelineno-6-127" href="#__codelineno-6-127"></a>          <span class="sa">f</span><span class="s2">"boundary, not a hand-written kernel split)"</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python3<span class="w"> </span><span class="s2">"073_graph_breaks_a_real_tracing_boundary_distinct_from_inductors_own_fusion_decision.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>python3<span class="w"> </span><span class="s2">"073_graph_breaks_a_real_tracing_boundary_distinct_from_inductors_own_fusion_decision.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed torch.compile output; this chapter is verified on the cloud sandbox only, per the disk-space finding above):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Real torch._dynamo.explain() summary, no break:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Real torch._dynamo.explain() summary, no break:
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>  graph_count=1 graph_break_count=0 op_count=4
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>Real torch._dynamo.explain() summary, with one .item() break:
@@ -2688,7 +2688,7 @@ still cause breaks. The demonstration explicitly disables scalar capture
 to make its intended boundary reproducible. <code>torch._dynamo.explain()</code> reports this directly, as
 a real <code>ExplainOutput</code> dataclass with clean fields rather than a wall of
 printed guard objects:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  diamond_no_break:     graph_count=1  graph_break_count=0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  diamond_no_break:     graph_count=1  graph_break_count=0
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  diamond_with_break:   graph_count=2  graph_break_count=1
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>                         break reason: "Unsupported Tensor.item() call
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>                         with capture_scalar_outputs=False"
@@ -2708,7 +2708,7 @@ source ever names <code>t1</code> as a return value. The SECOND module's own ker
 crosses the graph-break boundary as a real compiled buffer passed from
 the first module's own output directly into the second module's own
 input.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>  diamond_with_break, real compiled shape:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>  diamond_with_break, real compiled shape:
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  kernel 1: cpp_fused_add_sum_0              kernel 2: cpp_fused_add_mul_relu_0
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  in:  a, b                                  in:  t1 (=buf0), c
@@ -2725,9 +2725,9 @@ separately compiled kernels -- reached here by a completely different
 real mechanism: a tracing limitation TorchDynamo hits before compilation
 even starts, not a hand-written kernel split the programmer chose in
 advance.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python3<span class="w"> </span><span class="s2">"073_graph_breaks_a_real_tracing_boundary_distinct_from_inductors_own_fusion_decision.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python3<span class="w"> </span><span class="s2">"073_graph_breaks_a_real_tracing_boundary_distinct_from_inductors_own_fusion_decision.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Chapter 28, File 074: TorchInductor's own real autotuning config surface,</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Chapter 28, File 074: TorchInductor's own real autotuning config surface,</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># laid directly next to CUDA Hammer's own Schedule/enumerateSchedules()</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># (Chapter 21), hybrid cost-model-then-measurement autotuner (Chapter 23.3),</span>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># and TuningCache (Chapter 24) -- the same "read the real library's own</span>
@@ -2857,10 +2857,10 @@ advance.</p>
 <a id="__codelineno-12-128" name="__codelineno-12-128" href="#__codelineno-12-128"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">"(max-autotune produced a CPU-tensor result; GPU availability "</span>
 <a id="__codelineno-12-129" name="__codelineno-12-129" href="#__codelineno-12-129"></a>          <span class="s2">"above is a separate host property, not the execution device)"</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">"074_real_inductor_autotune_config_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">"074_real_inductor_autotune_config_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed torch.compile output; this chapter is verified on the cloud sandbox only, per the disk-space finding above):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Real torch._inductor.config autotuning fields (library defaults):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Real torch._inductor.config autotuning fields (library defaults):
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  max_autotune = False
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>  max_autotune_gemm = False
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>  max_autotune_pointwise = False
@@ -2930,7 +2930,7 @@ candidates rather than failing outright when no GPU is attached -- the
 same "real execution succeeds even under this chapter's own real
 hardware limitation" finding File 072 and File 073 already established
 for the ungated default path.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python3<span class="w"> </span><span class="s2">"074_real_inductor_autotune_config_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python3<span class="w"> </span><span class="s2">"074_real_inductor_autotune_config_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
 </code></pre></div>
 
 

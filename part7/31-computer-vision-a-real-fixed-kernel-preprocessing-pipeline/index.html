@@ -2250,7 +2250,7 @@ fixed-kernel preprocessing stage that runs before a real vision model
 ever sees a pixel -- brightness/contrast calibration, then a small,
 fixed spatial filter. Three sections, the same self-checking structure
 every chapter in this book has used since Chapter 1:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 31's own shape, section by section                      |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  31.1  Calibrated brightness/contrast normalization -- a real     |
@@ -2298,7 +2298,7 @@ second pass's Const nodes as a quantization scale and zero point. This
 section runs the identical two-pass structure through CUDA Hammer's own
 C++ graph builder instead of a Python calibration script, on image
 intensities instead of tensor values:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>+-------------------------+     +--------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>+-------------------------+     +--------------------------------+
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>|  PASS 1: the STATS graph |     |  PASS 2: the CALIBRATION graph  |
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>|                           |     |  (built FRESH, using Pass 1's   |
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>|  img -&gt; Sum -&gt; mean       |     |   real measured mean baked in   |
@@ -2323,7 +2323,7 @@ signal: an 8x8 grid where the left four columns hold intensity 10 and
 the right four hold intensity 200, flattened row-major into 64 floats --
 a real vertical step edge Section 31.2 needs later, and a mean any
 reader can verify by hand: <code>(4*10 + 4*200) / 8 = 105.0</code> exactly.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 31: Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 31: Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 081_calibrated_brightness_contrast_normalization.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 31.1 -- Part 7 opens with a promise Getting Started already made:</span>
@@ -2648,11 +2648,11 @@ reader can verify by hand: <code>(4*10 + 4*200) / 8 = 105.0</code> exactly.</p>
 <a id="__codelineno-2-323" name="__codelineno-2-323" href="#__codelineno-2-323"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-2-324" name="__codelineno-2-324" href="#__codelineno-2-324"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>081_calibrated_brightness_contrast_normalization.cpp<span class="w"> </span>-o<span class="w"> </span>081_calibrated_brightness_contrast_normalization_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>081_calibrated_brightness_contrast_normalization.cpp<span class="w"> </span>-o<span class="w"> </span>081_calibrated_brightness_contrast_normalization_driver
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./081_calibrated_brightness_contrast_normalization_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Chapter 31 (Part 7): Section 31.1 -- calibrated brightness/contrast normalization ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Chapter 31 (Part 7): Section 31.1 -- calibrated brightness/contrast normalization ===
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>8x8 step image (row-major, 64 pixels): left 4 columns = 10, right 4 columns = 200
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
@@ -2713,7 +2713,7 @@ the image border), producing 9 ordinary same-shaped <code>[64]</code> arrays --
 CUDA Hammer's own graph never sees an offset, only 9 real <code>Input</code> nodes
 it combines with <code>Mul</code> and <code>Add</code>, exactly like every other elementwise
 graph in this book:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  original 8x8 image            9 shifted copies (im2col, host-side)
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  original 8x8 image            9 shifted copies (im2col, host-side)
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  +---+---+---+---+              shift(-1,-1)  shift(-1,0)  shift(-1,1)
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  | . | . | . | . |    ----&gt;     shift( 0,-1)  shift( 0,0)  shift( 0,1)
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  | . | . | . | . |   (zero-     shift( 1,-1)  shift( 1,0)  shift( 1,1)
@@ -2728,7 +2728,7 @@ graph in this book:</p>
 never shifts anything, reading neighbors straight out of the original
 2D grid -- checks that the im2col-style graph computes exactly the same
 answer.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 31: Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 31: Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1">// 082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs.cpp</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1">//</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1">// Section 31.2 -- CUDA Hammer's IR (Input, Const, Add, Mul, ReLU, Sum) has</span>
@@ -3124,11 +3124,11 @@ answer.</p>
 <a id="__codelineno-6-394" name="__codelineno-6-394" href="#__codelineno-6-394"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-6-395" name="__codelineno-6-395" href="#__codelineno-6-395"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs.cpp<span class="w"> </span>-o<span class="w"> </span>082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs.cpp<span class="w"> </span>-o<span class="w"> </span>082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs_driver
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./082_a_real_fixed_3x3_filter_via_im2col_style_pre_shifted_inputs_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Chapter 31 (Part 7): Section 31.2 -- a real fixed 3x3 filter via im2col-style pre-shifted inputs ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Chapter 31 (Part 7): Section 31.2 -- a real fixed 3x3 filter via im2col-style pre-shifted inputs ===
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>--- Part 1: 3x3 box blur (weight 1/9 on all 9 neighbors) ---
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
@@ -3172,7 +3172,7 @@ response (both reading the SAME 9 inputs, a genuine multi-consumer
 fan-out), combined, thresholded, and globally average-pooled down to one
 scalar feature -- and runs the WHOLE thing through machinery this book
 already built and proved correct, never through anything new:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  normalize (31.1)   im2col-shift        THE CAPSTONE GRAPH (31.3)
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  normalize (31.1)   im2col-shift        THE CAPSTONE GRAPH (31.3)
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  img -&gt; normalized  the NORMALIZED  -&gt;  9 shifted inputs
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  (host reads back    image (host-       |         |
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>   the real Pass 2     side, AFTER       |         |
@@ -3203,7 +3203,7 @@ border, turning real "no data" zeros into a nonzero bias and silently
 corrupting every border pixel. So this file reads back File 081's real
 Pass 2 output first, shifts THAT array, and only then builds the graph
 that gets fused and vectorized.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 31: Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 31: Computer Vision -- A Real Fixed-Kernel Preprocessing Pipeline</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1">// 083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1">//</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1">// Section 31.3 -- the capstone. Files 081 and 082 each built and checked</span>
@@ -4115,11 +4115,11 @@ that gets fused and vectorized.</p>
 <a id="__codelineno-10-910" name="__codelineno-10-910" href="#__codelineno-10-910"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">allOk</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
 <a id="__codelineno-10-911" name="__codelineno-10-911" href="#__codelineno-10-911"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="o">[</span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>added<span class="w"> </span>automatically<span class="w"> </span>on<span class="w"> </span>x86_64<span class="o">]</span><span class="w"> </span>083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>083_the_whole_cv_pipeline_fused_and_vectorized_for_real_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span><span class="o">[</span>-mavx2<span class="w"> </span>-mfma<span class="w"> </span>added<span class="w"> </span>automatically<span class="w"> </span>on<span class="w"> </span>x86_64<span class="o">]</span><span class="w"> </span>083_the_whole_cv_pipeline_fused_and_vectorized_for_real.cpp<span class="w"> </span>-o<span class="w"> </span>083_the_whole_cv_pipeline_fused_and_vectorized_for_real_driver
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./083_the_whole_cv_pipeline_fused_and_vectorized_for_real_driver
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Chapter 31 (Part 7): Section 31.3 -- the whole CV pipeline, fused and vectorized for real ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Chapter 31 (Part 7): Section 31.3 -- the whole CV pipeline, fused and vectorized for real ===
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>--- Stage 0: normalize first, then im2col-shift the NORMALIZED image (order matters) ---
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>

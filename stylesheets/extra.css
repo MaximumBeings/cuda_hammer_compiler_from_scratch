@@ -20,7 +20,7 @@
 .md-typeset .chapter-figure figcaption { color:var(--md-default-fg-color--light); font-size:.8rem; margin:.7rem 0 0; }
 
 /* Soft-wrap code only; text diagrams retain their fixed-column geometry. */
-.md-typeset .highlight code {
+.md-typeset .highlight:is(.language-cpp, .language-c, .language-cuda, .language-python, .language-bash, .language-sh, .language-llvm, .language-mlir) code {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   tab-size: 4;

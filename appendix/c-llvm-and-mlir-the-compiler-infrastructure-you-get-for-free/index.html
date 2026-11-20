@@ -2271,7 +2271,7 @@ question since Chapter 31.2 first cited CUTLASS's own docs for the
 real im2col-based implicit-GEMM technique behind convolution
 libraries.</p>
 <h2 id="appendix-cs-own-shape">Appendix C's own shape<a class="headerlink" href="#appendix-cs-own-shape" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix C's own shape, section by section                      |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  C.1  Hand-Written LLVM IR for CUDA Hammer's Diamond Graph -- the |
@@ -2331,7 +2331,7 @@ dropping the device.</p>
 
 <p>Chapter 4's own diamond graph, reused in every chapter since, is five
 nodes built through <code>Graph::addInput</code>/<code>addBinary</code>/<code>addUnary</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  a, b = Input, Input
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  a, b = Input, Input
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  t1   = Add(a, b)
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  t2   = Mul(t1, a)
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  t3   = ReLU(t1)
@@ -2345,7 +2345,7 @@ conditional-select over an SSA value is a real <code>fcmp</code> feeding a real
 introduced for this book: it is the exact <code>fcmp</code>+<code>select</code> shape
 Chapter 34's own <code>max(a,b) = b + ReLU(a-b)</code> identity already used at
 the C++ source level, one level higher.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c">; 097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll</span>
+<div class="language-llvm highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c">; 097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c">; Appendix C.1 -- CUDA Hammer's own Chapter 4 diamond graph, hand-written</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c">; directly as real LLVM IR text instead of built through Graph::addInput/</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c">; addBinary/addUnary. The same five nodes File 005 built by hand:</span>
@@ -2388,25 +2388,25 @@ the C++ source level, one level higher.</p>
 <a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Verify (LLVM's own real IR verifier, not this book's code):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>opt<span class="w"> </span>-S<span class="w"> </span>-passes<span class="o">=</span>verify<span class="w"> </span>097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll<span class="w"> </span>-o<span class="w"> </span>/dev/null
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>opt<span class="w"> </span>-S<span class="w"> </span>-passes<span class="o">=</span>verify<span class="w"> </span>097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll<span class="w"> </span>-o<span class="w"> </span>/dev/null
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>VERIFY_OK
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>VERIFY_OK
 </code></pre></div>
 <p><strong>Run, path 1 -- compile the <code>.ll</code> text directly with <code>clang</code> (its own front end lowers straight to machine code):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>clang<span class="w"> </span>097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll<span class="w"> </span>-o<span class="w"> </span>diamond_exe<span class="w"> </span>-lm
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>clang<span class="w"> </span>097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll<span class="w"> </span>-o<span class="w"> </span>diamond_exe<span class="w"> </span>-lm
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>./diamond_exe
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>LLVM IR diamond result: 28.000000
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>LLVM IR diamond result: 28.000000
 </code></pre></div>
 <p><strong>Run, path 2 -- an independent path through LLVM's own native code generator, <code>llc</code>, then a plain linker (no <code>clang</code>-driven IR lowering involved at all):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>llc<span class="w"> </span>097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll<span class="w"> </span>-o<span class="w"> </span>diamond.s
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>llc<span class="w"> </span>097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll<span class="w"> </span>-o<span class="w"> </span>diamond.s
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>clang<span class="w"> </span>-no-pie<span class="w"> </span>diamond.s<span class="w"> </span>-o<span class="w"> </span>diamond_exe_via_llc<span class="w"> </span>-lm
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>./diamond_exe_via_llc
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>LLVM IR diamond result: 28.000000
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>LLVM IR diamond result: 28.000000
 </code></pre></div>
 <p>Both independent paths agree: 28.000000. The real generated x86-64
 assembly <code>llc</code> produced for <code>diamond</code> itself is worth reading in full
@@ -2416,7 +2416,7 @@ source level, and folded it into a single real <code>maxss</code> (SSE
 max-scalar-single) instruction, with no <code>fcmp</code>/<code>select</code>/branch left
 anywhere in the output:</p>
 <p><strong>Output (cloud sandbox -- real, live-executed output; <code>llc</code>'s own generated assembly text):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>    .text
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>    .text
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    .file   "097_hand_written_llvm_ir_for_cuda_hammers_diamond_graph.ll"
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    .globl  diamond                         # -- Begin function diamond
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    .p2align    4, 0x90
@@ -2496,7 +2496,7 @@ directly into <code>main</code> (the LLVM IR analogue of feeding
 <code>constantFoldPass()</code> a fully-constant graph), run through a real,
 general-purpose LLVM optimizer pipeline that has never heard of
 <code>Value</code>, <code>Node</code>, <code>Graph</code>, or <code>OpKind</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c">; Appendix C.2 -- the same diamond graph as File 097, but with a and b</span>
+<div class="language-llvm highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c">; Appendix C.2 -- the same diamond graph as File 097, but with a and b</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c">; baked in as literal constants inside main, the LLVM IR analogue of</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c">; Chapter 9's constantFoldPass() input: every operand of every node is</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c">; already a known constant before optimization runs.</span>
@@ -2530,11 +2530,11 @@ general-purpose LLVM optimizer pipeline that has never heard of
 <a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Run LLVM's own general-purpose constant-folding pipeline (inlining, instruction combining, global value numbering, dead-code elimination -- none of it written for this or any tensor IR):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>opt<span class="w"> </span>-S<span class="w"> </span>-passes<span class="o">=</span><span class="s2">"inline,instcombine,gvn,dce"</span><span class="w"> </span>098_what_llvms_own_optimizer_does_to_it_for_free.ll<span class="w"> </span>-o<span class="w"> </span>folded.ll
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>opt<span class="w"> </span>-S<span class="w"> </span>-passes<span class="o">=</span><span class="s2">"inline,instcombine,gvn,dce"</span><span class="w"> </span>098_what_llvms_own_optimizer_does_to_it_for_free.ll<span class="w"> </span>-o<span class="w"> </span>folded.ll
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>cat<span class="w"> </span>folded.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>; ModuleID = '098_what_llvms_own_optimizer_does_to_it_for_free.ll'
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>; ModuleID = '098_what_llvms_own_optimizer_does_to_it_for_free.ll'
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>source_filename = "098_what_llvms_own_optimizer_does_to_it_for_free.ll"
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>@.fmt = private unnamed_addr constant [30 x i8] c"LLVM IR diamond result: %.6f\0A\00"
@@ -2573,13 +2573,13 @@ because Chapter 9's <code>Graph</code> has no notion of external visibility at
 all) and re-running the same pipeline plus one more real pass,
 <code>globaldce</code> (whole-module dead-global elimination), removes the
 function too:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sed<span class="w"> </span><span class="s1">'s/define float @diamond/define internal float @diamond/'</span><span class="w"> </span>098_what_llvms_own_optimizer_does_to_it_for_free.ll<span class="w"> </span>&gt;<span class="w"> </span>internal.ll
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>sed<span class="w"> </span><span class="s1">'s/define float @diamond/define internal float @diamond/'</span><span class="w"> </span>098_what_llvms_own_optimizer_does_to_it_for_free.ll<span class="w"> </span>&gt;<span class="w"> </span>internal.ll
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>opt<span class="w"> </span>-S<span class="w"> </span>-passes<span class="o">=</span><span class="s2">"inline,instcombine,gvn,dce"</span><span class="w"> </span>internal.ll<span class="w"> </span>-o<span class="w"> </span>step1.ll
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>opt<span class="w"> </span>-S<span class="w"> </span>-passes<span class="o">=</span><span class="s2">"globaldce"</span><span class="w"> </span>step1.ll<span class="w"> </span>-o<span class="w"> </span>folded_internal.ll
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>cat<span class="w"> </span>folded_internal.ll
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>; ModuleID = '/tmp/appendix_c/098_internal_step1.ll'
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>; ModuleID = '/tmp/appendix_c/098_internal_step1.ll'
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>source_filename = "/tmp/appendix_c/098_internal.ll"
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>@.fmt = private unnamed_addr constant [30 x i8] c"LLVM IR diamond result: %.6f\0A\00"
@@ -2596,11 +2596,11 @@ function too:</p>
 <code>main</code> and the format string remain, and <code>main</code> itself is now nothing
 but a <code>printf</code> call with a literal. The program still compiles and
 runs, printing the same real 28.000000:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>clang<span class="w"> </span>folded_internal.ll<span class="w"> </span>-o<span class="w"> </span>folded_exe<span class="w"> </span>-lm
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>clang<span class="w"> </span>folded_internal.ll<span class="w"> </span>-o<span class="w"> </span>folded_exe<span class="w"> </span>-lm
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>./folded_exe
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>LLVM IR diamond result: 28.000000
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>LLVM IR diamond result: 28.000000
 </code></pre></div>
 <p>Chapter 9 needed two hand-written passes, tied to this book's own
 <code>OpKind</code> switch statement, to reach a comparable result over CUDA
@@ -2626,7 +2626,7 @@ pass. This file expresses the diamond graph applied elementwise over a
 real 5-element array as one <code>linalg.generic</code> op, with inputs chosen so
 ReLU genuinely clips something away rather than a convenience
 all-positive test vector:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>  a = [ 1, -2,   3, -4,  5]
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>  a = [ 1, -2,   3, -4,  5]
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>  b = [10,  1, -30,  1, -3]
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>  by hand, per index i:
@@ -2636,7 +2636,7 @@ all-positive test vector:</p>
 <a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>  i=3: t1=-3  (neg) t2=12   t3=0   out=12   -- ReLU clips a nonzero t1 away
 <a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>  i=4: t1=2   (pos) t2=10   t3=2   out=12
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>// Appendix C.3 -- the same diamond graph (t1=Add(a,b), t2=Mul(t1,a),
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>// Appendix C.3 -- the same diamond graph (t1=Add(a,b), t2=Mul(t1,a),
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>// t3=ReLU(t1), out=Add(t2,t3)) applied elementwise over a 5-element
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>// array, expressed as ONE real MLIR linalg.generic op -- the declarative,
 <a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>// fusion-friendly form Chapter 15's own hand-written LoopNest::tileLoop()
@@ -2715,11 +2715,11 @@ all-positive test vector:</p>
 <a id="__codelineno-18-77" name="__codelineno-18-77" href="#__codelineno-18-77"></a>}
 </code></pre></div>
 <p><strong>Step 1 -- lower the declarative <code>linalg.generic</code> into an explicit loop nest (<code>--convert-linalg-to-loops</code>, a real, general-purpose MLIR pass -- not written for this diamond, or for tensor compilers specifically):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>mlir-opt<span class="w"> </span>099_mlir_linalg_generic_and_progressive_lowering_for_a_fused_elementwise_op.mlir<span class="w"> </span>--convert-linalg-to-loops<span class="w"> </span>-o<span class="w"> </span>step1_loops.mlir
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>mlir-opt<span class="w"> </span>099_mlir_linalg_generic_and_progressive_lowering_for_a_fused_elementwise_op.mlir<span class="w"> </span>--convert-linalg-to-loops<span class="w"> </span>-o<span class="w"> </span>step1_loops.mlir
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>cat<span class="w"> </span>step1_loops.mlir
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>module {
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>module {
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>  func.func @diamond_elementwise(%arg0: memref&lt;5xf32&gt;, %arg1: memref&lt;5xf32&gt;, %arg2: memref&lt;5xf32&gt;) {
 <a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>    %cst = arith.constant 0.000000e+00 : f32
 <a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>    %c0 = arith.constant 0 : index
@@ -2781,7 +2781,7 @@ Triton's own real compiled TTIR for Flash Attention's KV-block loop --
 the same MLIR structured-control-flow op, produced by a different
 real frontend, doing the same real job.</p>
 <p><strong>Step 2 -- continue the real progressive lowering down to the LLVM dialect (structured control flow to a plain CFG, then arithmetic, control flow, and memory operations each to their own LLVM-dialect equivalents, then reconcile the type-conversion bookkeeping the pass pipeline leaves behind):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>mlir-opt<span class="w"> </span>step1_loops.mlir<span class="w"> </span>--convert-scf-to-cf<span class="w"> </span>-o<span class="w"> </span>step2_cf.mlir
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>mlir-opt<span class="w"> </span>step1_loops.mlir<span class="w"> </span>--convert-scf-to-cf<span class="w"> </span>-o<span class="w"> </span>step2_cf.mlir
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>mlir-opt<span class="w"> </span>step2_cf.mlir<span class="w"> </span>--convert-arith-to-llvm<span class="w"> </span>--convert-cf-to-llvm<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">    </span>--finalize-memref-to-llvm<span class="w"> </span>--convert-func-to-llvm<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span>--reconcile-unrealized-casts<span class="w"> </span>-o<span class="w"> </span>step3_llvmdialect.mlir
@@ -2793,10 +2793,10 @@ package (checked directly: not present anywhere on this machine), so
 rather than printing the whole output array, <code>main</code> returns a single
 <code>f32</code> -- <code>out[3]</code>, the one index where ReLU genuinely clips a nonzero
 value away -- and <code>--entry-point-result=f32</code> reports it directly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>mlir-cpu-runner<span class="w"> </span>step3_llvmdialect.mlir<span class="w"> </span>-e<span class="w"> </span>main<span class="w"> </span>--entry-point-result<span class="o">=</span>f32
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>mlir-cpu-runner<span class="w"> </span>step3_llvmdialect.mlir<span class="w"> </span>-e<span class="w"> </span>main<span class="w"> </span>--entry-point-result<span class="o">=</span>f32
 </code></pre></div>
 <p><strong>Output (cloud sandbox -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>1.200000e+01
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>1.200000e+01
 </code></pre></div>
 <p>1.200000e+01 -- 12.0, matching the hand derivation for <code>out[3]</code>
 exactly. Nothing about this specific diamond graph was ever written
@@ -2841,7 +2841,7 @@ limitation as every CUDA-linked file since Chapter 18 -- so this file
 compiles and instantiates the real CUTLASS kernel template, and
 reports the real <code>cudaGetDeviceCount()</code> result, rather than claiming a
 run.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1">// Appendix C.4 capstone -- Chapter 31.2 cited NVIDIA CUTLASS's own docs</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1">// Appendix C.4 capstone -- Chapter 31.2 cited NVIDIA CUTLASS's own docs</span>
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="c1">// for the real im2col-based implicit-GEMM technique behind convolution</span>
 <a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="c1">// libraries ("constructs the convolution matrix explicitly via... im2col").</span>
 <a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="c1">// This file goes one level deeper: it compiles a real CUTLASS GEMM</span>
@@ -2932,14 +2932,14 @@ run.</p>
 <a id="__codelineno-24-89" name="__codelineno-24-89" href="#__codelineno-24-89"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile against the real, sparse-cloned CUTLASS headers:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>nvcc<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-arch<span class="o">=</span>sm_80<span class="w"> </span>--expt-relaxed-constexpr<span class="w"> </span><span class="se">\</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>nvcc<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-arch<span class="o">=</span>sm_80<span class="w"> </span>--expt-relaxed-constexpr<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">    </span>-I/path/to/cutlass/include<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">    </span>100_cutlass_and_the_real_im2col_aware_gemm_behind_chapter_31s_citation.cu<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">    </span>-o<span class="w"> </span>cutlass_gemm
 <a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"exit: </span><span class="nv">$?</span><span class="s2">"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output; cloud-only per this book's standing rule, and this appendix's own device-toolchain-absence finding above):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>cudaGetDeviceCount: err=no CUDA-capable device is detected, deviceCount=0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>cudaGetDeviceCount: err=no CUDA-capable device is detected, deviceCount=0
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>No CUDA device detected in this environment -- compiling and
 <a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>instantiating the real CUTLASS Gemm template above (this is the
 <a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>real thing CUTLASS's build would have checked at kernel-launch

@@ -2436,7 +2436,7 @@
 <p><strong>What you need to know first:</strong> Chapter 4's <code>Value</code>/<code>Node</code>/<code>Graph</code> and <code>topologicalSort()</code>, Chapter 7's <code>printGraphAsSource()</code>, and Chapter 8's <code>TransformPass</code> and <code>runPasses()</code> -- this chapter plugs two brand-new passes directly into that last piece of infrastructure, completely unchanged.</p>
 <hr />
 <p>Chapter 8 built the machinery -- a <code>TransformPass</code> signature, a first real pass (<code>canonicalizeNodeNames()</code>), and a <code>PassManager</code> that runs a sequence of passes safely -- but neither of Chapter 8's own passes made a graph <em>better</em> in any measurable sense; canonicalization only changes names. This chapter builds the first two passes that actually do: constant folding, which notices when a computation's answer is already fully determined and replaces the computation with that answer directly, and dead code elimination, which notices when a node's result is never actually used and drops it. Both passes plug into Chapter 8's <code>TransformPass</code> signature -- <code>Graph(const Graph&amp;)</code> -- with no changes to that signature at all, which is exactly the payoff of Chapter 8 having settled on that design two chapters early.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO CHAPTER 8's OWN INFRASTRUCTURE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO CHAPTER 8's OWN INFRASTRUCTURE:
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  Chapter 8's passes:              THIS chapter's passes:
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -2464,7 +2464,7 @@
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>A recipe that says "preheat the oven to 350 plus 25 degrees" is asking the cook to do arithmetic that has nothing to do with cooking -- the number 375 was always the actual answer, and writing "350 plus 25" instead of just "375" adds a small, pointless step every single time the recipe is followed. A graph can end up with the exact same kind of pointless step: <code>Const(2)</code> added to <code>Const(3)</code> is <em>always</em> going to be <code>5</code>, for every single execution of that graph, for every possible input the graph might receive elsewhere -- because neither operand depends on anything that could vary. Computing that addition again every time the graph runs is real, avoidable, repeated work for an answer that was already fully determined the moment the graph was built. Constant folding is the pass that notices this and does the arithmetic once, right now, at compile time, instead of leaving it to be redone at every single run.</p>
 <p>Chapter 2's own File 004 already built a constant-folding pass -- but for a much simpler IR, a flat sequence of three-address-code instructions with no graph structure at all. This section builds the real thing for CUDA Hammer's own <code>Graph</code>, reusing Chapter 2's core idea (if every operand is already known, replace the computation with the answer) while building it entirely from this book's own <code>Value</code>/<code>Node</code>/<code>Graph</code>/<code>topologicalSort()</code> machinery.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>THE CORE IDEA, UNCHANGED SINCE CHAPTER 2, NOW APPLIED TO A REAL GRAPH:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>THE CORE IDEA, UNCHANGED SINCE CHAPTER 2, NOW APPLIED TO A REAL GRAPH:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  Chapter 2's File 004 (a flat instruction list):       THIS chapter (a real Graph):
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
@@ -2477,7 +2477,7 @@
 </code></pre></div>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p><code>constantFoldPass()</code> rebuilds the graph in topological order -- structurally the same walk Chapter 8's <code>canonicalizeNodeNames()</code> already used -- but at every <code>Add</code>, <code>Mul</code>, and <code>ReLU</code>, it checks whether its own already-rebuilt operands turned out to be <code>Const</code> nodes <em>in the new graph</em>. When they are, it computes the real arithmetic answer immediately and emits a single <code>Const</code> node instead of the original operation. When they aren't, it rebuilds the node exactly as it was, unchanged.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>constantFoldPass() AT EACH KIND OF NODE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>constantFoldPass() AT EACH KIND OF NODE:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  Input, Const   --&gt;  rebuilt exactly as-is (nothing to fold -- a leaf
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>                       has no operands to check in the first place)
@@ -2493,7 +2493,7 @@
 <a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>                         rebuild the ReLU exactly as it was
 </code></pre></div>
 <p>The detail that makes this fold an entire <em>chain</em> of constant computation in a single pass, rather than needing to run repeatedly until nothing changes, is exactly which graph the Const check looks at: the check reads <code>result.node(...)</code>, the <em>new</em> graph being built, not the old one. A node folded earlier in the same walk is already sitting in the new graph as a <code>Const</code> by the time anything downstream of it gets checked -- so that downstream node sees a <code>Const</code> operand too, and folds in turn.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Chapter 9: Constant Folding and Dead Code Elimination</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Chapter 9: Constant Folding and Dead Code Elimination</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1">// 015_constant_folding_replaces_computation_with_its_answer.cpp</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1">//</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1">// Section 9.1 -- constant folding, this book's first genuinely</span>
@@ -2829,11 +2829,11 @@
 <a id="__codelineno-3-334" name="__codelineno-3-334" href="#__codelineno-3-334"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>015_constant_folding_replaces_computation_with_its_answer.cpp<span class="w"> </span>-o<span class="w"> </span>015_constant_folding_replaces_computation_with_its_answer
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>015_constant_folding_replaces_computation_with_its_answer.cpp<span class="w"> </span>-o<span class="w"> </span>015_constant_folding_replaces_computation_with_its_answer
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>./015_constant_folding_replaces_computation_with_its_answer
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>=== Section 9.1: constantFoldPass(), folding a whole constant chain in one pass ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>=== Section 9.1: constantFoldPass(), folding a whole constant chain in one pass ===
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Original graph:
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  %0 = Const(c1) [value=2]
@@ -2875,7 +2875,7 @@
 <p>A shipping warehouse that never checks which crates anyone actually ordered will happily keep building and storing crates nobody will ever pick up -- the resources spent building, labeling, and storing those crates are real, and completely wasted, the moment nothing downstream ever asks for them. A graph can accumulate the exact same kind of waste: a node computed correctly, from real inputs, that nothing else in the graph -- and nothing outside it -- ever actually consumes. Dead code elimination is the pass that finds nodes like this and drops them, finally putting Chapter 8's own "rebuild rather than mutate" design to the purpose it was built for: <code>Graph</code> still has no way to remove a node from an existing graph, so "drop a dead node" has only ever meant "don't add it to the new graph being built."</p>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
 <p>Deciding whether a node is dead requires answering a question this book's <code>Graph</code> has never had a way to ask: which node's value does the <em>caller</em> actually want? Every example graph since Chapter 4 has ended with a node named <code>"out"</code>, purely by convention -- nothing in <code>Graph</code> itself records that fact. Without SOME notion of "this is the value the graph is actually for," dead code elimination has no anchor to reason from at all: every node would trivially qualify as "not used by anything outside the graph," since the graph has no concept of an outside in the first place.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>WHY "DEAD" HAS NO MEANING WITHOUT A DESIGNATED OUTPUT:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>WHY "DEAD" HAS NO MEANING WITHOUT A DESIGNATED OUTPUT:
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  a Graph with NO known output:  every node is "unused by anything
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>                                   outside the graph" -- but so is
@@ -2890,7 +2890,7 @@
 <a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>                                   live; everything else is dead.
 </code></pre></div>
 <p>This section picks the simplest convention that fits every example graph this book has built through Chapter 8: the <em>last</em> node added to the graph is treated as that graph's own output. This is a real simplification, not a hidden one -- a language with multiple return values, or an explicit list of "these values must stay live," would need something more general than "whichever node happens to be last." For the single-output graphs this book has used everywhere so far, this convention has one very deliberate payoff: <code>deadCodeEliminationPass()</code> keeps the exact signature every other <code>TransformPass</code> in this book has, <code>Graph(const Graph&amp;)</code> -- no extra "which node is the output" parameter ever needs to be threaded through Chapter 8's own <code>runPasses()</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>LIVENESS, COMPUTED BY WALKING BACKWARD FROM THE OUTPUT:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>LIVENESS, COMPUTED BY WALKING BACKWARD FROM THE OUTPUT:
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  topologicalSort() (Chapter 4) walks FORWARD -- from nodes with no
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  inputs, toward nodes that depend on them -- to find a valid order to
@@ -2906,7 +2906,7 @@
 <a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>  reachable from NOTHING the output depends on -- is DEAD.
 </code></pre></div>
 <p>One detail worth being precise about: a node with more than one live consumer (this book's own diamond graph's <code>t1</code>, needed by both <code>t2</code> and <code>t3</code>) is still visited, and kept, exactly once. <code>computeLiveNodeIds()</code> uses a <code>std::set&lt;int&gt;</code> specifically because liveness is a yes/no question about a node, never a count of how many paths reach it -- the backward walk simply skips a node it has already marked live, the same way <code>identityPass()</code> and <code>constantFoldPass()</code> skip nothing and instead correctly reuse a single, already-built <code>Value</code> whenever more than one downstream node references the same input.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">// Chapter 9: Constant Folding and Dead Code Elimination</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">// Chapter 9: Constant Folding and Dead Code Elimination</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1">// 016_dead_code_elimination_from_the_graphs_own_output.cpp</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1">//</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1">// Section 9.2 -- dead code elimination, the first real use of Chapter</span>
@@ -3190,11 +3190,11 @@
 <a id="__codelineno-8-282" name="__codelineno-8-282" href="#__codelineno-8-282"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>016_dead_code_elimination_from_the_graphs_own_output.cpp<span class="w"> </span>-o<span class="w"> </span>016_dead_code_elimination_from_the_graphs_own_output
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>016_dead_code_elimination_from_the_graphs_own_output.cpp<span class="w"> </span>-o<span class="w"> </span>016_dead_code_elimination_from_the_graphs_own_output
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>./016_dead_code_elimination_from_the_graphs_own_output
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>=== Section 9.2: deadCodeEliminationPass(), dropping a node nothing depends on ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>=== Section 9.2: deadCodeEliminationPass(), dropping a node nothing depends on ===
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>Graph with one dead node ('junk'):
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  %0 = Input(a)
@@ -3235,7 +3235,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Paying off a mortgage early does not just eliminate the payment itself -- it can also free up money that was going toward mortgage-related insurance, which in turn might free up something else, in a chain that was never visible while the mortgage was still active. Constant folding has exactly this same second-order effect on a graph: folding <code>(c1 + c2) * c3</code> down to a single <code>Const(20)</code> does not just simplify that one computation -- it also <em>severs</em> every edge that used to point back to <code>c1</code>, <code>c2</code>, <code>c3</code>, and the intermediate <code>t1</code>, since the new <code>Const(20)</code> node has no inputs at all. Those four nodes were genuinely needed before the fold; after it, nothing in the graph depends on any of them anymore. Folding does not know or care about this side effect -- it rebuilds every single node in the graph, whether or not anything downstream still needs it. Noticing and cleaning up the wreckage is dead code elimination's job, and it can only do that job if it runs <em>after</em> folding has created the mess for it to find.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>WHAT FOLDING ALONE LEAVES BEHIND (SAME GRAPH AS SECTION 9.1):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>WHAT FOLDING ALONE LEAVES BEHIND (SAME GRAPH AS SECTION 9.1):
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  before folding:  c1, c2, c3 --&gt; t1 --&gt; t2 --&gt; out
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>                                          (x also feeds out)
@@ -3251,7 +3251,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p>Both <code>constantFoldPass()</code> and <code>deadCodeEliminationPass()</code> already have the exact signature Chapter 8's <code>TransformPass</code> requires -- neither needed a single change to plug directly into Chapter 8's own <code>runPasses()</code>. File 017 below reuses <code>runPasses()</code> completely unchanged, running <code>[constantFoldPass, deadCodeEliminationPass]</code> over File 015's own seven-node graph, and prints a node count alongside every before/after dump so the size reduction is visible at each step, not just at the end.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>THE PIPELINE, NODE COUNTS MADE EXPLICIT AT EVERY STEP:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>THE PIPELINE, NODE COUNTS MADE EXPLICIT AT EVERY STEP:
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  before any pass:                7 nodes  (c1, c2, c3, t1, t2, x, out)
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  after constantFoldPass:         7 nodes  (t1, t2 became Const --
@@ -3268,7 +3268,7 @@
 <a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>  directly.
 </code></pre></div>
 <p>The order-matters claim is worth proving directly, not just asserting: File 017 also runs <code>deadCodeEliminationPass()</code> completely alone, on the <em>original</em>, unfolded graph. In the unfolded graph, <code>c1</code>, <code>c2</code>, <code>c3</code>, and <code>t1</code> are all still genuinely needed -- <code>t1</code> really does compute <code>Add(c1, c2)</code>, and <code>t2</code> really does need that result -- so DCE alone finds every single node live and removes nothing at all. The 7-node-to-3-node reduction earlier is not something either pass could produce by itself; it specifically requires folding to run first, creating the dead nodes, and DCE to run second, finding them.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>WHY ORDER SPECIFICALLY MATTERS HERE (NOT JUST "BOTH PASSES SHOULD RUN"):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>WHY ORDER SPECIFICALLY MATTERS HERE (NOT JUST "BOTH PASSES SHOULD RUN"):
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  DCE alone, on the UNFOLDED graph:
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    c1, c2, c3, t1 are all genuinely, actually needed by t2 --&gt;
@@ -3282,7 +3282,7 @@
 <a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>  the difference is not "DCE didn't run" -- it's that DCE was asked
 <a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>  the right question ("what's live NOW") only in the second ordering.
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Chapter 9: Constant Folding and Dead Code Elimination</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Chapter 9: Constant Folding and Dead Code Elimination</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1">// 017_folding_and_dce_together_through_chapter_8s_pass_manager.cpp</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1">//</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1">// Section 9.3 -- running constantFoldPass and deadCodeEliminationPass</span>
@@ -3644,11 +3644,11 @@
 <a id="__codelineno-14-360" name="__codelineno-14-360" href="#__codelineno-14-360"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>017_folding_and_dce_together_through_chapter_8s_pass_manager.cpp<span class="w"> </span>-o<span class="w"> </span>017_folding_and_dce_together_through_chapter_8s_pass_manager
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>017_folding_and_dce_together_through_chapter_8s_pass_manager.cpp<span class="w"> </span>-o<span class="w"> </span>017_folding_and_dce_together_through_chapter_8s_pass_manager
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>./017_folding_and_dce_together_through_chapter_8s_pass_manager
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Section 9.3: constant folding creates dead code; DCE only helps if it runs AFTER ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Section 9.3: constant folding creates dead code; DCE only helps if it runs AFTER ===
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>&gt;&gt;&gt; Pipeline: [constantFoldPass, deadCodeEliminationPass]
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>

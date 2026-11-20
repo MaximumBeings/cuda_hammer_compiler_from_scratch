@@ -2436,7 +2436,7 @@
 <p><strong>What you need to know first:</strong> Chapter 4's <code>Value</code>/<code>Node</code>/<code>Graph</code>, <code>topologicalSort()</code>, and consumer-counting idiom (<code>consumerCounts()</code>), Chapter 6's <code>Shape</code>/<code>inferShapes()</code>, Chapter 8's <code>TransformPass</code> and <code>runPasses()</code>, Chapter 9's <code>evaluate()</code> and its "last node is the output" convention, and Chapter 12's arithmetic-intensity byte-counting for the exact same diamond graph this chapter reuses.</p>
 <hr />
 <p>Every pass through Chapter 11 shared one structural trait: it replaced a node with <em>another single node</em> -- constant folding replaced a computable <code>Add</code> with a <code>Const</code>; CSE replaced a duplicate with a pointer to the original; algebraic simplification replaced an identity with an already-existing operand. In every case, the graph's own node-for-node character never changed -- print it with Chapter 7's <code>printGraphAsSource()</code> before and after, and you'd still see one line per operation, still parseable by Chapter 5's own grammar. Fusion cannot work this way, because its entire point is to make <em>several</em> operations happen inside <em>one</em> kernel launch -- and CUDA Hammer's <code>Graph</code> has never had a way to say "this one node actually represents three operations, not one." This chapter builds that representation, and the pass that produces it.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO PART 2's OWN PASS LINEAGE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO PART 2's OWN PASS LINEAGE:
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  Ch9's passes:        Ch10's pass:          Ch11's pass:            THIS chapter's pass:
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -2463,7 +2463,7 @@
 <p>Think of how a recipe card works. Most recipe steps stand alone: "chop the onion," written on its own line, could be read and done independently of anything else, and another recipe could reference "an already-chopped onion" as its own starting ingredient. But some steps only make sense read together: "whisk the eggs, then fold in the whisked eggs while still warm" is really one continuous action with an internal handoff -- writing "fold in the eggs" as its own separate card, to be done whenever someone gets around to it, would let them go cold first, changing the result. A <code>FusedElementwise</code> node is CUDA Hammer's way of writing several operations on ONE card, with the "handoff" between them made explicit as something that happens immediately, in place, never left to cool.</p>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>Chapter 3 already described exactly this shape in a real, production compiler: XLA's own fusion computations, where, quoting Chapter 3's own citation, "no intermediate storage inside the fusion is materialized in HBM." This chapter builds CUDA Hammer's own version of that idea. A <code>FusedElementwise</code> node's <code>inputs</code> list holds only its <strong>external</strong> inputs -- values that genuinely have to be read from memory when the fused kernel starts. Its own internal computation is a small, ordered program: a <code>std::vector&lt;FusedStep&gt;</code>, where each <code>FusedStep</code> is one <code>Add</code>, <code>Mul</code>, or <code>ReLU</code>, and each of ITS OWN operands is either an <code>ExternalInput</code> (read once, from the node's own <code>inputs</code> list) or a <code>PriorStep</code> (the result of an earlier step in the SAME program, which never touches memory at all -- it lives in a register for exactly the one step that reads it).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>A FusedElementwise NODE'S OWN SHAPE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>A FusedElementwise NODE'S OWN SHAPE:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  Node {
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    op = FusedElementwise
@@ -2481,7 +2481,7 @@
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>  at the level of one node's own internal program.
 </code></pre></div>
 <p><code>elementwiseFusionPass()</code> builds this by walking the graph in topological order, deciding at each <code>Add</code>/<code>Mul</code>/<code>ReLU</code> node whether it can be <em>inlined</em> into whatever single thing consumes it, or whether it must stand alone. The rule for inlining is exactly Chapter 4's own consumer-counting idiom (<code>File 005</code>'s <code>consumerCounts()</code>), computed once, up front: a node inlines into its consumer's own fused body if and only if it is itself <code>Add</code>/<code>Mul</code>/<code>ReLU</code> <strong>and</strong> it has exactly one consumer in the <em>original</em> graph. This section's own test graph is the simplest case where that rule never has to say no -- every node has exactly one consumer, so nothing yet forces a boundary; Section 13.2 is where the rule actually starts deciding something.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 13: Elementwise Fusion</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 13: Elementwise Fusion</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 13.1 -- Part 3's first real fusion PASS: elementwiseFusionPass(),</span>
@@ -2928,11 +2928,11 @@
 <a id="__codelineno-2-445" name="__codelineno-2-445" href="#__codelineno-2-445"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body.cpp<span class="w"> </span>-o<span class="w"> </span>027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body.cpp<span class="w"> </span>-o<span class="w"> </span>027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./027_elementwise_fusion_a_new_node_kind_for_a_fused_kernel_body
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 13.1: elementwiseFusionPass(), a straight single-consumer chain ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 13.1: elementwiseFusionPass(), a straight single-consumer chain ===
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Original graph (6 nodes):
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  %0 x = Input()
@@ -2975,7 +2975,7 @@
 <p>Picture two chefs sharing one prepared sauce. If only ONE dish uses that sauce, the cook can fold the sauce-making right into that dish's own cooking process -- taste, adjust, plate, all in one continuous motion, nothing sitting around. But if TWO different dishes both need the same sauce, someone has to make a full batch, set it down in a container both chefs can reach, and let each dish's own cook take what they need from that one container -- the sauce becomes a real, standalone thing precisely because more than one thing depends on it. Chapter 4's own diamond graph is exactly this second case: <code>t1</code> (<code>a + b</code>) is used by both <code>t2</code> and <code>t3</code> -- it cannot be folded into either one's own fused body without either computing it twice or letting the two fused kernels silently drift out of sync with each other.</p>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
 <p>Section 13.1's chain never had to answer a hard question, because every node in it had exactly one consumer. Chapter 4's diamond graph does: <code>t1 = Add(a, b)</code> is consumed by BOTH <code>t2 = Mul(t1, a)</code> and <code>t3 = ReLU(t1)</code>. The rule from Section 13.1 -- inline only when a node has exactly one consumer -- says <code>t1</code> must stand alone: <code>consumers[t1] == 2</code>. <code>t2</code> and <code>t3</code> each have exactly one consumer (<code>out</code>), so they inline into <code>out</code>'s own fused body. The result is a real, structural fusion <strong>boundary</strong>: two kernels, not one -- <code>t1</code> on its own, and a <code>FusedElementwise</code> node holding <code>t2</code>, <code>t3</code>, and <code>out</code> together.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>CHAPTER 4's DIAMOND, THROUGH elementwiseFusionPass()'s OWN RULE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>CHAPTER 4's DIAMOND, THROUGH elementwiseFusionPass()'s OWN RULE:
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  ORIGINAL:            a   b
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                         \ /
@@ -2998,7 +2998,7 @@
 <a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>                             step2 = Add(step0, step1)    -- was out, this node's own output
 </code></pre></div>
 <p>The SAME pass, unmodified, run on a graph where that sharing is absent, makes a different decision -- not because the pass changed, but because the graph's own structure changed. This section's own File 028 proves both directions: the diamond's real boundary, and a second, deliberately modified graph (same shape, minus the second consumer of <code>t1</code>) where the exact same rule now allows full fusion into one node.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 13: Elementwise Fusion</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 13: Elementwise Fusion</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1">// 028_fusion_boundaries_what_a_shared_value_forces.cpp</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1">//</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1">// Section 13.2 -- reuses Section 13.1's elementwiseFusionPass() and</span>
@@ -3392,11 +3392,11 @@
 <a id="__codelineno-6-392" name="__codelineno-6-392" href="#__codelineno-6-392"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>028_fusion_boundaries_what_a_shared_value_forces.cpp<span class="w"> </span>-o<span class="w"> </span>028_fusion_boundaries_what_a_shared_value_forces
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>028_fusion_boundaries_what_a_shared_value_forces.cpp<span class="w"> </span>-o<span class="w"> </span>028_fusion_boundaries_what_a_shared_value_forces
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./028_fusion_boundaries_what_a_shared_value_forces
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Section 13.2: Chapter 4's diamond graph -- a SHARED value forces a boundary ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Section 13.2: Chapter 4's diamond graph -- a SHARED value forces a boundary ===
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Original diamond (6 nodes):
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  %0 a = Input()
@@ -3459,7 +3459,7 @@
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p><code>elementwiseFusionPass()</code> returns a <code>FusionResult</code>, not a bare <code>Graph</code> -- its <code>representativeOldId</code> side table is genuinely useful (this section uses it directly, to carry Chapter 6's <code>inferShapes()</code> results on the original graph across the pass), but it is <em>analysis</em> information, not the transformation itself, echoing the same analysis-pass/transform-pass distinction Chapter 2 first drew and Chapter 8 formalized. A one-line wrapper, <code>elementwiseFusionTransform()</code>, adapts the pass to Chapter 8's exact <code>TransformPass</code> contract for use inside <code>runPasses()</code>, which only ever needs the new graph itself -- proving, a fifth time since Chapter 9, that this book's PassManager infrastructure still needs zero changes.</p>
 <p>Byte-counting generalizes cleanly from Chapter 12's own formula to this chapter's real, post-fusion graph: any node that is not a leaf -- whether a plain <code>Add</code>/<code>Mul</code>/<code>ReLU</code> that never got fused, or a <code>FusedElementwise</code> node holding several -- reads every one of its own <code>inputs</code> (its external reads) from memory and writes its own single output back. A <code>FusedElementwise</code> node's internal steps never appear in this count at all, which is precisely the point of building one.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>BEFORE vs. AFTER, ON CHAPTER 4's DIAMOND (Chapter 12's own graph, Section 12.3):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>BEFORE vs. AFTER, ON CHAPTER 4's DIAMOND (Chapter 12's own graph, Section 12.3):
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  BEFORE (4 separate kernels -- t1, t2, t3, out):        496 bytes  (Chapter 12's own figure)
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  AFTER elementwiseFusionPass() (t1 stands alone,
@@ -3471,7 +3471,7 @@
 <a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>              112 -- 256 -- 496   (strictly increasing, left to right)
 <a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>   idealized (unreachable)   REAL PASS   fully unfused
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 13: Elementwise Fusion</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 13: Elementwise Fusion</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1">// 029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1">//</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1">// Section 13.3 -- closes the chapter two ways: plugging</span>
@@ -3971,11 +3971,11 @@
 <a id="__codelineno-10-498" name="__codelineno-10-498" href="#__codelineno-10-498"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp<span class="w"> </span>-o<span class="w"> </span>029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds.cpp<span class="w"> </span>-o<span class="w"> </span>029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./029_measuring_a_real_fusion_pass_against_chapter_12s_two_bounds
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Section 13.3: elementwiseFusionPass() through Chapter 8's own runPasses() ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Section 13.3: elementwiseFusionPass() through Chapter 8's own runPasses() ===
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>--- before any pass (6 nodes) ---
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  %0 a = Input()

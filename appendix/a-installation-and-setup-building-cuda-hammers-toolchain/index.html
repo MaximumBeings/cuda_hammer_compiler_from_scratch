@@ -2288,7 +2288,7 @@ any of them directly. This appendix does that verification, the same
 way this book verifies everything else: by compiling and running real
 code, not by asserting a requirement.</p>
 <h2 id="appendix-as-own-shape">Appendix A's own shape<a class="headerlink" href="#appendix-as-own-shape" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Appendix A's own shape, section by section                       |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  A.1  How much of C++17 does CUDA Hammer actually need? -- a      |
@@ -2335,7 +2335,7 @@ compile every one of those 71 real files under three real standard
 flags and see what happens -- not to guess from memory which C++17
 features "sound like" the kind of thing a compiler-writing book would
 use.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  real sweep, this session, all 71 of this book's own .cpp files:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  real sweep, this session, all 71 of this book's own .cpp files:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  g++ -std=c++11 -fsyntax-only file.cpp   (for each of the 71 files)
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  g++ -std=c++14 -fsyntax-only file.cpp
@@ -2364,7 +2364,7 @@ succeeds -- not a description of what should happen, the actual
 compiler's own real behavior. A reader can reproduce the full 71-file
 sweep themselves with the same two commands shown above, run from
 this book's own <code>docs/</code> directory.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section A.1 -- Every chapter in this book has compiled its own code</span>
@@ -2440,11 +2440,11 @@ this book's own <code>docs/</code> directory.</p>
 <a id="__codelineno-2-74" name="__codelineno-2-74" href="#__codelineno-2-74"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Attempt 1 -- <code>-std=c++11</code> (expected to fail):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++11<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c11
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++11<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c11
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">echo</span><span class="w"> </span><span class="s2">"exit: </span><span class="nv">$?</span><span class="s2">"</span>
 </code></pre></div>
 <p><strong>Compile output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: warning: multi-character character constant [-Wmultichar]
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: warning: multi-character character constant [-Wmultichar]
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>   63 |     const long long elementCount = 1'000'000;
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>      |                                     ^~~~~
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>/home/claude/hammer_repo/docs/appendix/code/093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp: In function 'std::unique_ptr&lt;Node&gt; makeNode(int, float)':
@@ -2461,7 +2461,7 @@ this book's own <code>docs/</code> directory.</p>
 <a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>      |                                     ^~~~~
 </code></pre></div>
 <p><strong>Compile output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: warning: multi-character character constant [-Wmultichar]
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp:63:37: warning: multi-character character constant [-Wmultichar]
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>   63 |     const long long elementCount = 1'000'000;
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>      |                                     ^~~~~
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp: In function ‘std::unique_ptr&lt;Node&gt; makeNode(int, float)’:
@@ -2479,34 +2479,34 @@ this book's own <code>docs/</code> directory.</p>
 </code></pre></div>
 <p><em>The real compile error is the same root cause on both machines (std::make_unique and the digit-separator literal both need C++14) -- the diagnostic TEXT differs only in quote-mark style (straight quotes from the cloud's g++ 13.3.0, curly quotes from the device's g++ 11.4.0), a real g++-version formatting difference, not a difference in what actually failed or why.</em></p>
 <p><strong>Attempt 2 -- <code>-std=c++14</code> (the real minimum, expected to succeed):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++14<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c14
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++14<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c14
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>./093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c14
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>__cplusplus = 201402L
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>__cplusplus = 201402L
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>digit-separator literal elementCount = 1000000
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>real result: this file compiled and ran under this standard.
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>__cplusplus = 201402L
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>__cplusplus = 201402L
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>digit-separator literal elementCount = 1000000
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>real result: this file compiled and ran under this standard.
 </code></pre></div>
 <p><em>Byte-identical on both machines -- this file has no CUDA/NCCL/MPI linkage and no vector intrinsics, cross-verified the same way every plain C++ file in this book is.</em></p>
 <p><strong>Attempt 3 -- <code>-std=c++17</code> (this book's own convention, also succeeds):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c17
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need.cpp<span class="w"> </span>-o<span class="w"> </span>093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c17
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>./093_how_much_of_cplusplus17_does_cuda_hammer_actually_need_c17
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>__cplusplus = 201703L
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>__cplusplus = 201703L
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>digit-separator literal elementCount = 1000000
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>real result: this file compiled and ran under this standard.
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>__cplusplus = 201703L
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>__cplusplus = 201703L
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>nodes allocated via std::make_unique: 3 (checksum of ids: 3)
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>digit-separator literal elementCount = 1000000
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>real result: this file compiled and ran under this standard.
@@ -2523,7 +2523,7 @@ this book's own <code>docs/</code> directory.</p>
 <p>Chapter 19's own real vectorized-CPU code generator picks its target
 instruction set once, at the top of its own <code>main()</code>, using only a
 compile-time architecture macro:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>  Chapter 19's own real generator (File 045 onward):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>  Chapter 19's own real generator (File 045 onward):
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  #if defined(__x86_64__)
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>      Isa hostIsa = Isa::Avx2;
@@ -2549,7 +2549,7 @@ standalone, reusable tool a reader runs on THEIR OWN machine before
 reaching Chapter 19, reading that machine's own real, live
 <code>/proc/cpuinfo</code> "flags" line directly rather than trusting the
 compile-time macro alone:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>  compile-time macro          real /proc/cpuinfo check
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>  compile-time macro          real /proc/cpuinfo check
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  (what Chapter 19's own      (what this section actually reads)
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>   generator branches on)
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
@@ -2570,7 +2570,7 @@ own real output differs exactly as expected: <code>__x86_64__</code> and a real
 real <code>asimd</code>-flagged CPU on the device -- both confirming, not just
 assuming, that Chapter 19's own compile-time choice is the real,
 correct one on each machine.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1">// 094_detecting_your_real_vector_isa_before_chapter_19.cpp</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1">//</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1">// Section A.2 -- Chapter 19's own real vectorized-CPU code generator</span>
@@ -2687,11 +2687,11 @@ correct one on each machine.</p>
 <a id="__codelineno-14-115" name="__codelineno-14-115" href="#__codelineno-14-115"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-14-116" name="__codelineno-14-116" href="#__codelineno-14-116"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>094_detecting_your_real_vector_isa_before_chapter_19.cpp<span class="w"> </span>-o<span class="w"> </span>094_detecting_your_real_vector_isa_before_chapter_19_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>094_detecting_your_real_vector_isa_before_chapter_19.cpp<span class="w"> </span>-o<span class="w"> </span>094_detecting_your_real_vector_isa_before_chapter_19_driver
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>./094_detecting_your_real_vector_isa_before_chapter_19_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>compile-time architecture macro: __x86_64__ defined
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>-&gt; Chapter 19's own generator will pick Isa::Avx2 for this machine.
@@ -2705,7 +2705,7 @@ correct one on each machine.</p>
 <a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a>from the compile-time architecture macro alone.
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>=== Appendix A.2: real vector-ISA detection, ahead of Chapter 19 ===
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>compile-time architecture macro: __aarch64__ defined
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>-&gt; Chapter 19's own generator will pick Isa::Neon for this machine.
@@ -2738,7 +2738,7 @@ host-side reference implementation...not by executing the kernel
 itself." This section is a minimal, standalone smoke test built on
 that exact same honest split, meant to be run BEFORE Chapter 18 to
 confirm an <code>nvcc</code> install works at all:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>  real nvcc compile (always attempted):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>  real nvcc compile (always attempted):
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    a trivial __global__ vectorAddKernel, real host/device pointer
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>    types, a real CUDA_CHECK macro -- if this reaches its own first
 <a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>    printf at all, the toolkit's own two-stage (device+host)
@@ -2757,7 +2757,7 @@ confirm an <code>nvcc</code> install works at all:</p>
 standing cross-machine rule it is verified on the cloud sandbox ONLY
 -- the device has no <code>nvcc</code> at all, confirmed directly in TOC.md's
 own toolchain notes, so there is nothing to cross-verify it against.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
 <a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="c1">// 095_verifying_an_optional_cuda_toolkit_install.cu</span>
 <a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="c1">//</span>
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1">// Section A.3 -- Chapter 18 onward needs a real CUDA toolkit (`nvcc`)</span>
@@ -2844,11 +2844,11 @@ own toolchain notes, so there is nothing to cross-verify it against.</p>
 <a id="__codelineno-19-85" name="__codelineno-19-85" href="#__codelineno-19-85"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-19-86" name="__codelineno-19-86" href="#__codelineno-19-86"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>nvcc<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-arch<span class="o">=</span>sm_80<span class="w"> </span>095_verifying_an_optional_cuda_toolkit_install.cu<span class="w"> </span>-o<span class="w"> </span>095_verifying_an_optional_cuda_toolkit_install_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>nvcc<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-arch<span class="o">=</span>sm_80<span class="w"> </span>095_verifying_an_optional_cuda_toolkit_install.cu<span class="w"> </span>-o<span class="w"> </span>095_verifying_an_optional_cuda_toolkit_install_driver
 <a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>./095_verifying_an_optional_cuda_toolkit_install_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output; CUDA-linked, cloud-only per this book's standing rule):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>=== Appendix A.3: verifying an optional CUDA toolkit install ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>=== Appendix A.3: verifying an optional CUDA toolkit install ===
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>
 <a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>real cudaGetDeviceCount(): no CUDA-capable device is detected, deviceCount=0
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>(this book's own two authoring machines both report 0 here -- no physical
@@ -2883,7 +2883,7 @@ checks into ONE consolidated report -- plain C++, no CUDA linkage, so
 per this book's own standing rule it is cross-verified on BOTH the
 cloud sandbox and the device, exactly like every other plain-C++
 capstone in this book since Chapter 1:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>  one real program, both machines:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>  one real program, both machines:
 <a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
 <a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>  [A.1] real __cplusplus value + a live std::make_unique probe
 <a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>        (if this line itself failed to compile, main() would never
@@ -2904,7 +2904,7 @@ device: <code>g++ 11.4.0</code>, no <code>nvcc</code>, real NEON) -- not re-asse
 claims from memory, but re-deriving them, independently, from this
 one small program's own real, fresh output, the same "measure, don't
 assert" discipline this book has followed since Chapter 1.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1">// Appendix A: Installation and Setup -- Building CUDA Hammer's Toolchain</span>
 <a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="c1">// 096_one_combined_toolchain_report_the_capstone.cpp</span>
 <a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1">//</span>
 <a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="c1">// Section A.4 (capstone) -- Sections A.1-A.3 each checked one real</span>
@@ -2992,11 +2992,11 @@ assert" discipline this book has followed since Chapter 1.</p>
 <a id="__codelineno-23-86" name="__codelineno-23-86" href="#__codelineno-23-86"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <a id="__codelineno-23-87" name="__codelineno-23-87" href="#__codelineno-23-87"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>096_one_combined_toolchain_report_the_capstone.cpp<span class="w"> </span>-o<span class="w"> </span>096_one_combined_toolchain_report_the_capstone_driver
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>096_one_combined_toolchain_report_the_capstone.cpp<span class="w"> </span>-o<span class="w"> </span>096_one_combined_toolchain_report_the_capstone_driver
 <a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>./096_one_combined_toolchain_report_the_capstone_driver
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>=== Appendix A.4 (capstone): one combined toolchain report ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>=== Appendix A.4 (capstone): one combined toolchain report ===
 <a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>
 <a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>[A.1] real __cplusplus = 201703L (C++17 or newer -- this book's own -std=c++17 convention met)
 <a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>      std::make_unique probe object: 1 (confirms C++14's own std::make_unique compiled)
@@ -3012,7 +3012,7 @@ assert" discipline this book has followed since Chapter 1.</p>
 <a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a>running compiled code on it, not copied from another machine's report ===
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>=== Appendix A.4 (capstone): one combined toolchain report ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>=== Appendix A.4 (capstone): one combined toolchain report ===
 <a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>
 <a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>[A.1] real __cplusplus = 201703L (C++17 or newer -- this book's own -std=c++17 convention met)
 <a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>      std::make_unique probe object: 1 (confirms C++14's own std::make_unique compiled)
@@ -3055,7 +3055,7 @@ cross-machine-verified treatment every numbered chapter has had.</p>
 Appendices list, still PLANNED and not yet written.</p>
 <h3 id="native-macos-feature-file-availability">Native macOS feature-file availability<a class="headerlink" href="#native-macos-feature-file-availability" title="Permanent link">&para;</a></h3>
 <p>Fresh arm64 macOS execution of File094 reports:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>/proc/cpuinfo unavailable: runtime flag inspection not performed on this platform.
 <a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>Architecture macros identify the compilation target, not a measured CPU feature list.
 </code></pre></div>
 <p>This is an unavailable Linux interface, not a CPU-feature mismatch. The historical Linux transcripts above describe their original environments, not this native macOS run.</p>

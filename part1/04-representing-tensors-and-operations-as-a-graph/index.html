@@ -2436,7 +2436,7 @@
 <p><strong>What you need to know first:</strong> Chapter 2's vocabulary (IR, pass, codegen) and, specifically, that Chapter 2's own IR was always a tree (as an AST) or a straight-line list (as linear IR) -- this chapter explains exactly why a tensor computation cannot stay that way.</p>
 <hr />
 <p>Part 1 starts CUDA Hammer itself: no more parsing arithmetic expression text, no more single-letter variables. From here forward, every chapter builds on the same graph data structure this chapter designs, compiles, and tests.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2's LINEAR IR (every temp is consumed by AT MOST one later
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2's LINEAR IR (every temp is consumed by AT MOST one later
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>instruction -- guaranteed by construction, since it came from walking
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>PARSED TEXT, where each subexpression appears exactly once):
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -2462,7 +2462,7 @@
 
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>Picture a well shared by two houses through a single pipe that splits at a T-joint: the water is drawn from the ground once, and both houses draw from that same supply. Now picture the alternative -- each house paying to dig its own separate well, doing the identical work of reaching the same water table twice, just so each house can have "its own" supply instead of sharing one. A tree is the second arrangement: nothing in a tree can be reached by two different paths, so if two different places in a computation both need the same result, a tree has no way to represent that except by computing it twice, in two separate, unconnected parts of the tree.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ONE well, shared by two houses (a graph):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>ONE well, shared by two houses (a graph):
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  well --&gt; pipe --&gt; [house A tap]
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>                 --&gt; [house B tap]
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  the water in the pipe is drawn once; both houses draw from the SAME
@@ -2477,7 +2477,7 @@
 </code></pre></div>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>Chapter 2's toy compiler was always a tree (as an AST) and then a straight-line list (as linear IR) for a real structural reason, not an arbitrary design choice: both were built by walking <em>parsed source text</em>, and a subexpression written once in source text produces exactly one AST node. Nothing in <code>lex()</code>/<code>Parser::parseExpr()</code>/<code>lower()</code> could ever make one computed result feed two different downstream operations, because there was never a way to write that sharing down in source text in the first place -- writing <code>a</code> twice in <code>a + a</code> just re-parses two separate <code>Variable</code> nodes that both happen to look the same name up in the same environment, not one shared computed value. A real tensor program does not have this restriction: a normalization's output routinely feeds both a residual-add and the next layer, and File 005 below builds exactly that shape by hand, directly through CUDA Hammer's own graph-construction API (<code>addInput</code>/<code>addBinary</code>/<code>addUnary</code>), never by parsing text.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 4: Representing Tensors and Operations as a Graph</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 4: Representing Tensors and Operations as a Graph</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 005_graph_representation_and_sharing.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 4.1 -- why a tensor computation needs a graph, not a tree or a</span>
@@ -2705,11 +2705,11 @@
 <a id="__codelineno-2-226" name="__codelineno-2-226" href="#__codelineno-2-226"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>005_graph_representation_and_sharing.cpp<span class="w"> </span>-o<span class="w"> </span>005_graph_representation_and_sharing
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>005_graph_representation_and_sharing.cpp<span class="w"> </span>-o<span class="w"> </span>005_graph_representation_and_sharing
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./005_graph_representation_and_sharing
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 4.1 / 4.2: a genuinely shared DAG, built through CUDA Hammer's own graph API ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 4.1 / 4.2: a genuinely shared DAG, built through CUDA Hammer's own graph API ===
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Graph (6 nodes):
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  %0 = Input(a)
@@ -2750,7 +2750,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>A library's own catalog does not hand a reader the book itself -- it hands them a call slip recording where the book lives: which shelf, which copy. Two different readers can hold identical call slips pointing at the exact same shelf entry, and neither one owns a private copy; neither slip can ever go stale from the book being moved, either, because the library's own shelving (not the slip) is what actually holds the book. CUDA Hammer's <code>Value</code> is that call slip, and <code>Graph</code> is the library's own shelves.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>A Value is a call slip, not the book itself:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>A Value is a call slip, not the book itself:
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  Value { nodeId: 7, outputIndex: 0 }    -- "shelf 7, copy 0"
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>Two DIFFERENT consumers can hold IDENTICAL call slips pointing at the
@@ -2775,7 +2775,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>A course catalog's prerequisite chart is only usable if some valid enrollment order actually exists: Calculus 1 before Calculus 2, Calculus 2 before Linear Algebra, and so on. A broken catalog that required Course A as a prerequisite for Course B, and Course B as a prerequisite for Course A, would leave no student able to take either course first -- there is no valid starting point, because everything that could come first already requires something else to come first. A computation graph has exactly the same requirement: every node's inputs have to be genuinely computable before that node runs, which means the graph has to be acyclic, or there is no order in which CUDA Hammer could ever actually execute it.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>COURSE PREREQUISITES (a valid DAG -- a valid enrollment order always
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>COURSE PREREQUISITES (a valid DAG -- a valid enrollment order always
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>exists, because nothing requires itself, directly or indirectly):
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  Calc 1 --&gt; Calc 2 --&gt; Linear Algebra
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
@@ -2787,7 +2787,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p>CUDA Hammer's own <code>addInput</code>/<code>addConst</code>/<code>addUnary</code>/<code>addBinary</code> API can only ever take <code>Value</code>s that some <em>earlier</em> call already returned -- provided callers do not forge Value ids or mix graphs -- so a graph built only through that API can never contain a cycle, by construction, the same way Chapter 2's parser could never produce an AST node with itself as its own child. File 006 below proves the resulting acyclicity two ways. First, it runs a genuine topological sort (Kahn's algorithm: repeatedly remove a node with no unprocessed producers left, decrementing every consumer's own remaining-producer count) on File 005's own diamond graph, and cross-checks that order with a second, independently implemented method -- a positional check confirming every node really does appear after all of its own producers -- the same independent-cross-check discipline Chapter 2 used for its AST evaluator. Second, it reaches <em>past</em> the normal API -- directly mutating a <code>Node</code>'s own <code>inputs</code> vector after construction, something ordinary use of <code>Graph</code> never does -- to hand-build one small graph that genuinely contains a cycle, and confirms the same checker correctly reports it as invalid rather than silently producing a wrong order.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// Chapter 4: Representing Tensors and Operations as a Graph</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// Chapter 4: Representing Tensors and Operations as a Graph</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1">// 006_topological_order_and_cycle_detection.cpp</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1">//</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1">// Section 4.3 -- a graph must be acyclic, and how CUDA Hammer's own</span>
@@ -3013,11 +3013,11 @@
 <a id="__codelineno-7-224" name="__codelineno-7-224" href="#__codelineno-7-224"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>006_topological_order_and_cycle_detection.cpp<span class="w"> </span>-o<span class="w"> </span>006_topological_order_and_cycle_detection
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>006_topological_order_and_cycle_detection.cpp<span class="w"> </span>-o<span class="w"> </span>006_topological_order_and_cycle_detection
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>./006_topological_order_and_cycle_detection
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>=== Section 4.3: topological order, and detecting a graph that has no valid one ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>=== Section 4.3: topological order, and detecting a graph that has no valid one ===
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>Part A -- valid DAG (6 nodes, built only through the graph API):
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    %0 = Input(a)

@@ -2440,7 +2440,7 @@
 <p><strong>What you need to know first:</strong> Chapter 4's <code>Value</code>/<code>Node</code>/<code>Graph</code> and <code>topologicalSort()</code>, Chapter 7's <code>printGraphAsSource()</code>, Chapter 8's <code>TransformPass</code> and <code>runPasses()</code>, and Chapter 9's <code>constantFoldPass()</code>, <code>deadCodeEliminationPass()</code>, and <code>evaluate()</code>, and Chapter 10's <code>commonSubexpressionEliminationPass()</code> -- this chapter adds a fourth pass to that same pipeline, and reuses all three of Chapter 9 and 10's passes directly in Section 11.3.</p>
 <hr />
 <p>Chapter 9's <code>constantFoldPass()</code> asks "is this computation's answer already fully known?" and, when it is, computes that answer once and emits it as a <code>Const</code>. Chapter 10's <code>commonSubexpressionEliminationPass()</code> asks "has this exact computation already been done somewhere else?" and, when it has, reuses the earlier result. This chapter's pass asks a third, narrower question that neither of those two can answer: "does ordinary arithmetic already guarantee this computation changes nothing at all, regardless of what its operand turns out to be?" Adding <code>0</code> to <em>any</em> number -- a compile-time constant or a genuine runtime <code>Input</code> nobody could ever fold away -- always returns that same number. Multiplying by <code>1</code> does too. A graph containing <code>add(x, 0)</code>, where <code>x</code> is a real runtime value, has nothing left to fold and nothing to deduplicate -- but the addition itself is still provably pointless, and algebraic simplification is the pass that notices.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO CHAPTERS 8, 9, AND 10's OWN INFRASTRUCTURE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT THIS CHAPTER ADDS TO CHAPTERS 8, 9, AND 10's OWN INFRASTRUCTURE:
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  Ch8's passes:        Ch9's passes:            Ch10's pass:              THIS chapter's pass:
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
@@ -2465,7 +2465,7 @@
 
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>Walking zero extra steps in any direction leaves you exactly where you started -- it is not a <em>small</em> step, it is not a step that happens to cancel out later, it is simply not a step at all, and a sensible person planning a route would never bother writing it down. <code>add(x, 0)</code> is the graph equivalent of writing down that zero step: whatever <code>x</code> turns out to be, adding zero to it changes nothing, for every possible value <code>x</code> could ever take, not just the ones a compiler happens to already know. Constant folding (Chapter 9) can only replace a computation once <em>every</em> operand is a known constant; <code>add(x, 0)</code> never qualifies, because <code>x</code> itself might be a genuine runtime input. Algebraic simplification does not need <code>x</code> to be known at all -- it only needs to know that <code>0</code> is the additive identity, a fact about arithmetic that holds regardless of what the other operand is.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>WHAT algebraicSimplificationPass() SEES, THAT constantFoldPass() CANNOT USE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>WHAT algebraicSimplificationPass() SEES, THAT constantFoldPass() CANNOT USE:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  constantFoldPass() folds add(x, 0)     only when x is ALSO a Const --
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>                                          it computes a brand new answer,
@@ -2478,7 +2478,7 @@
 </code></pre></div>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p><code>algebraicSimplificationPass()</code> is structurally the twin of <code>constantFoldPass()</code>: it rebuilds the graph in topological order, and at every <code>Add</code>, checks its own already-rebuilt operands against the additive identity. Where <code>constantFoldPass()</code> responds to a match by <em>computing</em> a new answer and building a fresh <code>Const</code> node, this pass responds by pointing directly at an operand that already exists in the new graph -- no computation, no new node of any kind.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>algebraicSimplificationPass() AT Add (this section's own identity):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>algebraicSimplificationPass() AT Add (this section's own identity):
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  add(x, 0)  --&gt;  IF the RIGHT operand is Const(0.0):  result is the LEFT operand, unchanged
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  add(0, x)  --&gt;  IF the LEFT operand is Const(0.0):   result is the RIGHT operand, unchanged
@@ -2489,7 +2489,7 @@
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  new graph before this node was even reached.
 </code></pre></div>
 <p>Because the check reads <code>oldIdToNewValue</code> -- the map from old ids to the <em>new</em> graph's own nodes, populated as the walk proceeds -- a simplification discovered early is immediately visible to anything downstream that consumes it, exactly the "check the new graph, not the old one" discipline <code>constantFoldPass()</code> used to fold an entire chain in a single pass, and <code>commonSubexpressionEliminationPass()</code> used to cascade a merge in a single pass. Section 11.2 shows this cascading behavior firing three levels deep in one graph; this section keeps things simpler, exercising the identity at more than one position (<code>x + 0</code> and <code>0 + x</code> both) and confirming a non-identity <code>Add</code> is left completely untouched.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Chapter 11: Algebraic Simplification</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1">// Chapter 11: Algebraic Simplification</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1">// 021_algebraic_simplification_the_additive_identity.cpp</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1">//</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1">// Section 11.1 -- algebraic simplification, this book's FOURTH</span>
@@ -2791,11 +2791,11 @@
 <a id="__codelineno-3-300" name="__codelineno-3-300" href="#__codelineno-3-300"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>021_algebraic_simplification_the_additive_identity.cpp<span class="w"> </span>-o<span class="w"> </span>021_algebraic_simplification_the_additive_identity
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>021_algebraic_simplification_the_additive_identity.cpp<span class="w"> </span>-o<span class="w"> </span>021_algebraic_simplification_the_additive_identity
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>./021_algebraic_simplification_the_additive_identity
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>=== Section 11.1: algebraicSimplificationPass(), the additive identity element ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>=== Section 11.1: algebraicSimplificationPass(), the additive identity element ===
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Graph with two additive-identity Adds ('t1', 't2') and one real Add ('t3'):
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  %0 = Input(x)
@@ -2835,7 +2835,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>Multiplying anything by zero is a different kind of "doing nothing" than adding zero. <code>x + 0</code> still gives you <code>x</code> back -- the identity element leaves the OTHER operand completely intact. <code>x * 0</code>, by contrast, gives you <code>0</code> back, no matter what <code>x</code> was -- the zero <em>absorbs</em> the other operand entirely, discarding it, whatever it happened to be. <code>1</code>, meanwhile, plays the same role for multiplication that <code>0</code> plays for addition: <code>x * 1</code> returns <code>x</code> unchanged, operand intact. And <code>ReLU</code> has an identity property of its own that has nothing to do with <code>0</code> or <code>1</code> at all: clamping every negative value to zero and leaving everything else untouched is a property that, once applied, cannot be made to matter again by applying it a second time -- <code>relu(relu(x))</code> and <code>relu(x)</code> are the exact same number, for every possible <code>x</code>, because there is nothing left for the second <code>relu</code> to clamp that the first one didn't already clamp.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>FOUR IDENTITIES, TWO DIFFERENT SHAPES:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>FOUR IDENTITIES, TWO DIFFERENT SHAPES:
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  "returns an OPERAND, unchanged"          "returns something NEW, discarding an operand"
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
@@ -2848,7 +2848,7 @@
 </code></pre></div>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
 <p><code>mul(x, 0)</code>'s own shape matters for what comes later in this chapter: unlike every other identity here, it does not merely skip building a NEW node -- it discards the OTHER operand outright, along with everything that operand depended on. If <code>x</code> were itself an expensive, multi-node computation, <code>mul(x, 0)</code> throws all of that work away in one step, the instant simplification reaches it -- and whatever <code>x</code> was built from becomes real, newly-created dead code, since nothing in the simplified graph references it anymore. This chapter's own pass, like <code>constantFoldPass()</code> before it, never goes back and cleans that up; that observation is Section 11.3's own starting point.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mul(x, 0) DISCARDS x -- AND EVERYTHING x DEPENDED ON:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>mul(x, 0) DISCARDS x -- AND EVERYTHING x DEPENDED ON:
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  before:                        after:
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>
@@ -2859,7 +2859,7 @@
 <a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    w=mul(y,0)   --&gt;   just "0"    w  --&gt;  (gone -- aliases 0 directly)
 </code></pre></div>
 <p>Because <code>algebraicSimplificationPass()</code> checks the graph being rebuilt (not the original), a simplification discovered early in a walk is visible to whatever consumes it later -- letting several simplifications cascade in a single pass, the same discipline this chapter has followed since Section 11.1. The file below builds a graph where that cascade runs three levels deep: two separate <code>mul(_, 0)</code>s both collapse to the <em>same</em> zero constant; an <code>Add</code> that then combines those two now-identical zeros collapses <em>again</em>, to that same zero; and an <code>Add</code> that combines <em>that</em> zero with something else collapses a <em>third</em> time, to whatever that something else was.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>A THREE-LEVEL CASCADE, DISCOVERED IN ONE PASS:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>A THREE-LEVEL CASCADE, DISCOVERED IN ONE PASS:
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  level 1:  t3=mul(x,0)  --&gt;  aliases zero          t4=mul(0,y)  --&gt;  aliases zero
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  level 2:  s2=add(t3,t4)  =  add(zero,zero)  --&gt;  ITSELF an identity  --&gt;  aliases zero
@@ -2868,7 +2868,7 @@
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  three separate identity matches, chained together, in a SINGLE walk
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>  of algebraicSimplificationPass() -- no repeated passes needed.
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">// Chapter 11: Algebraic Simplification</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">// Chapter 11: Algebraic Simplification</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1">// 022_multiplicative_identity_absorbing_zero_and_relu_idempotence.cpp</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1">//</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1">// Section 11.2 -- the same algebraicSimplificationPass() from Section</span>
@@ -3173,11 +3173,11 @@
 <a id="__codelineno-9-303" name="__codelineno-9-303" href="#__codelineno-9-303"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>022_multiplicative_identity_absorbing_zero_and_relu_idempotence.cpp<span class="w"> </span>-o<span class="w"> </span>022_multiplicative_identity_absorbing_zero_and_relu_idempotence
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>022_multiplicative_identity_absorbing_zero_and_relu_idempotence.cpp<span class="w"> </span>-o<span class="w"> </span>022_multiplicative_identity_absorbing_zero_and_relu_idempotence
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>./022_multiplicative_identity_absorbing_zero_and_relu_idempotence
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>=== Section 11.2: multiplicative identity, absorbing zero, and ReLU idempotence, cascading in one pass ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>=== Section 11.2: multiplicative identity, absorbing zero, and ReLU idempotence, cascading in one pass ===
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>Graph exercising every identity this pass knows, with three cascade levels:
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  %0 = Input(x)
@@ -3227,7 +3227,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Section 9.3 asked whether constant folding could expose new dead code, and proved it could. Section 10.3 asked a different-angle version of the same question -- whether folding could expose a common-subexpression opportunity CSE could never find on its own -- and proved that too. This section asks the question from a third angle: can folding expose an algebraic-simplification opportunity that simplification could never find on its own? The graph below is built so the answer, once again, is yes -- and once again, this chapter does not just assert it: it measures it, running <code>algebraicSimplificationPass()</code> completely alone on the unfolded graph first, and confirming directly that it finds nothing.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>THE SAME "COULD RUNNING THIS AGAIN FIND MORE" QUESTION, A THIRD ANGLE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>THE SAME "COULD RUNNING THIS AGAIN FIND MORE" QUESTION, A THIRD ANGLE:
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  Section 9.3's angle:          Section 10.3's angle:          THIS section's angle:
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
@@ -3242,7 +3242,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p>The graph this section builds gives <code>constantFoldPass()</code>, <code>commonSubexpressionEliminationPass()</code>, <code>algebraicSimplificationPass()</code>, and <code>deadCodeEliminationPass()</code> each a genuine, separate job to do, in that order. <code>c1 + c2</code> (values <code>3</code> and <code>-3</code>) folds to <code>Const(0)</code>, named <code>z</code>. Before folding runs, <code>z</code> is a plain <code>Add</code> node -- <code>algebraicSimplificationPass()</code> only ever checks whether an operand <em>is already</em> a <code>Const</code>, never what it would eventually compute to, so <code>mul(y, z)</code> cannot be recognized as "multiply by zero" until folding has actually turned <code>z</code> into one. <code>y</code> itself is a real, otherwise-unused subexpression (<code>mul(a, b)</code>) -- once simplification uses the now-folded <code>z</code> to discard <code>mul(y, z)</code> entirely, <code>y</code> (and the <code>a</code>/<code>b</code> that fed it) become genuinely new dead code, exactly the hazard Section 11.2's own <code>[COMMON TRAP]</code> described. A literal duplicate (<code>sum2</code>, computing the same thing as <code>sum1</code>) gives <code>commonSubexpressionEliminationPass()</code> real work too, merging before simplification even runs.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>BEFORE FOLDING:  z is an Add -- mul(y, z) has no Const operand at all.
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>BEFORE FOLDING:  z is an Add -- mul(y, z) has no Const operand at all.
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    c1  c2                z is NOT yet a Const --
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>     \  /                 algebraicSimplificationPass()
@@ -3253,7 +3253,7 @@
 <a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>    z=const(0)             mul(y, z)  --&gt;  aliases z directly,
 <a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>                            discarding y (and a, b) entirely.
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Chapter 11: Algebraic Simplification</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1">// Chapter 11: Algebraic Simplification</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1">// 023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1">//</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1">// Section 11.3 -- constantFoldPass() (9.1), commonSubexpressionEliminationPass()</span>
@@ -3776,11 +3776,11 @@
 <a id="__codelineno-14-521" name="__codelineno-14-521" href="#__codelineno-14-521"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp<span class="w"> </span>-o<span class="w"> </span>023_folding_cse_simplification_and_dce_closing_part_2s_pipeline
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>023_folding_cse_simplification_and_dce_closing_part_2s_pipeline.cpp<span class="w"> </span>-o<span class="w"> </span>023_folding_cse_simplification_and_dce_closing_part_2s_pipeline
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>./023_folding_cse_simplification_and_dce_closing_part_2s_pipeline
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Section 11.3, Part A: algebraicSimplificationPass() ALONE, before any folding ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>=== Section 11.3, Part A: algebraicSimplificationPass() ALONE, before any folding ===
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>size: 13 -&gt; 13
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>self-check: simplification alone finds NOTHING before folding runs (confirmed)

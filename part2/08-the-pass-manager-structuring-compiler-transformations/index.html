@@ -2436,7 +2436,7 @@
 <p><strong>What you need to know first:</strong> Chapter 4's <code>Value</code>/<code>Node</code>/<code>Graph</code> and <code>topologicalSort()</code>, Chapter 5's <code>graphsStructurallyEqual()</code>, and Chapter 7's <code>printGraphAsSource()</code> -- this chapter reuses all three completely unchanged.</p>
 <hr />
 <p>Chapter 6 built this book's first analysis pass, <code>inferShapes()</code>: it reads a <code>Graph</code>, walks it, and returns a brand-new <code>map&lt;int, Shape&gt;</code> -- and never once modifies the <code>Graph</code> it read. Chapter 7 built something with a similar shape, <code>printGraphAsSource()</code>: reads a <code>Graph</code>, returns a <code>std::string</code>, and again never touches the graph itself. Both chapters called their own function a "pass," borrowing Chapter 2's own general vocabulary, but neither chapter needed to be precise about what other <em>kind</em> of pass might exist, because neither one needed to change a graph. Part 2 does. Chapter 9's constant folding needs to replace a computed node with a simpler constant one; its dead code elimination needs to drop nodes nothing downstream uses at all. Neither of those is possible with only the kind of pass Chapters 6 and 7 already wrote -- this chapter builds the other kind, and the machinery to run a sequence of them safely.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>TWO KINDS OF PASS, BOTH ALREADY USED IN THIS BOOK, NOW MADE PRECISE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>TWO KINDS OF PASS, BOTH ALREADY USED IN THIS BOOK, NOW MADE PRECISE:
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  ANALYSIS pass (Chapters 6, 7):        TRANSFORM pass (this chapter, and
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                          every chapter in Part 2 after it):
@@ -2464,7 +2464,7 @@
 <p>A proofreader and a copy editor both read the exact same manuscript, but they hand back fundamentally different things: a proofreader hands back a list of problems, leaving the manuscript itself untouched, while a copy editor hands back a <em>revised manuscript</em>, a genuinely different document built from the original. Both are doing real, valuable work over the same input; neither one's output is "wrong" for not looking like the other's. An analysis pass is this book's own proofreader -- <code>inferShapes()</code> reads a graph and reports something about it (a shape for every node) without changing a single thing about the graph itself. A transform pass is the copy editor -- it reads a graph and hands back a genuinely different graph, one this book has never seen before that call, built specifically because the original wasn't quite what was wanted.</p>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>The concrete decision this section has to make is not just "transform passes exist" -- it's <em>how</em> a transform pass is allowed to change a graph, and that decision is forced by something Chapter 4 already built (or rather, didn't build): <code>Graph</code> has never had a way to remove a node once <code>addInput</code>/<code>addConst</code>/<code>addUnary</code>/<code>addBinary</code> added it. That was a perfectly reasonable omission for Chapters 4 through 7 -- nothing in representing, parsing, validating, or printing a graph ever needed to delete anything -- but Chapter 9's dead code elimination is going to need to drop nodes nothing downstream depends on, and this book is not going to retrofit an in-place removal API onto <code>Graph</code> just to support one future chapter. Instead, this chapter fixes a <code>TransformPass</code>'s own signature once, for every pass Part 2 will ever write:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>WHY A TransformPass READS AN OLD Graph AND RETURNS A NEW ONE, RATHER
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>WHY A TransformPass READS AN OLD Graph AND RETURNS A NEW ONE, RATHER
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>THAN MODIFYING ITS INPUT IN PLACE:
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  Graph (from Chapter 4) can ADD nodes -- addInput/addConst/addUnary/
@@ -2498,7 +2498,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>Two photographs of the exact same street corner, taken by two different photographers, can look completely different -- different angle, different time of day, different framing -- while depicting the literal same physical place. Comparing them side by side to answer "is this the same corner" is hard precisely because the <em>incidental</em> differences (lighting, framing) swamp the <em>structural</em> fact that matters (same buildings, same intersection). Two graphs built through this book's own API can end up in exactly this situation: the diamond graph built by hand in Chapter 4, parsed from text in Chapter 5, or handed back by some future pass, all compute the exact same thing, but a human (or a future pass, printing before/after dumps) comparing their <em>printed text</em> would see totally different node names and have to work to notice the underlying computation never changed at all.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>THE SAME COMPUTATION, TWO COMPLETELY DIFFERENT PRINTED TEXTS -- A REAL
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>THE SAME COMPUTATION, TWO COMPLETELY DIFFERENT PRINTED TEXTS -- A REAL
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>PROBLEM FOR ANY FUTURE PASS THAT WANTS TO COMPARE "BEFORE" AND "AFTER"
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>DUMPS BY EYE:
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
@@ -2519,7 +2519,7 @@
 </code></pre></div>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
 <p><code>canonicalizeNodeNames()</code> fixes exactly this problem by rewriting every node's <code>debugName</code> to a name determined entirely by its own position in the graph -- <code>"%" + id</code> -- so two structurally identical graphs, however they were originally named, print out identically after canonicalization. The function walks the input graph in Chapter 4's own <code>topologicalSort()</code> order (deliberately, not <code>g.nodes()</code> directly -- the same "don't rely on the coincidence" discipline Chapter 6's <code>inferShapes()</code> and Chapter 7's own printer both already established) and rebuilds a fresh <code>Graph</code>, one node at a time, through the ordinary <code>addInput</code>/<code>addConst</code>/<code>addUnary</code>/<code>addBinary</code> API -- the same API every other chapter has used, never anything more privileged.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CANONICALIZING THE DIAMOND GRAPH, STEP BY STEP:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CANONICALIZING THE DIAMOND GRAPH, STEP BY STEP:
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  old id  op     old name  new id  canonical name
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  %0      Input  a         %0      %0
@@ -2534,7 +2534,7 @@
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  unchanged; only every debugName is replaced.
 </code></pre></div>
 <p>The one piece of bookkeeping this function cannot skip is remapping <em>references</em>: when node <code>%3</code> (old <code>t2</code>, <code>Mul(t1, a)</code>) gets rebuilt, its two inputs have to point at the NEW graph's own values for <code>t1</code> and <code>a</code> -- not their old ids, which is why <code>canonicalizeNodeNames()</code> keeps an explicit <code>map&lt;int, Value&gt; oldIdToNewValue</code> as it walks, updated after every node it rebuilds, and consulted every time a later node needs to reference an earlier one.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>WHY canonicalizeNodeNames() KEEPS AN EXPLICIT oldIdToNewValue MAP,
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>WHY canonicalizeNodeNames() KEEPS AN EXPLICIT oldIdToNewValue MAP,
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>RATHER THAN ASSUMING NEW IDS EQUAL OLD IDS:
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  for THIS book's own diamond graph, walking in topological order
@@ -2552,7 +2552,7 @@
 <a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>  future case where they wouldn't).
 </code></pre></div>
 <p>File 013 below builds the diamond graph with Chapter 4's own human-chosen names, runs <code>canonicalizeNodeNames()</code>, and checks two genuinely different things: that every resulting name is exactly <code>"%" + id</code> (the surface-level claim), and, far more importantly, that the canonicalized graph is still <code>graphsStructurallyEqual()</code> to the original (the claim that actually matters -- the computation itself never changed, only its names did). A third check confirms the original graph's own names are completely untouched after the pass runs, proving <code>canonicalizeNodeNames()</code> really is read-only on its input, exactly as Section 8.1 requires of every <code>TransformPass</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// Chapter 8: The Pass Manager: Structuring Compiler Transformations</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// Chapter 8: The Pass Manager: Structuring Compiler Transformations</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1">// 013_pass_interface_and_a_first_transform_pass.cpp</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1">//</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1">// Section 8.1 -- what a PASS actually is, made concrete for THIS book's</span>
@@ -2829,11 +2829,11 @@
 <a id="__codelineno-5-275" name="__codelineno-5-275" href="#__codelineno-5-275"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>013_pass_interface_and_a_first_transform_pass.cpp<span class="w"> </span>-o<span class="w"> </span>013_pass_interface_and_a_first_transform_pass
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>013_pass_interface_and_a_first_transform_pass.cpp<span class="w"> </span>-o<span class="w"> </span>013_pass_interface_and_a_first_transform_pass
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>./013_pass_interface_and_a_first_transform_pass
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>=== Section 8.2: canonicalizeNodeNames(), a real first transform pass ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>=== Section 8.2: canonicalizeNodeNames(), a real first transform pass ===
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>Original graph (human-chosen names):
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  %0 = Input(a)
@@ -2871,7 +2871,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>A relay team's coach does not just fire the starting gun and hope -- between every single handoff, someone is watching to confirm the baton was actually passed cleanly before the next runner is allowed to take off. If a handoff goes wrong, everyone finds out at THAT exact handoff, not three legs later when the team crosses the finish line in the wrong order and nobody can say where it went wrong. A <code>PassManager</code> plays exactly this role for a sequence of transform passes: Part 2 and beyond will eventually want to run several passes back to back (constant fold, then eliminate dead code, then simplify, then eliminate dead code again), and trusting every single one blindly -- only checking the FINAL result, if at all -- means a bug in an early pass could silently corrupt everything after it, with no way to tell which pass actually caused the problem.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>WHAT A PassManager THAT ONLY CHECKED THE FINAL RESULT WOULD RISK:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>WHAT A PassManager THAT ONLY CHECKED THE FINAL RESULT WOULD RISK:
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  Graph --&gt; pass A --&gt; pass B (has a bug!) --&gt; pass C --&gt; FINAL CHECK
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
@@ -2888,7 +2888,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p><code>runPasses()</code> takes an initial graph and an ordered list of <code>NamedPass</code>es (a name paired with a <code>TransformPass</code>), and threads the graph through them one at a time. After every single pass -- not just at the end -- it does two things: it calls Chapter 4's own <code>topologicalSort()</code> on the result and throws immediately, naming that exact pass, if the result is not a valid DAG; and it calls Chapter 7's own <code>printGraphAsSource()</code> to print the graph's new state, so a human watching the output can see exactly what each pass did. This is the first place in the book Chapter 7's printer is used for something other than testing itself -- and the fact that Chapter 7 proved it a genuine round-trip-verified serialization, not just a plausible-looking dump, is exactly what makes trusting these before/after printouts reasonable here.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>THE runPasses() FLOW, FOR A TWO-PASS PIPELINE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>THE runPasses() FLOW, FOR A TWO-PASS PIPELINE:
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  step 1: print the graph's STARTING state (via printGraphAsSource())
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  step 2: run pass 1  --&gt;  check the result is acyclic (topologicalSort())
@@ -2901,7 +2901,7 @@
 <a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>  step 4: return the final graph, having survived every check along the way
 </code></pre></div>
 <p>File 014 below runs two different pipelines through <code>runPasses()</code>. The first, <code>[identityPass, canonicalizeNodeNames]</code>, is entirely well-behaved -- <code>identityPass()</code> is the simplest possible real transform pass (it rebuilds an exact, unchanged copy, existing purely to prove the manager correctly threads a graph through MULTIPLE passes in sequence, not just one), followed by Section 8.2's own canonicalization pass. Three distinct graph states get printed (the start, after <code>identityPass</code>, after <code>canonicalizeNodeNames</code>), and the final result's names are confirmed canonical. The second pipeline is the negative case this book tests in every chapter: <code>breakGraphByInsertingCycle()</code>, a deliberately broken "pass" that rebuilds an identity copy and then reaches past <code>Graph</code>'s own public API via <code>mutableNode()</code> -- the identical escape hatch Chapter 4's own File 006 used to prove its cycle detector worked -- to force a real cycle into its own output before returning it, simulating a real pass with a real bug. <code>runPasses()</code> is confirmed to throw immediately, naming <code>breakGraphByInsertingCycle</code> specifically, proving the post-pass validity check is not just decoration.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>WHAT breakGraphByInsertingCycle() ACTUALLY DOES, AND WHY IT'S A FAIR
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>WHAT breakGraphByInsertingCycle() ACTUALLY DOES, AND WHY IT'S A FAIR
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>TEST OF THE PASS MANAGER RATHER THAN A TRICK:
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  it builds a perfectly normal identity copy first (same as
@@ -2920,7 +2920,7 @@
 <a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>  realistic test of what runPasses() would need to catch if a REAL
 <a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>  pass ever had a REAL bug this severe.
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Chapter 8: The Pass Manager: Structuring Compiler Transformations</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Chapter 8: The Pass Manager: Structuring Compiler Transformations</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1">// 014_pass_manager_runs_passes_and_validates_between_them.cpp</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1">//</span>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1">// Section 8.3 -- a real PassManager: something that runs a SEQUENCE of</span>
@@ -3243,11 +3243,11 @@
 <a id="__codelineno-11-321" name="__codelineno-11-321" href="#__codelineno-11-321"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>014_pass_manager_runs_passes_and_validates_between_them.cpp<span class="w"> </span>-o<span class="w"> </span>014_pass_manager_runs_passes_and_validates_between_them
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>014_pass_manager_runs_passes_and_validates_between_them.cpp<span class="w"> </span>-o<span class="w"> </span>014_pass_manager_runs_passes_and_validates_between_them
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>./014_pass_manager_runs_passes_and_validates_between_them
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>=== Section 8.3: PassManager runs a sequence of passes, validating between each ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>=== Section 8.3: PassManager runs a sequence of passes, validating between each ===
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>&gt;&gt;&gt; Pipeline 1: [identityPass, canonicalizeNodeNames] over the diamond graph
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>

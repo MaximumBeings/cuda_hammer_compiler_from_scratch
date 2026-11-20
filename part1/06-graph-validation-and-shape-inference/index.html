@@ -2440,7 +2440,7 @@
 <p><strong>What you need to know first:</strong> Chapter 4's <code>Value</code>/<code>Node</code>/<code>Graph</code> and its topological sort (<code>topologicalSort()</code>, reused completely unchanged in this chapter), and Chapter 2's vocabulary for what a "pass" is.</p>
 <hr />
 <p>Neither Chapter 4 nor Chapter 5 ever gave a <code>Node</code> a size. A graph built by hand through <code>addBinary</code>, or parsed from a line of text like <code>t2 = mul(t1, a)</code>, is entirely a statement about <em>which values depend on which other values</em> -- it says nothing about how many numbers any of those values actually holds. That is deliberate: shape is not a structural property of the graph the way an edge is, it is something that has to be <em>computed</em>, separately, and this chapter builds exactly that computation as its own pass -- reading an already-built graph, producing a result, and never modifying <code>Node</code>'s own definition to do it.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT CHAPTERS 4 AND 5 BUILT (edges only -- no notion of size anywhere):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT CHAPTERS 4 AND 5 BUILT (edges only -- no notion of size anywhere):
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  Graph:  %0 = Input(a)        %2 = Add(t1), inputs %0, %1
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>          %1 = Input(b)        %3 = Mul(t2), inputs %2, %0
@@ -2467,7 +2467,7 @@
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>Two spreadsheets can only be added cell by cell if their columns line up -- row 3, column B in the first sheet has to correspond to <em>some</em> specific cell in the second sheet for "add these two sheets together" to mean anything at all. If both sheets are exactly the same size, the correspondence is obvious: cell for cell, in place. Real tensor programs need something more flexible than "exactly the same size, always" -- a single per-channel bias value, shaped like one row, routinely gets added to every row of a much larger table, and forcing the programmer to first manually copy that one row into a full-sized table just to make the shapes match would be pure busywork. Broadcasting is the rule that makes "obviously supposed to line up, even though the sizes aren't identical" precise instead of vague.</p>
 <p>Picture the one-row bias case concretely: a table of monthly sales with 12 rows (one per month) and 4 columns (one per product), and a single 4-column row of per-product adjustments to add to <em>every</em> month. Nothing needs to be copied 12 times -- the single row is understood to apply to each of the 12 rows in turn, because it lines up with them column for column.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>A 12-ROW TABLE, PLUS A SINGLE 4-COLUMN ROW APPLIED TO EVERY ROW OF IT:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>A 12-ROW TABLE, PLUS A SINGLE 4-COLUMN ROW APPLIED TO EVERY ROW OF IT:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  sales, shape [12, 4]:          adjustment, shape [4]:
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    row 1:  [ 10, 20, 30, 40 ]     [ +1, +2, +3, +4 ]
@@ -2485,7 +2485,7 @@
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>Two shapes are combined by NumPy, PyTorch, and TensorFlow all using the exact same rule, and it is worth stating precisely rather than gesturing at loosely, since File 009's own <code>broadcastShapes()</code> implements it exactly. NumPy's own documentation states the comparison direction plainly: "When operating on two arrays, NumPy compares their shapes element-wise. It starts with the trailing (i.e. rightmost) dimension and works its way left." -- meaning two shapes are lined up starting from their <em>last</em> dimension, not their first, and a shape with fewer dimensions than the other is treated as if it had extra leading dimensions of size <code>1</code> to pad it out to the same length. Once two shapes are lined up this way, NumPy's own documentation states the compatibility test just as plainly: "Two dimensions are compatible when 1. they are equal, or 2. one of them is 1." When one of an aligned pair is <code>1</code>, the result takes the <em>other</em> one's size -- the size-1 dimension is the one that conceptually "repeats" to match its partner, the way the single adjustment row above conceptually repeats against every one of the sales table's 12 rows.</p>
 <p>Walking <code>[3, 4]</code> and <code>[4]</code> through this rule step by step makes the trailing-alignment idea concrete:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ALIGNING [3, 4] AGAINST [4], FROM THE TRAILING DIMENSION LEFTWARD:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>ALIGNING [3, 4] AGAINST [4], FROM THE TRAILING DIMENSION LEFTWARD:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  shape A:     3    4
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  shape B:  (pad)   4
@@ -2500,7 +2500,7 @@
 <a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>  final result shape:  [3, 4]
 </code></pre></div>
 <p>And the reverse case -- <code>[3, 1]</code> against <code>[1, 4]</code>, where <em>both</em> shapes contribute a real, non-1 dimension at different positions -- shows broadcasting is symmetric, not something only the "smaller" shape does:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ALIGNING [3, 1] AGAINST [1, 4] -- BOTH SIDES BROADCAST, AT DIFFERENT POSITIONS:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ALIGNING [3, 1] AGAINST [1, 4] -- BOTH SIDES BROADCAST, AT DIFFERENT POSITIONS:
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  position 0 (trailing):  A=1, B=4  --&gt;  A is 1  --&gt;  result: 4  (B's size wins here)
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  position 1 (next left): A=3, B=1  --&gt;  B is 1  --&gt;  result: 3  (A's size wins here)
@@ -2511,7 +2511,7 @@
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  dimension at the position where the OTHER shape only has a 1.
 </code></pre></div>
 <p>File 009 below tests <code>broadcastShapes()</code> against five such cases, including both of the ones traced above, checking every result against a shape this book computed by hand -- not merely that the function runs, but that it computes the exact right answer.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Chapter 6: Graph Validation and Shape Inference</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1">// Chapter 6: Graph Validation and Shape Inference</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">// 009_shape_inference_by_topological_walk.cpp</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="c1">//</span>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1">// Section 6.1 -- what "valid" means for a tensor graph (the broadcasting</span>
@@ -2804,11 +2804,11 @@
 <a id="__codelineno-4-291" name="__codelineno-4-291" href="#__codelineno-4-291"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>009_shape_inference_by_topological_walk.cpp<span class="w"> </span>-o<span class="w"> </span>009_shape_inference_by_topological_walk
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>009_shape_inference_by_topological_walk.cpp<span class="w"> </span>-o<span class="w"> </span>009_shape_inference_by_topological_walk
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>./009_shape_inference_by_topological_walk
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>=== Section 6.1: the broadcasting rule, tested on its own ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>=== Section 6.1: the broadcasting rule, tested on its own ===
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  [3, 4] broadcast [3, 4] -&gt; [3, 4]  (expected [3, 4], confirmed)
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  [3, 4] broadcast [4] -&gt; [3, 4]  (expected [3, 4], confirmed)
@@ -2844,7 +2844,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>A relay race only works because each runner already has the baton in hand before they need to start running -- nobody is ever asked to run <em>before</em> the previous leg finishes. Shape inference has exactly this same dependency: a node's own output shape can only be computed once every one of its inputs' shapes is already known, which means visiting nodes in <em>some</em> order where a node's producers always come before it. Chapter 4 already built and proved exactly this ordering -- <code>topologicalSort()</code> -- for an entirely different reason (proving a graph has a valid execution order at all), and shape inference reuses that same function, unchanged, simply because the ordering guarantee it provides is exactly the one this new problem also needs.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>THE DIAMOND GRAPH, SHAPES FILLING IN AS THE TOPOLOGICAL WALK PROCEEDS:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>THE DIAMOND GRAPH, SHAPES FILLING IN AS THE TOPOLOGICAL WALK PROCEEDS:
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  step 1: visit %0 (a)   -- a LEAF: shape is DECLARED, not computed: [3, 4]
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  step 2: visit %1 (b)   -- a LEAF: shape is DECLARED, not computed: [4]
@@ -2861,7 +2861,7 @@
 <a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>  on at all.
 </code></pre></div>
 <p>It is worth being concrete about what would go wrong without that ordering guarantee. Imagine visiting nodes in raw id order were somehow <em>not</em> a valid topological order for some other graph -- say a node whose own producer happened to have a higher id (impossible through this book's own <code>addBinary</code>/<code>addUnary</code> API, by Chapter 4's own cycle-freedom argument, but instructive to picture anyway):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>WHAT WOULD BREAK WITHOUT A TOPOLOGICAL ORDER (a hypothetical, not something
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>WHAT WOULD BREAK WITHOUT A TOPOLOGICAL ORDER (a hypothetical, not something
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>this book's own API can actually construct):
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>  visit %5 first, whose input is %2  --  shapes.at(2) -- FAILS: %2 has
@@ -2889,7 +2889,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>A quality-control checkpoint partway down an assembly line exists so a defective part gets pulled <em>there</em>, not three stations later when it's already been bolted into something else and the defect is much harder to trace back to its actual source. Shape inference plays exactly this role for a tensor graph: an incompatible pair of shapes is caught the moment <code>inferShapes()</code> reaches the node that combines them, with a specific, named error identifying that exact node and those exact shapes -- never silently producing a wrong or nonsensical shape that some much later pass, or worse, generated code, would have to somehow puzzle out was wrong in the first place.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>FOUR THINGS inferShapes() CAN ENCOUNTER, AND WHERE EACH IS CAUGHT:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>FOUR THINGS inferShapes() CAN ENCOUNTER, AND WHERE EACH IS CAUGHT:
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  a valid graph, every shape declared and every Add/Mul compatible
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    --&gt; no exception -- shapes computed for every node, returned normally
@@ -2911,7 +2911,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p>File 010 below reuses File 009's <code>Shape</code>, <code>broadcastShapes()</code>, <code>Graph</code>, <code>topologicalSort()</code>, and <code>inferShapes()</code> completely unchanged -- Section 6.3 adds no new inference logic at all, only a test harness proving the checks already built into that code actually fire, and fire only when they should. Three deliberately broken graphs are tested: two different flavors of genuinely incompatible shapes (one where <em>no</em> dimension pair lines up, one where only the trailing pair fails despite another pair matching, specifically to rule out any "partial credit" bug), and one graph where a leaf's declared shape was simply never provided. A fourth, valid control case -- File 009's own diamond graph, run through <code>inferShapes()</code> again here -- confirms none of these checks misfire on correct input, the same control-case discipline Chapter 5's own File 008 used for parse errors.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 6: Graph Validation and Shape Inference</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Chapter 6: Graph Validation and Shape Inference</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1">// 010_shape_validation_errors.cpp</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1">//</span>
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1">// Section 6.3 -- catching a real shape mismatch, and a missing declared</span>
@@ -3210,11 +3210,11 @@
 <a id="__codelineno-10-297" name="__codelineno-10-297" href="#__codelineno-10-297"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>010_shape_validation_errors.cpp<span class="w"> </span>-o<span class="w"> </span>010_shape_validation_errors
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>010_shape_validation_errors.cpp<span class="w"> </span>-o<span class="w"> </span>010_shape_validation_errors
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>./010_shape_validation_errors
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Section 6.3: rejecting shape-invalid graphs instead of trusting them blindly ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>=== Section 6.3: rejecting shape-invalid graphs instead of trusting them blindly ===
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>--- valid graph (control case: File 009's own diamond) ---
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  inferred successfully, no exception thrown

@@ -2237,7 +2237,7 @@ arXiv:1805.02867) shows a running max and running sum can be updated
 INCREMENTALLY, one block of columns at a time, provided every time the
 running max increases, whatever was already accumulated gets rescaled by
 <code>exp(old_max - new_max)</code> to stay mathematically consistent.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 29's own shape, section by section                       |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  29.1  The online-softmax algorithm itself, in pure NumPy --      |
@@ -2270,7 +2270,7 @@ computed -- exactly the kind of whole-row data dependency Chapter 14's
 own <code>Sum</code> node has always represented, but here <code>M</code> (the row length) is
 what real Flash Attention needs to tile, not just materialize once and
 reduce.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  Naive attention (materializes the FULL score matrix):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  Naive attention (materializes the FULL score matrix):
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  Q (N x d)   K (M x d)         scores (N x M)    -- THE memory
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>      \         /                    |               bottleneck:
@@ -2308,7 +2308,7 @@ fixed random <code>Q</code>/<code>K</code>/<code>V</code>, deliberately choosing
 of any candidate block size -- so every configuration forces a genuine
 tail block, the same "don't pick numbers that hide the edge case"
 practice Chapter 19's own <code>n=11</code> vector-width test already established:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chapter 29, File 075: Flash Attention's own algorithmic core -- online</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chapter 29, File 075: Flash Attention's own algorithmic core -- online</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># (streaming) softmax over tiled key/value blocks -- implemented in pure</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># NumPy (no torch, no triton, no jax, no tvm) so this file cross-verifies</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># byte-for-byte identical on both the cloud sandbox and the device, the</span>
@@ -2463,10 +2463,10 @@ practice Chapter 19's own <code>n=11</code> vector-width test already establishe
 <a id="__codelineno-2-153" name="__codelineno-2-153" href="#__codelineno-2-153"></a>          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">naive_bytes</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">flash_peak_bytes</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">x smaller, at the SAME "</span>
 <a id="__codelineno-2-154" name="__codelineno-2-154" href="#__codelineno-2-154"></a>          <span class="sa">f</span><span class="s2">"real sequence length"</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"075_naive_vs_online_softmax_flash_attention_pure_numpy.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"075_naive_vs_online_softmax_flash_attention_pure_numpy.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Naive attention: Q(8x4) @ K(13x4).T -&gt; scores(8x13), the full matrix FlashAttention's own algorithm never materializes.
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Naive attention: Q(8x4) @ K(13x4).T -&gt; scores(8x13), the full matrix FlashAttention's own algorithm never materializes.
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>Naive scores matrix: 104 floats, 832 bytes (float64) held at once.
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>block_size_kv= 4: 4 real KV block(s) (last block size 1), peak per-block score tile = 256 bytes -- output match = True (max abs diff 2.220e-16), running max matches naive row-max = True, running sum matches naive row-sum = True
@@ -2478,7 +2478,7 @@ practice Chapter 19's own <code>n=11</code> vector-width test already establishe
 <a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>  flash peak per-block score tile: 524,288 bytes (512 KB) -- 8.0x smaller, at the SAME real sequence length
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Naive attention: Q(8x4) @ K(13x4).T -&gt; scores(8x13), the full matrix FlashAttention's own algorithm never materializes.
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Naive attention: Q(8x4) @ K(13x4).T -&gt; scores(8x13), the full matrix FlashAttention's own algorithm never materializes.
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>Naive scores matrix: 104 floats, 832 bytes (float64) held at once.
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>block_size_kv= 4: 4 real KV block(s) (last block size 1), peak per-block score tile = 256 bytes -- output match = True (max abs diff 2.220e-16), running max matches naive row-max = True, running sum matches naive row-sum = True
@@ -2547,7 +2547,7 @@ as a plain Python <code>for</code> over a <code>tl.constexpr</code> range -- and
 with the same explicit <code>target=GPUTarget(...)</code> technique Chapter 27
 established (no physical GPU needed, real AOT compilation only, the same
 honest scope every Triton file in this book has carried since).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>  flash_attention_kernel (one @triton.jit function, BLOCK_M x D output):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>  flash_attention_kernel (one @triton.jit function, BLOCK_M x D output):
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  load Q block                      (tt.load, once)
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  running_max, running_sum, running_out -- real Triton register values
@@ -2588,7 +2588,7 @@ header line and every other excerpt printed below are byte-identical --
 and only the raw character COUNTS differ, from the same embedded
 absolute-path-length artifact Chapter 27 already traced to Triton's own
 <code>#locN = loc(...)</code> debug table.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Chapter 29, File 076: File 075's online-softmax algorithm as a Triton kernel.</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Chapter 29, File 076: File 075's online-softmax algorithm as a Triton kernel.</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># Historical evidence for this file is offline AOT compilation, not GPU execution.</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># File 075 numerically compares its own NumPy implementations on finite cases;</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># that does not validate this Triton kernel or prove correctness for every input.</span>
@@ -2733,10 +2733,10 @@ absolute-path-length artifact Chapter 27 already traced to Triton's own
 <a id="__codelineno-7-143" name="__codelineno-7-143" href="#__codelineno-7-143"></a>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">[</span><span class="n">load_idx</span><span class="p">:</span><span class="n">load_idx</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]:</span>
 <a id="__codelineno-7-144" name="__codelineno-7-144" href="#__codelineno-7-144"></a>        <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"076_a_real_triton_flash_attention_kernel_compiled_with_no_gpu.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"076_a_real_triton_flash_attention_kernel_compiled_with_no_gpu.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Real compiled pipeline stages: ['source', 'ttir', 'ttgir', 'llir', 'ptx', 'cubin']
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Real compiled pipeline stages: ['source', 'ttir', 'ttgir', 'llir', 'ptx', 'cubin']
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  ttir: 12594 real chars
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  ttgir: 22321 real chars
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  llir: 36265 real chars
@@ -2754,7 +2754,7 @@ absolute-path-length artifact Chapter 27 already traced to Triton's own
 <a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>%col_offsets = tt.splat %start_n : i32 -&gt; tensor&lt;16xi32&gt; loc(#loc51)
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-executed output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Real compiled pipeline stages: ['source', 'ttir', 'ttgir', 'llir', 'ptx', 'cubin']
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Real compiled pipeline stages: ['source', 'ttir', 'ttgir', 'llir', 'ptx', 'cubin']
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  ttir: 14320 real chars
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  ttgir: 23918 real chars
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  llir: 36347 real chars
@@ -2798,7 +2798,7 @@ softmax wearing a "flash" name. Same disk-safety scope as Chapter 28:
 this file is verified on the cloud sandbox only; the device still
 receives and md5-verifies it, but does not run it (no torch installed
 there).</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Chapter 29, File 077 (capstone): real PyTorch's own CPU Flash Attention</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Chapter 29, File 077 (capstone): real PyTorch's own CPU Flash Attention</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="c1"># implementation, and what TorchInductor (Chapter 28) does with it.</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="c1">#</span>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Real toolchain note, same disk-safety scope as Chapter 28: this file is</span>
@@ -2953,10 +2953,10 @@ there).</p>
 <a id="__codelineno-11-153" name="__codelineno-11-153" href="#__codelineno-11-153"></a>          <span class="s2">"also has Triton codegen and library-selection paths. Compiler "</span>
 <a id="__codelineno-11-154" name="__codelineno-11-154" href="#__codelineno-11-154"></a>          <span class="s2">"capabilities depend on version, backend, graph and shape."</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>python3<span class="w"> </span><span class="s2">"077_real_pytorch_flash_attention_and_why_inductor_never_regenerates_it.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>python3<span class="w"> </span><span class="s2">"077_real_pytorch_flash_attention_and_why_inductor_never_regenerates_it.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-executed output; this file is verified on the cloud sandbox only, per Chapter 28's own disk-space finding):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>=== Part 1: real backend availability, queried directly ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>=== Part 1: real backend availability, queried directly ===
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>is_flash_attention_available(): True
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>flash_sdp_enabled(): True
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>math_sdp_enabled(): True

@@ -2248,7 +2248,7 @@ now without even CPU-interpreted execution as a fallback. And
 exactly like TVMScript's <code>@I.ir_module</code> did in Chapter 26 -- every file
 in this chapter had to exist as a real file on disk from the start, never
 piped through a heredoc.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 27's own shape, section by section                      |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  27.1  The block-level model itself, and Triton's own real,      |
@@ -2285,7 +2285,7 @@ text ever names an individual thread.</p>
 <p>File 069 compiles a real block-level vector-add kernel with no physical
 GPU present, using the explicit-<code>target=</code> technique above, and prints
 every real stage of Triton's own compiler pipeline it produces:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  source (Python)
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  source (Python)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>      |
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>      +--  Triton's own AST-to-MLIR frontend
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>      |
@@ -2311,7 +2311,7 @@ every real stage of Triton's own compiler pipeline it produces:</p>
 <a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>      |
 <a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>  cubin  (a real compiled binary for sm_80)
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chapter 27, File 069: Triton's block-level programming model, and the real,</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Chapter 27, File 069: Triton's block-level programming model, and the real,</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># multi-stage compiler pipeline that lowers it.</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">#</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Real toolchain investigation (throwaway, before this file was written):</span>
@@ -2429,10 +2429,10 @@ every real stage of Triton's own compiler pipeline it produces:</p>
 <a id="__codelineno-2-116" name="__codelineno-2-116" href="#__codelineno-2-116"></a>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">compiled</span><span class="o">.</span><span class="n">asm</span><span class="p">[</span><span class="s2">"ptx"</span><span class="p">]</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[:</span><span class="mi">12</span><span class="p">]:</span>
 <a id="__codelineno-2-117" name="__codelineno-2-117" href="#__codelineno-2-117"></a>        <span class="nb">print</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"069_tritons_block_level_model_and_its_real_ttir_ttgir_llir_pipeline.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"069_tritons_block_level_model_and_its_real_ttir_ttgir_llir_pipeline.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated Triton output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>driver.active real error (expected, no physical GPU): 0 active drivers ([]). There should only be one.
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>driver.active real error (expected, no physical GPU): 0 active drivers ([]). There should only be one.
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Real compiled pipeline stages: ['source', 'ttir', 'ttgir', 'llir', 'ptx', 'cubin']
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  ttir: 3790 real chars
@@ -2487,7 +2487,7 @@ every real stage of Triton's own compiler pipeline it produces:</p>
 <a id="__codelineno-4-53" name="__codelineno-4-53" href="#__codelineno-4-53"></a>    .param .u64 .ptr .global .align 1 vector_add_kernel_param_0,
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated Triton output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>driver.active real error (expected, no physical GPU): 0 active drivers ([]). There should only be one.
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>driver.active real error (expected, no physical GPU): 0 active drivers ([]). There should only be one.
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>Real compiled pipeline stages: ['source', 'ttir', 'ttgir', 'llir', 'ptx', 'cubin']
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  ttir: 4401 real chars
@@ -2572,9 +2572,9 @@ NOT depend on the host CPU running the compiler at all, only on the
 explicit <code>target=</code> passed to <code>triton.compile()</code> -- a real, structural
 consequence of Triton targeting an external GPU architecture rather than
 the machine it happens to compile on.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python3<span class="w"> </span><span class="s2">"069_tritons_block_level_model_and_its_real_ttir_ttgir_llir_pipeline.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python3<span class="w"> </span><span class="s2">"069_tritons_block_level_model_and_its_real_ttir_ttgir_llir_pipeline.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Chapter 27, File 070: fusion in Triton isn't a separate compiler PASS the</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># Chapter 27, File 070: fusion in Triton isn't a separate compiler PASS the</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># way it is in CUDA Hammer (Ch13-16), XLA (Ch25), or Relax (Ch26) -- it's a</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># consequence of how many real ops the PROGRAMMER writes inside one</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># @triton.jit function body. This file puts that claim to a real, structural</span>
@@ -2725,10 +2725,10 @@ the machine it happens to compile on.</p>
 <a id="__codelineno-7-149" name="__codelineno-7-149" href="#__codelineno-7-149"></a>          <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="mf">100.0</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="n">split_bytes</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">fused_bytes</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">fused_bytes</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">% more traffic, "</span>
 <a id="__codelineno-7-150" name="__codelineno-7-150" href="#__codelineno-7-150"></a>          <span class="sa">f</span><span class="s2">"purely from materializing t1)"</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"070_block_level_fusion_is_a_language_choice_not_a_compiler_pass.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"070_block_level_fusion_is_a_language_choice_not_a_compiler_pass.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated Triton output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>=== Real fused-kernel TTIR (path-normalized) ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>=== Real fused-kernel TTIR (path-normalized) ===
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>module {
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  tt.func public @diamond_fused_kernel(%a_ptr: !tt.ptr&lt;f32&gt; loc("a_ptr"(#loc)), %b_ptr: !tt.ptr&lt;f32&gt; loc("b_ptr"(#loc)), %c_ptr: !tt.ptr&lt;f32&gt; loc("c_ptr"(#loc)), %out_ptr: !tt.ptr&lt;f32&gt; loc("out_ptr"(#loc)), %n_elements: i32 loc("n_elements"(#loc))) attributes {noinline = false} {
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    %t3 = arith.constant dense&lt;0.000000e+00&gt; : tensor&lt;1024xf32&gt; loc(#loc23)
@@ -2822,7 +2822,7 @@ the machine it happens to compile on.</p>
 <a id="__codelineno-9-92" name="__codelineno-9-92" href="#__codelineno-9-92"></a>  split:  24576 bytes (t1 additionally written by kernel 1 AND read back by kernel 2 -- 8192 extra bytes, 50.0% more traffic, purely from materializing t1)
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated Triton output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>=== Real fused-kernel TTIR (path-normalized) ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>=== Real fused-kernel TTIR (path-normalized) ===
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>module {
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  tt.func public @diamond_fused_kernel(%a_ptr: !tt.ptr&lt;f32&gt; loc("a_ptr"(#loc)), %b_ptr: !tt.ptr&lt;f32&gt; loc("b_ptr"(#loc)), %c_ptr: !tt.ptr&lt;f32&gt; loc("c_ptr"(#loc)), %out_ptr: !tt.ptr&lt;f32&gt; loc("out_ptr"(#loc)), %n_elements: i32 loc("n_elements"(#loc))) attributes {noinline = false} {
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    %t3 = arith.constant dense&lt;0.000000e+00&gt; : tensor&lt;1024xf32&gt; loc(#loc23)
@@ -2939,7 +2939,7 @@ full stop. File 070 tests this directly on the exact same diamond graph
 Chapters 4, 13, 25, and 26 have all already used (<code>t1 = a + b</code>, shared by
 <code>t2 = t1 * c</code> and <code>t3 = relu(t1)</code>, joining at <code>out = t2 + t3</code>), written
 two different ways:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>  diamond_fused_kernel            diamond_split_kernel_1 / _2
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>  diamond_fused_kernel            diamond_split_kernel_1 / _2
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  (ONE @triton.jit function)      (the SAME four ops, split by hand)
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  load a, b, c (3 loads)          kernel 1: load a, b (2 loads)
@@ -2973,9 +2973,9 @@ central, honest structural finding: in a graph compiler (XLA, Relax,
 CUDA Hammer itself), fusion is a COMPILER decision made after the fact;
 in Triton, it is a PROGRAMMER decision made in advance, and the compiler
 never gets a say in where the boundary falls.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>python3<span class="w"> </span><span class="s2">"070_block_level_fusion_is_a_language_choice_not_a_compiler_pass.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>python3<span class="w"> </span><span class="s2">"070_block_level_fusion_is_a_language_choice_not_a_compiler_pass.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Chapter 27, File 071 (capstone): real Triton autotuning, laid directly next</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="c1"># Chapter 27, File 071 (capstone): real Triton autotuning, laid directly next</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="c1"># to CUDA Hammer's own real Schedule (Ch21), hybrid autotuner (Ch23), and</span>
 <a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="c1"># TuningCache (Ch24) -- the same "no GPU here for a real autotuning RUN, so</span>
 <a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="c1"># lay the real record types side by side" pattern Chapter 25.3 used for XLA's</span>
@@ -3083,10 +3083,10 @@ never gets a say in where the boundary falls.</p>
 <a id="__codelineno-13-106" name="__codelineno-13-106" href="#__codelineno-13-106"></a>              <span class="sa">f</span><span class="s2">"ptx=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">compiled</span><span class="o">.</span><span class="n">asm</span><span class="p">[</span><span class="s1">'ptx'</span><span class="p">])</span><span class="si">}</span><span class="s2"> chars, "</span>
 <a id="__codelineno-13-107" name="__codelineno-13-107" href="#__codelineno-13-107"></a>              <span class="sa">f</span><span class="s2">"cubin=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">compiled</span><span class="o">.</span><span class="n">asm</span><span class="p">[</span><span class="s1">'cubin'</span><span class="p">])</span><span class="si">}</span><span class="s2"> bytes"</span><span class="p">)</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>python3<span class="w"> </span><span class="s2">"071_real_triton_autotune_config_search_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>python3<span class="w"> </span><span class="s2">"071_real_triton_autotune_config_search_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated Triton output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Real Autotuner object: Autotuner
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Real Autotuner object: Autotuner
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  self.configs: 4 real triton.Config objects
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    BLOCK_SIZE: 256, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    BLOCK_SIZE: 512, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
@@ -3139,7 +3139,7 @@ never gets a say in where the boundary falls.</p>
 <a id="__codelineno-15-51" name="__codelineno-15-51" href="#__codelineno-15-51"></a>  BLOCK_SIZE= 2048 num_warps=8 num_stages=3: compiled OK, ptx=18475 chars, cubin=14184 bytes
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated Triton output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Real Autotuner object: Autotuner
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Real Autotuner object: Autotuner
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>  self.configs: 4 real triton.Config objects
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>    BLOCK_SIZE: 256, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    BLOCK_SIZE: 512, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
@@ -3244,7 +3244,7 @@ same discipline as Chapter 23.1's own <code>generateScheduledElementwiseFunction
 that a real search space is a search space of real, individually
 compilable programs, not an abstraction that only makes sense once
 hardware is attached.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>python3<span class="w"> </span><span class="s2">"071_real_triton_autotune_config_search_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>python3<span class="w"> </span><span class="s2">"071_real_triton_autotune_config_search_next_to_cuda_hammers_own_schedule_and_tuningcache.py"</span>
 </code></pre></div>
 
 

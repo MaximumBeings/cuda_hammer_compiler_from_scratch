@@ -2440,7 +2440,7 @@
 <p><strong>What you need to know first:</strong> Chapter 1's argument for why fusing operations matters. Basic C++ (classes, recursion, <code>std::unique_ptr</code>). No prior compiler-construction background is assumed -- that is exactly what this chapter builds.</p>
 <hr />
 <p>Chapter 1 argued that eager execution pays real, countable costs, and that a compiler which sees a whole chain of operations at once can remove them. It never said what a compiler actually <em>is</em>, mechanically. This chapter answers that with the smallest complete example that still has every real stage: a compiler for ordinary arithmetic expressions like <code>(a + b) * c - d</code>, with integer literals, single-letter variables, and the four usual operators. The language is deliberately not tensors -- that starts in Part 1 -- because the vocabulary this chapter builds (parse, lower, pass, codegen) is exactly the same vocabulary CUDA Hammer uses later, and it's easier to see clearly on expressions any reader can evaluate in their head.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>SOURCE TEXT        front end                     middle end                back end
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>SOURCE TEXT        front end                     middle end                back end
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>"a + b * c"  --&gt;  LEX  --&gt;  tokens  --&gt;  PARSE  --&gt;  AST  --&gt;  LOWER  --&gt;  linear IR  --&gt;  PASSES  --&gt;  IR  --&gt;  CODEGEN  --&gt;  result
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  front end:  turns text into a tree that reflects the language's real
@@ -2462,7 +2462,7 @@
 
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>A sentence like "the dog that chased the cat barked" is ambiguous if you only read it left to right one word at a time -- you need to know which clause modifies which noun to understand who actually barked. A parse tree resolves exactly this kind of ambiguity for a sentence's grammar; an AST does the identical job for a programming language's grammar. <code>a + b * c</code> is ambiguous read strictly left to right (compute <code>a + b</code> first? or <code>b * c</code> first?) until the language's precedence rules are applied, and an AST is precedence made concrete: the multiplication ends up <em>underneath</em> the addition in the tree specifically because it has to be computed first.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>source: a + b * c   (parsed so that * binds tighter than +)
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>source: a + b * c   (parsed so that * binds tighter than +)
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  +
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    a
@@ -2478,7 +2478,7 @@
 </code></pre></div>
 <h3 id="background">Background<a class="headerlink" href="#background" title="Permanent link">&para;</a></h3>
 <p>The code below is a complete front end for the expression language: a lexer that turns source text into a token stream, and a recursive-descent parser that consumes that stream and builds a real AST, respecting the standard precedence (<code>*</code> and <code>/</code> bind tighter than <code>+</code> and <code>-</code>) and parentheses. This same file also lowers the AST to a linear IR and interprets it -- that is Section 2.2's own subject, covered together with this section's parsing code because they are, in a real compiler, genuinely two stages of one pipeline running back to back on the same data.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 2: What a Compiler Pipeline Looks Like</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// Chapter 2: What a Compiler Pipeline Looks Like</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1">// 003_parsing_lowering_and_ir.cpp</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1">//</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1">// Section 2.1 -- source text to an abstract syntax tree -- and</span>
@@ -2797,11 +2797,11 @@
 <a id="__codelineno-2-317" name="__codelineno-2-317" href="#__codelineno-2-317"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>003_parsing_lowering_and_ir.cpp<span class="w"> </span>-o<span class="w"> </span>003_parsing_lowering_and_ir
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>003_parsing_lowering_and_ir.cpp<span class="w"> </span>-o<span class="w"> </span>003_parsing_lowering_and_ir
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>./003_parsing_lowering_and_ir
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 2.1 / 2.2: source -&gt; tokens -&gt; AST -&gt; linear IR -&gt; result ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>=== Section 2.1 / 2.2: source -&gt; tokens -&gt; AST -&gt; linear IR -&gt; result ===
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>--- source: "a + b * c" ---
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>AST:
@@ -2886,7 +2886,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>A tree is a natural shape for representing <em>how</em> an expression is structured, but it is an awkward shape for a pass to transform mechanically -- there's no single, ordered sequence of "steps" to walk through and rewrite. A linear IR fixes that: it's the same computation, flattened into an ordered list of simple instructions, each one computing exactly one operation and storing its result in a numbered temporary. This is the same flattening a recipe writer does converting "a dish that needs the sauce, which needs the reduction, which needs the stock" into a numbered list of steps a line cook can execute one at a time without needing to hold the whole recipe's structure in their head at once.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>AST (indented)          linear IR (three-address code)
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>AST (indented)          linear IR (three-address code)
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  +
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    a                --&gt;    t0 = b * c
@@ -2914,7 +2914,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>A copy editor revising a manuscript works entirely from the manuscript itself: they don't re-interview the author to check whether a sentence could be tightened, they read the actual words on the page and rewrite them. A compiler pass has exactly this discipline, and it is what makes passes composable: a pass reads the IR, decides what to change, and writes a new (or modified) IR, never reaching back to the source text or the AST that produced it. This chapter's one real pass, constant folding, does the smallest useful version of this: any instruction whose operands are already known at compile time gets computed right then, and the instruction disappears from the program entirely.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>before folding (3 instructions):        after folding (0 instructions):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>before folding (3 instructions):        after folding (0 instructions):
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>  t0 = 2 + 3                              (fully resolved to the
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  t1 = 4 - 1                               literal 15 at compile time --
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  t2 = t0 * t1                             nothing left to execute)
@@ -2925,7 +2925,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p>The pass below, <code>foldConstants</code>, walks File 003's own IR exactly once, in instruction order. For each instruction it first rewrites both operands (substituting in any already-folded constant from an earlier instruction in the same walk -- this is constant <em>propagation</em>, riding along with the folding), then checks whether both are now statically known. If they are, it computes the result immediately and records it in <code>knownValue</code>, without emitting an instruction; otherwise it keeps the instruction, with its rewritten operands. This single-pass design is exactly why <code>(1 + 1) + (1 + 1) + a</code> folds all the way down to <code>t3 = 4 + a</code> in the locked output below, even though the outer addition's own operands (<code>t0</code> and <code>t1</code>) are themselves temps, not literals, at the moment they're first read: by the time the pass reaches the instruction that uses them, both have already been resolved to known values earlier in the same walk. Every test expression is interpreted both before and after folding on the same variable bindings specifically to check the one property a pass must never violate: it can change how many instructions exist, but never what the program computes.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// Chapter 2: What a Compiler Pipeline Looks Like</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// Chapter 2: What a Compiler Pipeline Looks Like</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1">// 004_constant_folding_pass.cpp</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1">//</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1">// Section 2.3 -- passes: transforming the IR without ever touching</span>
@@ -3212,11 +3212,11 @@
 <a id="__codelineno-7-285" name="__codelineno-7-285" href="#__codelineno-7-285"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>004_constant_folding_pass.cpp<span class="w"> </span>-o<span class="w"> </span>004_constant_folding_pass
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>004_constant_folding_pass.cpp<span class="w"> </span>-o<span class="w"> </span>004_constant_folding_pass
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>./004_constant_folding_pass
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>=== Section 2.3: a real constant-folding pass over the IR ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>=== Section 2.3: a real constant-folding pass over the IR ===
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>--- source: "a + (2 * 3)" ---
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>IR before folding (2 instructions):

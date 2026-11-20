@@ -2436,7 +2436,7 @@
 <p><strong>What you need to know first:</strong> Chapter 2's vocabulary (lexer/parser/AST are not needed again here, but IR, pass, and codegen are used throughout). No prior exposure to XLA, TVM, or Triton is assumed.</p>
 <hr />
 <p>Every fact this chapter states about XLA, TVM, or Triton is cited to that project's own real, current documentation -- this chapter's own honesty discipline, stated once in <a href="../../getting-started/">Getting Started</a> and followed here rather than repeated on every paragraph. That also means this chapter's <code>code/</code> directory is empty: there is nothing to compile, because the claims here are about what three <em>other</em> projects' own real source and documentation say, not about anything this book measures itself. Chapter 4 returns to genuinely compiled, genuinely run C++ when CUDA Hammer's own graph IR starts.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2'S VOCABULARY:   source --&gt; AST --&gt; lower --&gt; IR --&gt; passes --&gt; codegen
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>CHAPTER 2'S VOCABULARY:   source --&gt; AST --&gt; lower --&gt; IR --&gt; passes --&gt; codegen
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>XLA     : StableHLO graph --&gt; HLO --&gt; HLO passes (fusion, CSE, DCE, ...) --&gt; LLVM --&gt; machine code
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>TVM     : Relay graph --&gt; TensorIR (TIR) --&gt; schedule primitives (split, fuse, reorder, ...) --&gt; codegen
@@ -2455,7 +2455,7 @@
 
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>Picture a factory with two stations on its line. The first station applies the same general-purpose tools to every product that passes through, regardless of which specific machine will assemble it later -- deduplicating parts, discarding anything unused, planning where boxes will sit in the warehouse. The second station is specialized per destination: a product headed to one assembly line gets fittings that product headed to a different line would never need. XLA's own compilation pipeline has exactly this two-station shape, and a further, final station turns the result into real machine code.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Phase 1 (target-independent, runs the same way for any backend):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Phase 1 (target-independent, runs the same way for any backend):
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  StableHLO --&gt; [CSE, target-independent operation fusion, buffer analysis] --&gt; HLO
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Phase 2 (backend-specific, GPU shown here):
@@ -2481,7 +2481,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>A recipe states what a dish is: these ingredients, combined in this way, produce this result. It says nothing about <em>how</em> a kitchen actually executes it -- whether one cook does every step in sequence, or three cooks divide the prep work, or the oven preheats while the vegetables are being chopped. Many different kitchen workflows produce the identical dish; some are simply faster. TVM's own design separates a tensor computation's definition from a <em>schedule</em> -- a chosen sequence of transformations describing how to actually execute that same, unchanged computation -- in exactly this way.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>WHAT (the computation, defined once, in TensorIR):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>WHAT (the computation, defined once, in TensorIR):
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  C[i, j] = sum_k A[i, k] * B[k, j]              -- one fixed mathematical definition
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>HOW (a schedule -- one of many valid choices for the SAME computation above):
@@ -2510,7 +2510,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Giving driving directions to a single driver is one kind of instruction: turn left here, merge there, one vehicle following one route. Giving a route to a convoy's own dispatcher is a different kind of instruction entirely: the dispatcher receives the destination and decides internally how the convoy's individual vehicles space themselves, merge lanes, and pass through checkpoints -- details the original route never had to specify. CUDA's own programming model is the first kind: a programmer writes the code <em>one thread</em> executes, and the hardware replicates that same scalar program across every thread in a block. Triton's programming model is the second kind.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CUDA   -- "Scalar Program, Blocked Threads":
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>CUDA   -- "Scalar Program, Blocked Threads":
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  programmer writes:    one thread's-worth of code, operating on a single acc[i]
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  hardware replicates:  that same scalar program across every thread in the block
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>

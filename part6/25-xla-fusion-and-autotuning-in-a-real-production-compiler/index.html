@@ -2305,7 +2305,7 @@ boundaries may be stricter than anything this chapter observes on
 XLA:CPU. That gap is named here explicitly, the same way Chapter 18 named
 its own "compiles but never executes" limitation, rather than left
 implicit.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+----------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+----------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 25's own shape, section by section                    |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                  |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  25.1  A production IR meets CUDA Hammer's own diamond graph    |
@@ -2338,7 +2338,7 @@ value with <code>consumers != 1</code> gets forced external. XLA has never seen
 Chapter 4's own <code>Graph</code>/<code>Node</code> types, so it cannot be handed that graph
 directly -- but the same <em>shape</em> is trivial to write in JAX, and JAX's own
 <code>jit</code> compiles it through the real XLA pipeline:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    a       b                    JAX / Python:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    a       b                    JAX / Python:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>     \     /                       t1 = a + b
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>      \   /                        t2 = t1 * c
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>      [t1]                          t3 = relu(t1)
@@ -2367,7 +2367,7 @@ own backend-specific CUDA codegen runs.</p>
 <p>File 063 asks JAX for the diamond graph's own StableHLO, unoptimized,
 exactly as XLA's frontend first sees it, then asks for the same graph's
 real, fully optimized HLO after XLA's own fusion pass has run.
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Chapter 25, Section 25.1-25.2: CUDA Hammer's own diamond test graph --</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># the same shared-value shape used by Ch4's Graph/Node IR and Ch13's</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># elementwiseFusionPass() ever since -- run through a REAL production</span>
@@ -2470,10 +2470,10 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-2-101" name="__codelineno-2-101" href="#__codelineno-2-101"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-2-102" name="__codelineno-2-102" href="#__codelineno-2-102"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"063_a_diamond_graph_through_real_xlas_hlo_ir.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"063_a_diamond_graph_through_real_xlas_hlo_ir.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated XLA output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>jax version: 0.10.2
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>jax version: 0.10.2
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>real backend device: cpu:0
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>==============================================================================
@@ -2607,7 +2607,7 @@ real, fully optimized HLO after XLA's own fusion pass has run.
 <a id="__codelineno-4-132" name="__codelineno-4-132" href="#__codelineno-4-132"></a>-- number of `fusion(...)` instructions in the ENTRY computation once t1 escapes as an output: 2
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated XLA output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>jax version: 0.6.2
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>jax version: 0.6.2
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>real backend device: TFRT_CPU_0
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>==============================================================================
@@ -2715,12 +2715,12 @@ definition cannot be inside any fusion group -- and on both machines,
 real XLA responds by materializing t1 separately:</p>
 <p><strong>Excerpt, cloud sandbox (x86-64, jax 0.10.2 -- real, version-specific
 structure, quoted from the full Part 3 dump above):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>%wrapped_add = f32[6,8]{1,0} fusion(%a.1, %b.1), kind=kLoop, calls=%wrapped_add_computation, ...
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>%wrapped_add = f32[6,8]{1,0} fusion(%a.1, %b.1), kind=kLoop, calls=%wrapped_add_computation, ...
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>%maximum_add_fusion = f32[6,8]{1,0} fusion(%wrapped_add, %c.1), kind=kLoop, calls=%fused_computation, ...
 </code></pre></div>
 <p><strong>Excerpt, device (aarch64, jax 0.6.2 -- real, version-specific structure,
 quoted from the full Part 3 dump above):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>%add.4 = f32[6,8]{1,0} add(%Arg_0.1, %Arg_1.2), ...
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>%add.4 = f32[6,8]{1,0} add(%Arg_0.1, %Arg_1.2), ...
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>%maximum_add_fusion = f32[6,8]{1,0} fusion(%add.4, %Arg_2.3), kind=kLoop, calls=%fused_computation, ...
 </code></pre></div>
 <p>Two real, independently pip-installed jaxlib builds (0.10.2 on the cloud
@@ -2740,9 +2740,9 @@ exactly where Chapter 13's own <code>consumers != 1</code> rule would also have 
 the boundary -- reached here by a different, more general test
 ("does every use stay inside this group") that happens to agree with
 Chapter 13's own simpler one in this particular case.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"063_a_diamond_graph_through_real_xlas_hlo_ir.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"063_a_diamond_graph_through_real_xlas_hlo_ir.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="c1"># Chapter 25, Section 25.2 (continued): the reduction half of the same</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># question File 063 asked about elementwise sharing -- this time against</span>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Ch14's own reductionFusionPass() rule, which forces a Sum node's OUTPUT</span>
@@ -2825,10 +2825,10 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-9-81" name="__codelineno-9-81" href="#__codelineno-9-81"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-9-82" name="__codelineno-9-82" href="#__codelineno-9-82"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>python3<span class="w"> </span><span class="s2">"064_reduction_fusion_under_real_xla.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>python3<span class="w"> </span><span class="s2">"064_reduction_fusion_under_real_xla.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated XLA output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>jax version: 0.10.2
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>jax version: 0.10.2
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>real backend device: cpu:0
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>==============================================================================
@@ -2944,7 +2944,7 @@ Chapter 13's own simpler one in this particular case.</p>
 <a id="__codelineno-11-114" name="__codelineno-11-114" href="#__codelineno-11-114"></a>-- the downstream multiply is fused into the SAME single kernel as the reduce, not split into a second one: True
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated XLA output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>jax version: 0.6.2
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>jax version: 0.6.2
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>real backend device: TFRT_CPU_0
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>==============================================================================
@@ -3037,9 +3037,9 @@ treat "this is a reduction" as an automatic fusion boundary by itself --
 only "does every consumer of this value stay inside the same group"
 matters, the same rule Section 25.1 already found for ordinary elementwise
 sharing.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">"064_reduction_fusion_under_real_xla.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">"064_reduction_fusion_under_real_xla.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="c1"># Chapter 25, Section 25.3 (capstone): CUDA Hammer's own Schedule/TuningCache</span>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="c1"># machinery (Ch21, Ch24) laid directly next to the real record types XLA's</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="c1"># own GPU autotuner uses in production.</span>
@@ -3170,10 +3170,10 @@ sharing.</p>
 <a id="__codelineno-14-129" name="__codelineno-14-129" href="#__codelineno-14-129"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-14-130" name="__codelineno-14-130" href="#__codelineno-14-130"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python3<span class="w"> </span><span class="s2">"065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>python3<span class="w"> </span><span class="s2">"065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py"</span>
 </code></pre></div>
 <p><strong>Output (current local rerun, Apple Silicon/macOS; one actual host execution):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>==============================================================================
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>==============================================================================
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>PART 1: the tuning-knob record itself
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>==============================================================================
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>CudaHammerSchedule (Ch21, this book's own struct):
@@ -3257,7 +3257,7 @@ version-specific. OpenXLA's <a href="https://openxla.org/xla/persisted_autotunin
 also requires user-managed version separation/invalidation. CUDA Hammer's
 one-string target key illustrates why context matters, without implementing
 or experimentally verifying XLA's complete cache-reuse policy.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>python3<span class="w"> </span><span class="s2">"065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>python3<span class="w"> </span><span class="s2">"065_cuda_hammers_schedule_vs_xlas_real_autotuning_records.py"</span>
 </code></pre></div>
 <h3 id="what-a-real-independent-mature-fusion-engine-still-leaves-on-the-table">What a real, independent, mature fusion engine still leaves on the table<a class="headerlink" href="#what-a-real-independent-mature-fusion-engine-still-leaves-on-the-table" title="Permanent link">&para;</a></h3>
 <p>Snider and Liang's 2023 paper "Operator Fusion in XLA: Analysis and

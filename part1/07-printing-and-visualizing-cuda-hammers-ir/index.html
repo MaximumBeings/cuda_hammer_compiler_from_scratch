@@ -2440,7 +2440,7 @@
 <p><strong>What you need to know first:</strong> Chapter 4's <code>Value</code>/<code>Node</code>/<code>Graph</code>, Chapter 5's tokenizer and parser (<code>lexLine</code>/<code>parseStatement</code>/<code>parseProgram</code>), and Chapter 6's <code>Shape</code>/<code>inferShapes()</code> -- this chapter reuses all three completely unchanged and adds nothing to any of them.</p>
 <hr />
 <p>Every chapter since Chapter 4 has, in passing, written some version of a function that prints a <code>Graph</code> to the terminal -- File 005 had one, File 007 had another, File 009's <code>main()</code> printed shapes inline. Each of those was a quick, disposable debug aid, good enough to eyeball while writing that one chapter's own tests and then never looked at again. This chapter takes printing seriously as its own subject, because Part 2 is about to start writing real optimization passes -- constant folding, dead code elimination, common subexpression elimination -- and every one of those passes will need to be debugged the same way Chapter 2's own IR interpreter was: by looking at a graph <em>before</em> a pass runs and the same graph <em>after</em>, and trusting that what got printed is a faithful, complete description of what the pass actually saw and produced, not an approximation of it.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT A Graph LOOKS LIKE FROM THE OUTSIDE, RIGHT NOW (Chapters 4-6):
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>WHAT A Graph LOOKS LIKE FROM THE OUTSIDE, RIGHT NOW (Chapters 4-6):
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  in memory: a heap of Node objects, linked by Value{nodeId, outputIndex}
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>             -- real and correct, and INVISIBLE to a human at a terminal
@@ -2472,7 +2472,7 @@
 <h3 id="intuition">Intuition<a class="headerlink" href="#intuition" title="Permanent link">&para;</a></h3>
 <p>A program that crashes with no error message and no stack trace is barely more useful than a program that doesn't run at all -- the information a developer actually needs to fix it exists somewhere in memory at the moment of the crash, but if nothing ever surfaces it, that information might as well not exist. A compiler's IR has exactly the same problem, one level up: if a graph can be built, parsed, validated, and optimized, but never <em>looked at</em>, then every one of those steps is a black box a developer has to trust blindly, or step through one field access at a time in a debugger. Every real compiler this book has already cited -- and this is a general, well-known architectural fact about compilers, not a claim needing its own citation -- treats "dump the IR in a form a human or another tool can read" as a first-class feature, not an afterthought.</p>
 <p>The specific trap this section calls out is subtler than "we should add a print function." Chapter 5's own File 007 already has one:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>CHAPTER 5's printGraph() (File 007) -- LOOKS LIKE A PRINTER, ISN'T ONE:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>CHAPTER 5's printGraph() (File 007) -- LOOKS LIKE A PRINTER, ISN'T ONE:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  %0 = Input(a)
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  %1 = Input(b)
@@ -2510,7 +2510,7 @@
 
 <h3 id="intuition_1">Intuition<a class="headerlink" href="#intuition_1" title="Permanent link">&para;</a></h3>
 <p>A photocopier that only sometimes reproduces a document correctly is worse than no photocopier at all, because it invites trust it has not earned -- the failures are exactly the copies nobody double-checks. The bar for a real IR printer is the same: it is not enough for its output to <em>look</em> like valid syntax, because a printer with a subtle bug (a missing argument, a swapped operand order, a name collision) can produce text that is syntactically fine and semantically wrong, and nothing about glancing at it would reveal that. The only test strong enough to catch that class of bug is a genuine round trip: print a graph to text, parse that exact text back into a brand-new graph using Chapter 5's own unmodified parser, and check -- not by eye, but with the same <code>graphsStructurallyEqual()</code> function Chapter 5 already built -- that the new graph is identical, node for node and edge for edge, to the one that was printed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>THE ROUND TRIP THIS SECTION'S SELF-CHECK ACTUALLY PROVES:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>THE ROUND TRIP THIS SECTION'S SELF-CHECK ACTUALLY PROVES:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  step 1: Graph (original)
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  step 2: text ("a = input()\nb = input()\n...")
@@ -2531,7 +2531,7 @@
 </code></pre></div>
 <h3 id="background_1">Background<a class="headerlink" href="#background_1" title="Permanent link">&para;</a></h3>
 <p><code>printGraphAsSource()</code> walks every node in the graph and emits exactly the line Chapter 5's grammar expects for that node's own operation: <code>input()</code> takes no arguments at all; <code>const(&lt;value&gt;)</code> takes the one stored numeric value, not a reference to anything; <code>add(&lt;lhs&gt;, &lt;rhs&gt;)</code> and <code>mul(&lt;lhs&gt;, &lt;rhs&gt;)</code> each take their two operands; <code>relu(&lt;in&gt;)</code> takes its one operand. The one detail worth being precise about is <em>what</em> gets printed for an operand -- never a node's numeric id (as Chapter 5's own File 007 debug dump did), always the input node's own <code>debugName</code>, because a numeric id like <code>%2</code> is not a legal argument in this book's grammar at all; only a NAME or a NUMBER is, and <code>parseStatement()</code> would reject anything else.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>PRINTING THE DIAMOND GRAPH, NODE BY NODE, ID-TO-NAME SUBSTITUTION MADE EXPLICIT:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>PRINTING THE DIAMOND GRAPH, NODE BY NODE, ID-TO-NAME SUBSTITUTION MADE EXPLICIT:
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  node  op     inputs (by id)   printed line          substitutions used
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  %0    Input  (none)           a = input()           (none)
@@ -2547,7 +2547,7 @@
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>  identically and only Const needs its own separate branch at all.
 </code></pre></div>
 <p>A second detail this file's own code comments call out explicitly, because it is easy to assume the opposite: printing nodes in plain <code>g.nodes()</code> order -- the order they were created in, not some order computed by a call to <code>topologicalSort()</code> -- is already correct here, and does not need Chapter 4's topological sort at all.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>WHY NODE-CREATION ORDER IS ALREADY A VALID PRINTING ORDER:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>WHY NODE-CREATION ORDER IS ALREADY A VALID PRINTING ORDER:
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  Chapter 4's own addBinary()/addUnary() can only take a Value that was
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  ALREADY returned by some earlier call -- there is no way to construct
@@ -2569,7 +2569,7 @@
 <p>Chapter 6's own [COMMON TRAP] made the identical point about <code>inferShapes()</code>: id order and topological order coincide here because Chapter 4's API is append-only and can only reference already-existing nodes. A future pass that rewrites or reorders nodes -- which Part 2 starts building in Chapter 8 -- is not guaranteed to preserve that coincidence. <code>printGraphAsSource()</code> relies on it today because it is genuinely true today; a later chapter that adds node reordering would need to switch this function back to walking <code>topologicalSort()</code>'s own <code>order</code>, exactly the way <code>inferShapes()</code> already does on principle rather than convenience.</p>
 </div>
 <p>Const is the one operation whose argument is a number, not a name, and <code>printGraphAsSource()</code> branches on that explicitly rather than trying to force it through the same "look up a debugName" logic every other operation uses:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>THE ONE BRANCH IN printGraphAsSource() THAT ISN'T "LOOK UP A DEBUGNAME":
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>THE ONE BRANCH IN printGraphAsSource() THAT ISN'T "LOOK UP A DEBUGNAME":
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  every op except Const:  print the INPUT NODE'S debugName
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                           (a reference to something already defined)
@@ -2586,7 +2586,7 @@
 <a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>  require their arguments to resolve through the symbol table.
 </code></pre></div>
 <p>File 011 below proves all of this concretely: it prints the familiar diamond graph, checks the printed text against a hand-written expected string byte for byte, then performs the real round trip -- parsing that printed text and confirming <code>graphsStructurallyEqual()</code> against the original -- and repeats the whole thing a second time on a small graph containing a <code>Const</code> node, specifically to exercise the one branch the diamond graph itself never touches.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 7: Printing and Visualizing CUDA Hammer's IR</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1">// Chapter 7: Printing and Visualizing CUDA Hammer's IR</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1">// 011_printing_the_ir_as_reparseable_text.cpp</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="c1">//</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1">// Section 7.1 -- why an IR that can't be printed is a debugging dead end</span>
@@ -2935,11 +2935,11 @@
 <a id="__codelineno-6-347" name="__codelineno-6-347" href="#__codelineno-6-347"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>011_printing_the_ir_as_reparseable_text.cpp<span class="w"> </span>-o<span class="w"> </span>011_printing_the_ir_as_reparseable_text
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>011_printing_the_ir_as_reparseable_text.cpp<span class="w"> </span>-o<span class="w"> </span>011_printing_the_ir_as_reparseable_text
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>./011_printing_the_ir_as_reparseable_text
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Section 7.2: printing a graph as text its OWN parser can read back in ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>=== Section 7.2: printing a graph as text its OWN parser can read back in ===
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>Printed source (6 nodes):
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>a = input()
@@ -2970,7 +2970,7 @@
 
 <h3 id="intuition_2">Intuition<a class="headerlink" href="#intuition_2" title="Permanent link">&para;</a></h3>
 <p>Text answers "what does this graph say," read line by line, but it answers "what SHAPE is this graph" much more slowly than a picture does -- finding every node with two consumers, or seeing at a glance where a chain of computation branches and later merges back together, is exactly the kind of question eyes answer faster over a picture than over a column of <code>name = op(args)</code> lines. This section builds a second, completely different external view of the same <code>Graph</code>: an export to Graphviz's own DOT language, a real, independently specified graph-description format that a real, independently written tool (<code>dot</code>) already knows how to lay out and render. This book is not inventing a picture format of its own; it is speaking a language something else already understands.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>DOT'S OWN GRAMMAR, QUOTED FROM GRAPHVIZ'S REAL DOCUMENTATION
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>DOT'S OWN GRAMMAR, QUOTED FROM GRAPHVIZ'S REAL DOCUMENTATION
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>(https://graphviz.org/doc/info/lang.html), MAPPED ONTO WHAT THIS
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>SECTION'S exportToDot() ACTUALLY EMITS:
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
@@ -2989,7 +2989,7 @@
 </code></pre></div>
 <h3 id="background_2">Background<a class="headerlink" href="#background_2" title="Permanent link">&para;</a></h3>
 <p><code>exportToDot()</code> walks the graph twice: once to emit one node statement per <code>Node</code> (an id like <code>n2</code>, an attribute list containing a <code>label</code> built from that node's <code>debugName</code>, its operation, and -- when shape information is supplied -- its inferred shape from Chapter 6's own <code>inferShapes()</code>), and once to emit one edge statement per real input edge, <code>n&lt;inputId&gt; -&gt; n&lt;consumerId&gt;;</code>, directly mirroring <code>Node::inputs</code> the same way every other file in this book has read that field. A node's DOT identifier is deliberately never its <code>debugName</code> directly:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>WHY exportToDot() USES "n2" AS A NODE'S DOT IDENTIFIER, NOT ITS debugName:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>WHY exportToDot() USES "n2" AS A NODE'S DOT IDENTIFIER, NOT ITS debugName:
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>  DOT's own unquoted-identifier rule requires a letter or underscore
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>  followed by letters, digits, or underscores -- "n" + an integer id
@@ -3004,7 +3004,7 @@
 <a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>  without exportToDot() needing its own quoting/escaping logic at all.
 </code></pre></div>
 <p>The claim this section makes is stronger than "this text looks like DOT to a human reading it," and File 012's own self-check is built to prove that stronger claim directly: the generated text is written to a real file and handed to the actual <code>dot</code> binary (<code>dot -Tplain</code>, confirmed installed on this machine before the test runs), and the self-check passes only if Graphviz's own parser accepts it and exits successfully.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>THE VALIDATION PIPELINE FILE 012 ACTUALLY RUNS:
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>THE VALIDATION PIPELINE FILE 012 ACTUALLY RUNS:
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  step 1: Graph
 <a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>  step 2: exportToDot()          --&gt;  produces a .dot file on disk
@@ -3018,7 +3018,7 @@
 <a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>  "the real thing" is Graphviz's own parser, not a web page to fetch.
 </code></pre></div>
 <p>File 012 also runs three lighter, tool-independent checks on the DOT text itself -- the number of node statements equals the graph's own node count, the number of edge statements equals the graph's own total input-edge count, and the diamond graph's <code>out</code> node specifically shows exactly two incoming edges in the text, matching its two real inputs -- so the file's self-check still means something on a machine where <code>dot</code> itself happens not to be installed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1">// Chapter 7: Printing and Visualizing CUDA Hammer's IR</span>
+<div class="language-cpp highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1">// Chapter 7: Printing and Visualizing CUDA Hammer's IR</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1">// 012_visualizing_the_ir_as_graphviz_dot.cpp</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1">//</span>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1">// Section 7.3 -- text is enough to feed a program back into itself, but</span>
@@ -3344,11 +3344,11 @@
 <a id="__codelineno-12-324" name="__codelineno-12-324" href="#__codelineno-12-324"></a><span class="p">}</span>
 </code></pre></div>
 <p><strong>Compile and run:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>012_visualizing_the_ir_as_graphviz_dot.cpp<span class="w"> </span>-o<span class="w"> </span>012_visualizing_the_ir_as_graphviz_dot
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>g++<span class="w"> </span>-std<span class="o">=</span>c++17<span class="w"> </span>-Wall<span class="w"> </span>-Wextra<span class="w"> </span>-O2<span class="w"> </span>012_visualizing_the_ir_as_graphviz_dot.cpp<span class="w"> </span>-o<span class="w"> </span>012_visualizing_the_ir_as_graphviz_dot
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>./012_visualizing_the_ir_as_graphviz_dot
 </code></pre></div>
 <p><strong>Output:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>=== Section 7.3: exporting the graph as real Graphviz DOT ===
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>=== Section 7.3: exporting the graph as real Graphviz DOT ===
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>Generated DOT source:
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>digraph IR {

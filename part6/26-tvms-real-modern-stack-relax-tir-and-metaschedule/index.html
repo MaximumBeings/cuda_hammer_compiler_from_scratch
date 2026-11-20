@@ -2234,7 +2234,7 @@ slightly out of date. That is a genuine, humbling lesson about
 production software's own churn -- one a from-scratch toy compiler like
 CUDA Hammer never has to face, because nothing outside this book depends
 on <code>Schedule</code> staying named <code>Schedule</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>+------------------------------------------------------------------+
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>|  Chapter 26's own shape, section by section                      |
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>|                                                                    |
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>|  26.1  TVM's real scheduling primitives (split, vectorize) --     |
@@ -2266,7 +2266,7 @@ named primitives -- <code>split</code>, <code>reorder</code>, <code>parallel</co
 <code>unroll</code> -- that read almost like a direct translation of Chapter 21's
 own <code>Schedule{tileSizePerLoop, loopOrder, unrollFactor}</code> into an API
 someone else already built and shipped.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  Ch21's own Schedule struct        TVM's own real s_tir.Schedule
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>  Ch21's own Schedule struct        TVM's own real s_tir.Schedule
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  --------------------------        ------------------------------
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  tileSizePerLoop[dim] = 8    --&gt;   sch.split(loop, factors=[6, 8])
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  loopOrder = [1, 0]          --&gt;   sch.reorder(loop_1, loop_0)
@@ -2280,7 +2280,7 @@ own tile-size split, on the exact same <code>n=48</code> extent Chapter 21's own
 capstone search space used -- followed by a real <code>vectorize</code>, then
 compiles the scheduled TIR through a real LLVM backend and runs it,
 checked against a NumPy reference.
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Chapter 26, Section 26.1: TVM's own real, foundational scheduling layer --</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># the direct analogue of Chapter 21's own `Schedule`/`tileLoop()`, applied</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># to a real TIR (Tensor IR) function and actually compiled and run.</span>
@@ -2380,10 +2380,10 @@ checked against a NumPy reference.
 <a id="__codelineno-2-98" name="__codelineno-2-98" href="#__codelineno-2-98"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-2-99" name="__codelineno-2-99" href="#__codelineno-2-99"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"066_tirs_own_real_schedule_primitives_split_and_vectorize.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>python3<span class="w"> </span><span class="s2">"066_tirs_own_real_schedule_primitives_split_and_vectorize.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated TVM output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>tvm version: 0.26.0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>tvm version: 0.26.0
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>==============================================================================
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>PART 1: an unscheduled TIR PrimFunc from a Tensor Expression
@@ -2431,7 +2431,7 @@ checked against a NumPy reference.
 <a id="__codelineno-4-46" name="__codelineno-4-46" href="#__codelineno-4-46"></a>bit-exact match: True
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated TVM output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>tvm version: 0.26.0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>tvm version: 0.26.0
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>==============================================================================
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>PART 1: an unscheduled TIR PrimFunc from a Tensor Expression
@@ -2494,9 +2494,9 @@ tile the same loop the same way) but a layer of machinery that makes
 the idea safe to apply without re-deriving the index math by hand every
 time -- exactly the gap this book's own Chapter 25 closing section named
 between a toy autotuner and a production one.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python3<span class="w"> </span><span class="s2">"066_tirs_own_real_schedule_primitives_split_and_vectorize.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>python3<span class="w"> </span><span class="s2">"066_tirs_own_real_schedule_primitives_split_and_vectorize.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="c1"># Chapter 26, Section 26.2: CUDA Hammer's own Ch4/Ch13 diamond graph, this</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># time run through TVM's real, current graph-level IR -- Relax, not Relay</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># (see File 066's own header for how that was discovered, not assumed).</span>
@@ -2629,10 +2629,10 @@ between a toy autotuner and a production one.</p>
 <a id="__codelineno-7-131" name="__codelineno-7-131" href="#__codelineno-7-131"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-7-132" name="__codelineno-7-132" href="#__codelineno-7-132"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"067_relax_the_real_successor_to_relay_and_its_own_fusion_boundary.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python3<span class="w"> </span><span class="s2">"067_relax_the_real_successor_to_relay_and_its_own_fusion_boundary.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated TVM output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>tvm version: 0.26.0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>tvm version: 0.26.0
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>==============================================================================
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>PART 1: unoptimized Relax IR for the diamond graph
@@ -2766,7 +2766,7 @@ between a toy autotuner and a production one.</p>
 <a id="__codelineno-9-132" name="__codelineno-9-132" href="#__codelineno-9-132"></a>bit-exact match: True
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated TVM output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>tvm version: 0.26.0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>tvm version: 0.26.0
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>==============================================================================
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>PART 1: unoptimized Relax IR for the diamond graph
@@ -2951,9 +2951,9 @@ could happen somewhere in this book -- this is simply the first time it
 showed up across ARCHITECTURES rather than across ELEMENT ORDERS.
 Reported here plainly, the same as every other real machine-specific
 finding since Chapter 22.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python3<span class="w"> </span><span class="s2">"067_relax_the_real_successor_to_relay_and_its_own_fusion_boundary.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>python3<span class="w"> </span><span class="s2">"067_relax_the_real_successor_to_relay_and_its_own_fusion_boundary.py"</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="ch">#!/usr/bin/env python3</span>
+<div class="language-python highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="ch">#!/usr/bin/env python3</span>
 <a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="c1"># Chapter 26, Section 26.3 (capstone): TVM's own real, current auto-tuning</span>
 <a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># system -- MetaSchedule -- which the real, installed package confirms has</span>
 <a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># replaced BOTH AutoTVM and Ansor (`tvm.autotvm` and `tvm.auto_scheduler`</span>
@@ -3110,10 +3110,10 @@ finding since Chapter 22.</p>
 <a id="__codelineno-12-155" name="__codelineno-12-155" href="#__codelineno-12-155"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
 <a id="__codelineno-12-156" name="__codelineno-12-156" href="#__codelineno-12-156"></a>    <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">"068_metaschedules_real_tuningrecord_database_ch24s_own_cache_idea_at_production_scale.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>python3<span class="w"> </span><span class="s2">"068_metaschedules_real_tuningrecord_database_ch24s_own_cache_idea_at_production_scale.py"</span>
 </code></pre></div>
 <p><strong>Output (cloud sandbox, x86-64 -- real, live-generated TVM output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>tvm version: 0.26.0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>tvm version: 0.26.0
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>real meta_schedule module: &lt;module 'tvm.s_tir.meta_schedule' from '/usr/local/lib/python3.11/dist-packages/tvm/s_tir/meta_schedule/__init__.py'&gt;
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>real MetaSchedule Database classes available: ['Database', 'JSONDatabase', 'TuningRecord']
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>
@@ -3135,7 +3135,7 @@ finding since Chapter 22.</p>
 <a id="__codelineno-14-20" name="__codelineno-14-20" href="#__codelineno-14-20"></a>recovered trace matches the original schedule's own trace: True
 </code></pre></div>
 <p><strong>Output (device, aarch64 Linux VM -- real, live-generated TVM output):</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>tvm version: 0.26.0
+<div class="language-text highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>tvm version: 0.26.0
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>real meta_schedule module: &lt;module 'tvm.s_tir.meta_schedule' from '/sessions/rcw-01sjvzizaftbfuu7vxgwxekf/.local/lib/python3.10/site-packages/tvm/s_tir/meta_schedule/__init__.py'&gt;
 <a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>real MetaSchedule Database classes available: ['Database', 'JSONDatabase', 'TuningRecord']
 <a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
@@ -3208,7 +3208,7 @@ format instead stores a starting point plus a sequence of edits, and
 replays the edits to reconstruct the winning schedule on demand, rather
 than storing the winning shape itself. File 068's own Part 2 uses the
 corrected, real design.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>python3<span class="w"> </span><span class="s2">"068_metaschedules_real_tuningrecord_database_ch24s_own_cache_idea_at_production_scale.py"</span>
+<div class="language-bash highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>python3<span class="w"> </span><span class="s2">"068_metaschedules_real_tuningrecord_database_ch24s_own_cache_idea_at_production_scale.py"</span>
 </code></pre></div>
 
 
