@@ -45,3 +45,5 @@ The diagram builder is idempotent. All illustrations share a 760-unit deep-blue 
 Validation coverage is defined by `tools/book-manifest.json`. Update it deliberately when adding or removing a lesson; validators fail on missing, extra or empty input sets. This prevents a missing checkout from being reported as a successful zero-test run.
 
 For a fresh machine, follow [Getting Started](docs/getting-started.md), including separate driver/toolkit and optional framework steps. GPU validation uses a new empty log directory per run; it never overwrites the archived A100 evidence. Run one GPU validation at a time because the lesson drivers use fixed `/tmp/hammer_ch18_*` paths.
+
+Linked diagrams open in an accessible overlay on the same page. Use Close, Escape or the backdrop to return to the chapter. The viewer also works after instant navigation between chapters.

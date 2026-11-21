@@ -60,6 +60,7 @@ plugins:
   - search
 
 extra_css:
+  - stylesheets/image-viewer.css
   - stylesheets/extra.css
 
 nav:
@@ -118,3 +119,6 @@ nav:
 
 extra:
   social: []
+
+extra_javascript:
+  - javascripts/image-viewer.js
